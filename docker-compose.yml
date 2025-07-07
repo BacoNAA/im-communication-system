@@ -1,0 +1,110 @@
+# 文件路径: D:/projects/im-communication-system/docker-compose.yml
+version: '3.8'
+
+services:
+  # MySQL: 关系型数据库，用于存储核心业务数据
+  mysql:
+    image: mysql:9.3
+    container_name: im-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456 # 【请修改】为您自己的安全密码
+      MYSQL_DATABASE: im_db
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+  # Redis: 缓存数据库，用于提升热点数据访问速度
+  redis:
+    image: redis:6.2-alpine
+    container_name: im-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+  # RabbitMQ: 消息队列，用于服务间的异步解耦和消息分发
+  rabbitmq:
+    image: rabbitmq:3.9-management
+    container_name: im-rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"  # AMQP 协议端口
+      - "15672:15672" # 管理后台UI端口
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
+  # Elasticsearch: 搜索引擎，用于实现复杂的内容搜索功能
+  elasticsearch:
+    image: elasticsearch:7.17.10
+    container_name: im-elasticsearch
+    restart: always
+    environment:
+      - discovery.type=single-node
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+
+  # MinIO: 对象存储，用于存放用户上传的图片、视频、文件等
+  minio:
+    image: minio/minio:latest
+    container_name: im-minio
+    restart: always
+    ports:
+      - "9000:9000"  # API 端口
+      - "9001:9001"  # 控制台UI端口
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio-data:/data
+    command: server /data --console-address ":9001"
+
+  # Kurento: 媒体服务器，用于处理音视频通话的媒体流
+  kurento:
+    image: kurento/kurento-media-server:latest
+    container_name: im-kurento
+    restart: always
+    ports:
+      - "8888:8888"
+
+  # Prometheus: 监控数据采集服务
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: im-prometheus
+    restart: always
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+
+  # Grafana: 监控数据可视化面板
+  grafana:
+    image: grafana/grafana:latest
+    container_name: im-grafana
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+
+  # Nginx: API网关/反向代理
+  nginx:
+    image: nginx:latest
+    container_name: im-nginx-gateway
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./config/nginx.conf:/etc/nginx/nginx.conf
+
+volumes:
+  mysql-data:
+  redis-data:
+  es-data:
+  minio-data:

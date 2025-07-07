@@ -1,0 +1,39 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: im-communication-system
+
+  # --- ??????? (?????????) ---
+  datasource:
+    # ????????????? 3306 ??? 3307?????? docker-compose.yml ??
+    url: jdbc:mysql://localhost:3307/im_db?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8
+    username: root
+    # ??????????????? 123456
+    password: 123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  # --- JPA ?? ---
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+    open-in-view: false
+
+  # --- Redis ???? (????) ---
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      database: 0
+
+  # --- Actuator ?????? (????) ---
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus

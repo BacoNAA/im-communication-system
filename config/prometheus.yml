@@ -1,0 +1,7 @@
+# 文件路径: D:/projects/im-communication-system/config/prometheus.yml
+scrape_configs:
+  - job_name: 'spring-boot-app'
+    metrics_path: '/actuator/prometheus' # Spring Boot Actuator暴露指标的路径
+    static_configs:
+      # 定义要监控的目标
+      - targets: ['host.docker.internal:8080']
