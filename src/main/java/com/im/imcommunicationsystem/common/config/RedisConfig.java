@@ -56,8 +56,8 @@ public class RedisConfig {
         template.setHashKeySerializer(stringRedisSerializer);
         template.setHashValueSerializer(jackson2JsonRedisSerializer);
 
-        // 设置支持事务
-        template.setEnableTransactionSupport(true);
+        // 禁用事务支持，避免与Spring事务冲突
+        template.setEnableTransactionSupport(false);
         template.afterPropertiesSet();
 
         return template;

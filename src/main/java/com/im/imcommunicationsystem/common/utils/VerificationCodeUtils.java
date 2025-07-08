@@ -380,8 +380,20 @@ public class VerificationCodeUtils {
              throw ServiceException.validationError("验证码不能为空", null);
          }
          
-         if (code.trim().length() != codeType.getLength()) {
+         String trimmedCode = code.trim();
+         
+         if (trimmedCode.length() != codeType.getLength()) {
              throw ServiceException.validationError("验证码长度不正确", code);
+         }
+         
+         // 对于数字验证码类型，严格验证只能包含数字
+         if (codeType == CodeType.EMAIL_REGISTER || codeType == CodeType.EMAIL_LOGIN || 
+             codeType == CodeType.PASSWORD_RESET || codeType == CodeType.EMAIL_BIND || 
+             codeType == CodeType.PHONE_VERIFY || codeType == CodeType.TWO_FACTOR) {
+             
+             if (!trimmedCode.matches("\\d+")) {
+                 throw ServiceException.validationError("验证码格式不正确，只能包含数字", code);
+             }
          }
      }
      

@@ -44,11 +44,7 @@ public class GlobalConfig {
     @NotNull(message = "文件上传配置不能为空")
     private FileUpload fileUpload = new FileUpload();
 
-    /**
-     * JWT配置
-     */
-    @NotNull(message = "JWT配置不能为空")
-    private Jwt jwt = new Jwt();
+
 
     /**
      * 验证码配置
@@ -122,52 +118,7 @@ public class GlobalConfig {
         public void setUploadPath(String uploadPath) { this.uploadPath = uploadPath; }
     }
 
-    /**
-     * JWT配置类
-     */
-    public static class Jwt {
-        /**
-         * JWT密钥
-         */
-        @NotBlank(message = "JWT密钥不能为空")
-        private String secret = "im-communication-system-jwt-secret-key-2024";
 
-        /**
-         * 访问令牌过期时间（小时）
-         */
-        @Positive(message = "访问令牌过期时间必须为正数")
-        private int accessTokenExpiration = 24;
-
-        /**
-         * 刷新令牌过期时间（天）
-         */
-        @Positive(message = "刷新令牌过期时间必须为正数")
-        private int refreshTokenExpiration = 7;
-
-        /**
-         * 令牌前缀
-         */
-        @NotBlank(message = "令牌前缀不能为空")
-        private String tokenPrefix = "Bearer ";
-
-        /**
-         * 请求头名称
-         */
-        @NotBlank(message = "请求头名称不能为空")
-        private String headerName = "Authorization";
-
-        // Getters and Setters
-        public String getSecret() { return secret; }
-        public void setSecret(String secret) { this.secret = secret; }
-        public int getAccessTokenExpiration() { return accessTokenExpiration; }
-        public void setAccessTokenExpiration(int accessTokenExpiration) { this.accessTokenExpiration = accessTokenExpiration; }
-        public int getRefreshTokenExpiration() { return refreshTokenExpiration; }
-        public void setRefreshTokenExpiration(int refreshTokenExpiration) { this.refreshTokenExpiration = refreshTokenExpiration; }
-        public String getTokenPrefix() { return tokenPrefix; }
-        public void setTokenPrefix(String tokenPrefix) { this.tokenPrefix = tokenPrefix; }
-        public String getHeaderName() { return headerName; }
-        public void setHeaderName(String headerName) { this.headerName = headerName; }
-    }
 
     /**
      * 验证码配置类
@@ -256,8 +207,7 @@ public class GlobalConfig {
     public void setDescription(String description) { this.description = description; }
     public FileUpload getFileUpload() { return fileUpload; }
     public void setFileUpload(FileUpload fileUpload) { this.fileUpload = fileUpload; }
-    public Jwt getJwt() { return jwt; }
-    public void setJwt(Jwt jwt) { this.jwt = jwt; }
+
     public VerificationCode getVerificationCode() { return verificationCode; }
     public void setVerificationCode(VerificationCode verificationCode) { this.verificationCode = verificationCode; }
     public Message getMessage() { return message; }

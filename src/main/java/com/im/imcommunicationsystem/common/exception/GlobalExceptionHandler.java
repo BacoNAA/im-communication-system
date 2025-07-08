@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import javax.security.sasl.AuthenticationException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -97,6 +98,72 @@ public class GlobalExceptionHandler {
         log.warn("认证失败: {}", e.getMessage());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(ResponseUtils.error(401, "用户名或密码错误"));
+    }
+
+    /**
+     * 处理认证异常
+     *
+     * @param e 认证异常
+     * @param request HTTP请求
+     * @return 错误响应
+     */
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<?> handleAuthenticationException(AuthenticationException e, HttpServletRequest request) {
+        log.warn("登录认证失败: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ResponseUtils.error(401, e.getMessage()));
+    }
+
+    /**
+     * 处理自定义认证异常
+     * 
+     * @param e 自定义认证异常
+     * @param request HTTP请求
+     * @return 错误响应
+     */
+    @ExceptionHandler(com.im.imcommunicationsystem.auth.exception.AuthenticationException.class)
+    public ResponseEntity<?> handleCustomAuthenticationException(com.im.imcommunicationsystem.auth.exception.AuthenticationException e, HttpServletRequest request) {
+        String clientIp = getClientIpAddress(request);
+        String userAgent = request.getHeader("User-Agent");
+        
+        if (e.hasErrorCode()) {
+            log.warn("登录认证失败 [{}]: {} - 来源IP: {}, User-Agent: {}", 
+                    e.getErrorCode(), e.getMessage(), clientIp, userAgent);
+        } else {
+            log.warn("登录认证失败: {} - 来源IP: {}, User-Agent: {}", 
+                    e.getMessage(), clientIp, userAgent);
+        }
+        
+        // 构建详细的错误响应
+        Map<String, Object> errorDetails = new HashMap<>();
+        errorDetails.put("timestamp", java.time.LocalDateTime.now());
+        errorDetails.put("path", request.getRequestURI());
+        
+        if (e.hasErrorCode()) {
+            errorDetails.put("errorCode", e.getErrorCode());
+        }
+        
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ResponseUtils.error(401, e.getMessage(), errorDetails));
+    }
+    
+    /**
+     * 获取客户端真实IP地址
+     * @param request HTTP请求
+     * @return 客户端IP地址
+     */
+    private String getClientIpAddress(HttpServletRequest request) {
+        String xForwardedFor = request.getHeader("X-Forwarded-For");
+        if (xForwardedFor != null && !xForwardedFor.isEmpty() && !"unknown".equalsIgnoreCase(xForwardedFor)) {
+            return xForwardedFor.split(",")[0].trim();
+        }
+        
+        String xRealIp = request.getHeader("X-Real-IP");
+        if (xRealIp != null && !xRealIp.isEmpty() && !"unknown".equalsIgnoreCase(xRealIp)) {
+            return xRealIp;
+        }
+        
+        return request.getRemoteAddr();
     }
 
     /**

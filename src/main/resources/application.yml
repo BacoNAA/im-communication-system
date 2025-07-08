@@ -1,9 +1,20 @@
 server:
   port: 8080
+  servlet:
+    encoding:
+      charset: UTF-8
+      force: true
 
 spring:
   application:
     name: im-communication-system
+
+  mvc:
+    pathmatch:
+      matching-strategy: ant-path-matcher
+  web:
+    resources:
+      static-locations: classpath:/static/
 
   # --- ??????? (?????????) ---
   datasource:
@@ -14,16 +25,35 @@ spring:
     password: 123456
     driver-class-name: com.mysql.cj.jdbc.Driver
 
-  # --- JPA ?? ---
+  # --- JPA配置 ---
   jpa:
     hibernate:
-      ddl-auto: update
+      # 使用Flyway进行数据库迁移，禁用JPA自动建表
+      ddl-auto: validate
     properties:
       hibernate:
         '[format_sql]': true
-        # ?????????????? MySQL 8+ ???
+        # 指定数据库方言，适配 MySQL 8+ 版本
         dialect: org.hibernate.dialect.MySQLDialect
     open-in-view: false
+    
+  # --- Flyway数据库迁移配置 ---
+  flyway:
+    enabled: true
+    # 迁移脚本位置
+    locations: classpath:db/migration
+    # 基线版本
+    baseline-version: 0
+    # 如果数据库不为空，是否自动执行基线
+    baseline-on-migrate: true
+    # 验证迁移脚本的校验和
+    validate-on-migrate: true
+    # 清理数据库（生产环境请设为false）
+    clean-disabled: false
+    # 编码
+    encoding: UTF-8
+    # 表名前缀
+    table: flyway_schema_history
 
   # --- Redis ???? (????) ---
   data:
@@ -32,6 +62,40 @@ spring:
       port: 6379
       database: 0
 
+  # --- 邮件配置 ---
+  # 真实邮件发送配置 - 请根据您的邮箱服务商进行配置
+  mail:
+    # QQ邮箱配置示例
+    host: smtp.qq.com
+    port: 587
+    username: 1012779129@qq.com        # 请替换为您的QQ邮箱
+    password: tgduimgwozcxbbhi   # 请替换为您的QQ邮箱授权码（不是登录密码）
+    
+    # 163邮箱配置示例（注释掉的备选配置）
+    # host: smtp.163.com
+    # port: 465
+    # username: your-email@163.com
+    # password: your-authorization-code
+    
+    # Gmail配置示例（注释掉的备选配置）
+    # host: smtp.gmail.com
+    # port: 587
+    # username: your-email@gmail.com
+    # password: your-app-password
+    
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          # 对于SSL连接（如163邮箱端口465），启用以下配置
+          # ssl:
+          #   enable: true
+          #   trust: smtp.163.com
+    default-encoding: UTF-8
+
   # --- Actuator ?????? (????) ---
 management:
   endpoints:
@@ -39,8 +103,21 @@ management:
       exposure:
         include: health,info,prometheus
 
+# --- JWT配置 ---
+# JWT配置已移至app.jwt下
+
 # --- 应用配置 ---
 app:
+  # JWT配置
+  jwt:
+    secret: im-communication-system-jwt-secret-key-2024-very-long-secure-key-for-hs512-algorithm-minimum-512-bits-required-abcdefghijklmnopqrstuvwxyz0123456789
+    access-token-expiration: 86400  # 24小时（秒）
+    refresh-token-expiration: 604800  # 7天（秒）
+    temp-token-expiration: 300  # 5分钟（秒）
+    token-prefix: "Bearer "
+    header-name: Authorization
+    issuer: im-communication-system
+  
   # 验证码配置
   verification-code:
     default-length: 6

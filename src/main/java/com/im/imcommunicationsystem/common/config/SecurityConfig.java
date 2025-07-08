@@ -1,5 +1,7 @@
 package com.im.imcommunicationsystem.common.config;
 
+import com.im.imcommunicationsystem.common.filter.JwtAuthenticationFilter;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -10,6 +12,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -28,7 +31,10 @@ import java.util.Collections;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
+@RequiredArgsConstructor
 public class SecurityConfig {
+
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     /**
      * 密码编码器
@@ -65,14 +71,27 @@ public class SecurityConfig {
                         // 公开访问的端点
                         .requestMatchers(
                                 "/api/auth/**",           // 认证相关接口
+                                "/api/verification/**",   // 验证码相关接口
+                                "/api/account-lock/**",   // 账号锁定管理接口
                                 "/api/public/**",        // 公开接口
+                                "/api/test/**",          // 测试接口
                                 "/ws/**",                // WebSocket端点
                                 "/ws-native/**",         // 原生WebSocket端点
                                 "/actuator/**",          // 监控端点
                                 "/swagger-ui/**",        // Swagger UI
                                 "/v3/api-docs/**",       // OpenAPI文档
                                 "/favicon.ico",          // 网站图标
-                                "/error"                 // 错误页面
+                                "/error",                // 错误页面
+                                "/",                     // 根路径
+                                "/index.html",           // 首页
+                                "/register.html",        // 注册页面
+                                "/login.html",           // 登录页面
+                                "/dashboard.html",       // 仪表板页面
+                                "/static/**",            // 静态资源
+                                "/css/**",               // CSS文件
+                                "/js/**",                // JavaScript文件
+                                "/images/**",            // 图片文件
+                                "/*.html"                // 所有HTML文件
                         ).permitAll()
                         
                         // 管理员接口需要ADMIN权限
@@ -100,8 +119,8 @@ public class SecurityConfig {
                         })
                 );
 
-        // 在这里可以添加JWT认证过滤器
-        // http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        // 添加JWT认证过滤器
+        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

@@ -1,9 +1,10 @@
 package com.im.imcommunicationsystem.common.utils;
 
+import com.im.imcommunicationsystem.auth.config.JwtConfig;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -22,31 +23,38 @@ import java.util.Map;
  */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class JwtUtils {
 
-    /**
-     * JWT密钥
-     */
-    @Value("${jwt.secret:im-communication-system-jwt-secret-key-2024}")
-    private String secret;
+    private final JwtConfig jwtConfig;
 
     /**
-     * JWT过期时间（毫秒）
+     * 获取JWT密钥
      */
-    @Value("${jwt.expiration:86400000}")
-    private Long expiration;
+    private String getSecret() {
+        return jwtConfig.getSecret();
+    }
 
     /**
-     * 刷新令牌过期时间（毫秒）
+     * 获取访问令牌过期时间（毫秒）
      */
-    @Value("${jwt.refresh-expiration:604800000}")
-    private Long refreshExpiration;
+    private Long getAccessTokenExpiration() {
+        return jwtConfig.getAccessTokenExpiration() * 1000; // 转换为毫秒
+    }
 
     /**
-     * JWT发行者
+     * 获取刷新令牌过期时间（毫秒）
      */
-    @Value("${jwt.issuer:im-communication-system}")
-    private String issuer;
+    private Long getRefreshTokenExpiration() {
+        return jwtConfig.getRefreshTokenExpiration() * 1000; // 转换为毫秒
+    }
+
+    /**
+     * 获取JWT发行者
+     */
+    private String getIssuer() {
+        return jwtConfig.getIssuer();
+    }
 
     /**
      * 获取密钥
@@ -54,7 +62,7 @@ public class JwtUtils {
      * @return SecretKey实例
      */
     private SecretKey getSecretKey() {
-        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        return Keys.hmacShaKeyFor(getSecret().getBytes(StandardCharsets.UTF_8));
     }
 
     /**
@@ -72,7 +80,7 @@ public class JwtUtils {
         claims.put("roles", roles);
         claims.put("type", "access");
         
-        return createToken(claims, username, expiration);
+        return createToken(claims, username, getAccessTokenExpiration());
     }
 
     /**
@@ -88,7 +96,7 @@ public class JwtUtils {
         claims.put("username", username);
         claims.put("type", "refresh");
         
-        return createToken(claims, username, refreshExpiration);
+        return createToken(claims, username, getRefreshTokenExpiration());
     }
 
     /**
@@ -106,7 +114,7 @@ public class JwtUtils {
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(subject)
-                .setIssuer(issuer)
+                .setIssuer(getIssuer())
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
                 .signWith(getSecretKey(), SignatureAlgorithm.HS512)
@@ -288,6 +296,15 @@ public class JwtUtils {
         } catch (Exception e) {
             return 0L;
         }
+    }
+
+    /**
+     * 获取访问令牌过期时间（毫秒）
+     * 
+     * @return 过期时间（毫秒）
+     */
+    public Long getAccessTokenExpirationTime() {
+        return getAccessTokenExpiration();
     }
 
     /**
