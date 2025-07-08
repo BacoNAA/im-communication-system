@@ -1,0 +1,58 @@
+package com.im.imcommunicationsystem.auth.service;
+
+import com.im.imcommunicationsystem.auth.entity.LoginDevice;
+
+import java.util.List;
+
+/**
+ * 设备服务接口
+ * 处理登录设备相关业务逻辑
+ */
+public interface DeviceService {
+
+    /**
+     * 记录登录设备
+     * @param userId 用户ID
+     * @param deviceType 设备类型
+     * @param deviceInfo 设备信息
+     * @param ipAddress IP地址
+     * @return 登录设备信息
+     */
+    LoginDevice recordLoginDevice(Long userId, String deviceType, String deviceInfo, String ipAddress);
+
+    /**
+     * 获取用户活跃设备列表
+     * @param userId 用户ID
+     * @return 活跃设备列表
+     */
+    List<LoginDevice> getActiveDevices(Long userId);
+
+    /**
+     * 注销指定设备
+     * @param userId 用户ID
+     * @param deviceType 设备类型
+     */
+    void logoutDevice(Long userId, String deviceType);
+
+    /**
+     * 注销所有设备
+     * @param userId 用户ID
+     */
+    void logoutAllDevices(Long userId);
+
+    /**
+     * 更新设备活跃状态
+     * @param userId 用户ID
+     * @param deviceType 设备类型
+     * @param isActive 是否活跃
+     */
+    void updateDeviceStatus(Long userId, String deviceType, boolean isActive);
+
+    /**
+     * 检查设备是否活跃
+     * @param userId 用户ID
+     * @param deviceType 设备类型
+     * @return 是否活跃
+     */
+    boolean isDeviceActive(Long userId, String deviceType);
+}

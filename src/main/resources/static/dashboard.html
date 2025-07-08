@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IM通信系统</title>
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- 侧边栏 -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="user-avatar">
+                    <img id="userAvatar" src="images/default-avatar.svg" alt="用户头像">
+                </div>
+                <div class="user-info">
+                    <div class="user-name" id="userName">加载中...</div>
+                    <div class="user-status" id="userStatus">在线</div>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <ul class="nav-list">
+                    <li class="nav-item active" data-tab="chat">
+                        <i class="icon-chat"></i>
+                        <span>会话</span>
+                        <span class="badge" id="chatBadge">0</span>
+                    </li>
+                    <li class="nav-item" data-tab="contacts">
+                        <i class="icon-contacts"></i>
+                        <span>联系人</span>
+                    </li>
+                    <li class="nav-item" data-tab="moments">
+                        <i class="icon-moments"></i>
+                        <span>动态</span>
+                    </li>
+                    <li class="nav-item" data-tab="profile">
+                        <i class="icon-profile"></i>
+                        <span>我</span>
+                    </li>
+                </ul>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <button class="btn btn-icon" onclick="showSettings()" title="设置">
+                    <i class="icon-settings"></i>
+                </button>
+                <button class="btn btn-icon" onclick="logout()" title="退出登录">
+                    <i class="icon-logout"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- 主内容区 -->
+        <div class="main-content">
+            <!-- 会话列表 -->
+            <div class="content-panel" id="chatPanel">
+                <div class="panel-header">
+                    <h2>会话</h2>
+                    <button class="btn btn-icon" onclick="startNewChat()" title="新建会话">
+                        <i class="icon-plus"></i>
+                    </button>
+                </div>
+                <div class="panel-body">
+                    <div class="search-box">
+                        <input type="text" placeholder="搜索会话..." id="chatSearch">
+                        <i class="icon-search"></i>
+                    </div>
+                    <div class="chat-list" id="chatList">
+                        <div class="empty-state">
+                            <i class="icon-chat-empty"></i>
+                            <p>暂无会话</p>
+                            <button class="btn btn-primary" onclick="startNewChat()">开始聊天</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 联系人列表 -->
+            <div class="content-panel" id="contactsPanel" style="display: none;">
+                <div class="panel-header">
+                    <h2>联系人</h2>
+                    <button class="btn btn-icon" onclick="addContact()" title="添加联系人">
+                        <i class="icon-plus"></i>
+                    </button>
+                </div>
+                <div class="panel-body">
+                    <div class="search-box">
+                        <input type="text" placeholder="搜索联系人..." id="contactSearch">
+                        <i class="icon-search"></i>
+                    </div>
+                    <div class="contact-list" id="contactList">
+                        <div class="empty-state">
+                            <i class="icon-contacts-empty"></i>
+                            <p>暂无联系人</p>
+                            <button class="btn btn-primary" onclick="addContact()">添加联系人</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 动态列表 -->
+            <div class="content-panel" id="momentsPanel" style="display: none;">
+                <div class="panel-header">
+                    <h2>动态</h2>
+                    <button class="btn btn-icon" onclick="publishMoment()" title="发布动态">
+                        <i class="icon-plus"></i>
+                    </button>
+                </div>
+                <div class="panel-body">
+                    <div class="moments-list" id="momentsList">
+                        <div class="empty-state">
+                            <i class="icon-moments-empty"></i>
+                            <p>暂无动态</p>
+                            <button class="btn btn-primary" onclick="publishMoment()">发布动态</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 个人资料 -->
+            <div class="content-panel" id="profilePanel" style="display: none;">
+                <div class="panel-header">
+                    <h2>个人资料</h2>
+                    <button class="btn btn-icon" onclick="editProfile()" title="编辑资料">
+                        <i class="icon-edit"></i>
+                    </button>
+                </div>
+                <div class="panel-body">
+                    <div class="profile-info">
+                        <div class="profile-avatar">
+                            <img id="profileAvatar" src="images/default-avatar.svg" alt="头像">
+                            <button class="avatar-edit" onclick="changeAvatar()">
+                                <i class="icon-camera"></i>
+                            </button>
+                        </div>
+                        <div class="profile-details">
+                            <div class="detail-item">
+                                <label>昵称</label>
+                                <span id="profileNickname">加载中...</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>邮箱</label>
+                                <span id="profileEmail">加载中...</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>用户ID</label>
+                                <span id="profileUserId">加载中...</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>注册时间</label>
+                                <span id="profileRegisterTime">加载中...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="profile-actions">
+                        <button class="btn btn-outline" onclick="generateQRCode()">生成二维码名片</button>
+                        <button class="btn btn-outline" onclick="customizeHomepage()">自定义主页</button>
+                        <button class="btn btn-outline" onclick="manageDevices()">设备管理</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 聊天窗口 -->
+        <div class="chat-window" id="chatWindow" style="display: none;">
+            <div class="chat-header">
+                <div class="chat-info">
+                    <img class="chat-avatar" src="images/default-avatar.svg" alt="头像">
+                    <div class="chat-details">
+                        <div class="chat-name">聊天对象</div>
+                        <div class="chat-status">在线</div>
+                    </div>
+                </div>
+                <div class="chat-actions">
+                    <button class="btn btn-icon" onclick="closeChatWindow()" title="关闭">
+                        <i class="icon-close"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="chat-messages" id="chatMessages">
+                <!-- 聊天消息将在这里显示 -->
+            </div>
+            
+            <div class="chat-input">
+                <div class="input-toolbar">
+                    <button class="btn btn-icon" onclick="sendEmoji()" title="表情">
+                        <i class="icon-emoji"></i>
+                    </button>
+                    <button class="btn btn-icon" onclick="sendFile()" title="文件">
+                        <i class="icon-file"></i>
+                    </button>
+                    <button class="btn btn-icon" onclick="sendImage()" title="图片">
+                        <i class="icon-image"></i>
+                    </button>
+                </div>
+                <div class="input-area">
+                    <textarea id="messageInput" placeholder="输入消息..." rows="3"></textarea>
+                    <button class="btn btn-primary" onclick="sendMessage()">
+                        发送
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 消息提示 -->
+    <div id="messageContainer" class="message-container"></div>
+    
+    <script src="js/common.js"></script>
+    <script src="js/dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户登录 - IM通信系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            width: 100%;
+            max-width: 400px;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .login-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+
+        .login-header h1 {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .login-header p {
+            opacity: 0.9;
+            font-size: 16px;
+        }
+
+        .login-form {
+            padding: 40px 30px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background-color: #f8f9fa;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            background-color: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-group input.error {
+            border-color: #e74c3c;
+            background-color: #fdf2f2;
+        }
+
+        .error-message {
+            color: #e74c3c;
+            font-size: 14px;
+            margin-top: 8px;
+            display: none;
+        }
+
+        .remember-me {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .remember-me input[type="checkbox"] {
+            width: auto;
+            margin-right: 8px;
+        }
+
+        .remember-me label {
+            margin-bottom: 0;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .login-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .divider {
+            text-align: center;
+            margin: 25px 0;
+            position: relative;
+            color: #999;
+        }
+
+        .divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #e1e5e9;
+        }
+
+        .divider span {
+            background: white;
+            padding: 0 15px;
+        }
+
+        .register-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .register-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .register-link a:hover {
+            text-decoration: underline;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert.error {
+            background-color: #fdf2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+        }
+
+        .alert.success {
+            background-color: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #16a34a;
+        }
+
+        @media (max-width: 480px) {
+            .login-container {
+                margin: 10px;
+            }
+            
+            .login-header {
+                padding: 30px 20px;
+            }
+            
+            .login-form {
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <h1>欢迎回来</h1>
+            <p>登录您的账户继续使用</p>
+        </div>
+        
+        <div class="login-form">
+            <div id="alertContainer"></div>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">邮箱地址</label>
+                    <input type="email" id="email" name="email" placeholder="请输入您的邮箱地址" required>
+                    <div class="error-message" id="emailError"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">密码</label>
+                    <input type="password" id="password" name="password" placeholder="请输入您的密码" autocomplete="off" required>
+                    <div class="error-message" id="passwordError"></div>
+                </div>
+                
+                <div class="remember-me">
+                    <input type="checkbox" id="rememberMe" name="rememberMe">
+                    <label for="rememberMe">记住登录状态</label>
+                </div>
+                
+                <button type="submit" class="login-btn" id="loginBtn">登录</button>
+            </form>
+            
+            <div class="loading" id="loading">
+                <div class="loading-spinner"></div>
+                <p>正在登录...</p>
+            </div>
+            
+            <div class="divider">
+                <span>或</span>
+            </div>
+            
+            <div class="register-link">
+                还没有账户？<a href="/register.html">立即注册</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 获取设备信息
+        function getDeviceInfo() {
+            const userAgent = navigator.userAgent;
+            let deviceType = 'web';
+            
+            if (/Mobile|Android|iPhone|iPad/.test(userAgent)) {
+                deviceType = 'mobile';
+            } else if (/Tablet|iPad/.test(userAgent)) {
+                deviceType = 'tablet';
+            }
+            
+            return {
+                deviceType: deviceType,
+                deviceInfo: userAgent
+            };
+        }
+
+        // 显示错误信息
+        function showError(fieldId, message) {
+            const field = document.getElementById(fieldId);
+            const errorElement = document.getElementById(fieldId + 'Error');
+            
+            field.classList.add('error');
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+        }
+
+        // 清除错误信息
+        function clearError(fieldId) {
+            const field = document.getElementById(fieldId);
+            const errorElement = document.getElementById(fieldId + 'Error');
+            
+            field.classList.remove('error');
+            errorElement.style.display = 'none';
+        }
+
+        // 显示全局提示
+        function showAlert(message, type = 'error') {
+            const alertContainer = document.getElementById('alertContainer');
+            alertContainer.innerHTML = `
+                <div class="alert ${type}">
+                    ${message}
+                </div>
+            `;
+            alertContainer.querySelector('.alert').style.display = 'block';
+        }
+
+        // 清除全局提示
+        function clearAlert() {
+            const alertContainer = document.getElementById('alertContainer');
+            alertContainer.innerHTML = '';
+        }
+
+        // 验证邮箱格式
+        function validateEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+
+        // 验证表单
+        function validateForm() {
+            let isValid = true;
+            
+            // 清除之前的错误
+            clearError('email');
+            clearError('password');
+            clearAlert();
+            
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            
+            // 验证邮箱
+            if (!email) {
+                showError('email', '请输入邮箱地址');
+                isValid = false;
+            } else if (!validateEmail(email)) {
+                showError('email', '请输入有效的邮箱地址');
+                isValid = false;
+            }
+            
+            // 验证密码
+            if (!password) {
+                showError('password', '请输入密码');
+                isValid = false;
+            }
+            
+            return isValid;
+        }
+
+        // 处理登录
+        async function handleLogin(event) {
+            event.preventDefault();
+            
+            if (!validateForm()) {
+                return;
+            }
+            
+            const loginBtn = document.getElementById('loginBtn');
+            const loading = document.getElementById('loading');
+            const form = document.getElementById('loginForm');
+            
+            // 显示加载状态
+            loginBtn.disabled = true;
+            loading.style.display = 'block';
+            form.style.display = 'none';
+            
+            try {
+                const deviceInfo = getDeviceInfo();
+                const email = document.getElementById('email').value.trim();
+                const password = document.getElementById('password').value;
+
+                if (!email || !password) {
+                    showAlert('邮箱和密码不能为空', 'error');
+                    form.style.display = 'block';
+                    loading.style.display = 'none';
+                    loginBtn.disabled = false;
+                    return;
+                }
+
+                const formData = {
+                    email: email,
+                    password: password,
+                    deviceType: deviceInfo.deviceType,
+                    deviceInfo: deviceInfo.deviceInfo,
+                    rememberMe: document.getElementById('rememberMe').checked
+                };
+                
+                const response = await fetch('/api/auth/login/password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    // 登录成功
+                    const authData = result.data;
+                    
+                    // 存储认证信息
+                    if (formData.rememberMe) {
+                        // 记住登录状态：保存到localStorage（持久化）
+                        localStorage.setItem('accessToken', authData.accessToken);
+                        localStorage.setItem('refreshToken', authData.refreshToken);
+                        localStorage.setItem('userInfo', JSON.stringify(authData.userInfo));
+                        // 保存邮箱、密码和记住我状态，用于下次自动填充
+                        localStorage.setItem('savedEmail', formData.email);
+                        // 只有在后端返回密码时才保存（安全考虑）
+                        if (authData.userInfo && authData.userInfo.password) {
+                            localStorage.setItem('savedPassword', authData.userInfo.password);
+                        }
+                        localStorage.setItem('rememberMe', 'true');
+                        // 清除sessionStorage中可能存在的数据
+                        sessionStorage.removeItem('accessToken');
+                        sessionStorage.removeItem('refreshToken');
+                        sessionStorage.removeItem('userInfo');
+                    } else {
+                        // 不记住登录状态：保存到sessionStorage（会话级别）
+                        sessionStorage.setItem('accessToken', authData.accessToken);
+                        sessionStorage.setItem('refreshToken', authData.refreshToken);
+                        sessionStorage.setItem('userInfo', JSON.stringify(authData.userInfo));
+                        // 清除localStorage中的登录信息
+                        localStorage.removeItem('accessToken');
+                        localStorage.removeItem('refreshToken');
+                        localStorage.removeItem('userInfo');
+                        localStorage.removeItem('savedEmail');
+                        localStorage.removeItem('savedPassword');
+                        localStorage.removeItem('rememberMe');
+                        // 清空密码输入框，防止刷新页面后密码仍然存在
+                        document.getElementById('password').value = '';
+                    }
+                    
+                    showAlert('登录成功，正在跳转...', 'success');
+                    
+                    // 延迟跳转到主页
+                    setTimeout(() => {
+                        window.location.href = '/index.html';
+                    }, 1500);
+                    
+                } else {
+                    // 登录失败
+                    const errorMessage = result.message || '登录失败，请重试';
+                    showAlert(errorMessage, 'error');
+                    
+                    // 恢复表单显示
+                    form.style.display = 'block';
+                    loading.style.display = 'none';
+                    loginBtn.disabled = false;
+                    
+                    // 清空密码输入框
+                    document.getElementById('password').value = '';
+                }
+                
+            } catch (error) {
+                console.error('登录请求失败:', error);
+                showAlert('网络错误，请检查网络连接后重试', 'error');
+                
+                // 恢复表单显示
+                form.style.display = 'block';
+                loading.style.display = 'none';
+                loginBtn.disabled = false;
+            }
+        }
+
+        // 检查并填充保存的登录信息
+        function loadSavedLoginInfo() {
+            // 检查localStorage中是否有保存的邮箱（记住登录状态）
+            const savedEmail = localStorage.getItem('savedEmail');
+            const savedPassword = localStorage.getItem('savedPassword');
+            const rememberMe = localStorage.getItem('rememberMe') === 'true';
+            
+            if (savedEmail && rememberMe) {
+                // 填充邮箱
+                document.getElementById('email').value = savedEmail;
+                // 填充密码（如果有保存）
+                if (savedPassword) {
+                    document.getElementById('password').value = savedPassword;
+                }
+                // 设置记住我选项
+                document.getElementById('rememberMe').checked = true;
+                
+                // 显示提示信息
+                showAlert('已自动填充上次保存的登录信息', 'success');
+                
+                // 3秒后自动清除提示
+                setTimeout(() => {
+                    clearAlert();
+                }, 3000);
+            }
+        }
+
+        // 绑定事件
+        document.addEventListener('DOMContentLoaded', function() {
+            const loginForm = document.getElementById('loginForm');
+            loginForm.addEventListener('submit', handleLogin);
+            
+            // 加载保存的登录信息
+            loadSavedLoginInfo();
+            
+            // 输入时清除错误提示
+            document.getElementById('email').addEventListener('input', function() {
+                clearError('email');
+            });
+            
+            document.getElementById('password').addEventListener('input', function() {
+                clearError('password');
+            });
+        });
+    </script>
+</body>
+</html>
