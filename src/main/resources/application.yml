@@ -8,7 +8,7 @@ spring:
   # --- ??????? (?????????) ---
   datasource:
     # ????????????? 3306 ??? 3307?????? docker-compose.yml ??
-    url: jdbc:mysql://localhost:3307/im_db?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8
+    url: jdbc:mysql://localhost:3307/im_db?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
     username: root
     # ??????????????? 123456
     password: 123456
@@ -18,10 +18,11 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
     properties:
       hibernate:
-        format_sql: true
+        '[format_sql]': true
+        # ?????????????? MySQL 8+ ???
+        dialect: org.hibernate.dialect.MySQLDialect
     open-in-view: false
 
   # --- Redis ???? (????) ---
@@ -37,3 +38,47 @@ management:
     web:
       exposure:
         include: health,info,prometheus
+
+# --- 应用配置 ---
+app:
+  # 验证码配置
+  verification-code:
+    default-length: 6
+    default-expire-minutes: 5
+    send-interval-seconds: 60
+    max-retry-count: 5
+    code-types:
+      email-register:
+        length: 6
+        expire-minutes: 5
+        prefix: "EMAIL_REG"
+      email-login:
+        length: 6
+        expire-minutes: 5
+        prefix: "EMAIL_LOGIN"
+      password-reset:
+        length: 6
+        expire-minutes: 10
+        prefix: "PWD_RESET"
+      email-bind:
+        length: 6
+        expire-minutes: 5
+        prefix: "EMAIL_BIND"
+      phone-verify:
+        length: 6
+        expire-minutes: 5
+        prefix: "PHONE_VERIFY"
+      captcha:
+        length: 4
+        expire-minutes: 2
+        prefix: "CAPTCHA"
+      two-factor:
+        length: 6
+        expire-minutes: 10
+        prefix: "TWO_FACTOR"
+    security:
+      enable-ip-limit: true
+      max-send-per-hour: 10
+      enable-complexity-check: false
+
+
