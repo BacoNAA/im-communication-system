@@ -1,0 +1,876 @@
+2025-07-08 12:50:29.779 [background-preinit] INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.1.Final
+2025-07-08 12:50:29.797 [main] INFO  c.i.i.ImCommunicationSystemApplicationTests - Starting ImCommunicationSystemApplicationTests using Java 17.0.2 with PID 6236 (started by ASUS in d:\Project\im-communication-system)
+2025-07-08 12:50:29.799 [main] INFO  c.i.i.ImCommunicationSystemApplicationTests - No active profile set, falling back to 1 default profile: "default"
+2025-07-08 12:50:30.602 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 12:50:30.603 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-07-08 12:50:30.617 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 6 ms. Found 0 JPA repository interfaces.
+2025-07-08 12:50:31.019 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 12:50:31.022 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2025-07-08 12:50:31.041 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 10 ms. Found 0 Redis repository interfaces.
+2025-07-08 12:50:32.323 [main] INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-07-08 12:50:32.491 [main] INFO  org.hibernate.Version - HHH000412: Hibernate ORM core version 6.5.2.Final
+2025-07-08 12:50:32.544 [main] INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2025-07-08 12:50:32.887 [main] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-07-08 12:50:32.911 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2025-07-08 12:50:34.346 [main] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-07-08 12:50:34.352 [main] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 12:50:36.001 [main] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2025-07-08 12:50:37.259 [main] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 2 endpoints beneath base path '/actuator'
+2025-07-08 12:50:38.618 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Starting...
+2025-07-08 12:50:38.620 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@1d07d728]]
+2025-07-08 12:50:38.621 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Started.
+2025-07-08 12:50:38.631 [main] INFO  c.i.i.ImCommunicationSystemApplicationTests - Started ImCommunicationSystemApplicationTests in 9.242 seconds (process running for 10.28)
+2025-07-08 12:50:39.258 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopping...
+2025-07-08 12:50:39.259 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@1d07d728]]
+2025-07-08 12:50:39.259 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopped.
+2025-07-08 12:50:39.295 [SpringApplicationShutdownHook] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:16:32.581 [background-preinit] INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.2.Final
+2025-07-08 13:16:32.610 [main] INFO  c.i.i.c.c.VerificationCodeConfigTest - Starting VerificationCodeConfigTest using Java 17.0.2 with PID 18900 (started by ASUS in D:\Project\im-communication-system)
+2025-07-08 13:16:32.611 [main] INFO  c.i.i.c.c.VerificationCodeConfigTest - No active profile set, falling back to 1 default profile: "default"
+2025-07-08 13:16:33.447 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:16:33.448 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-07-08 13:16:33.468 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 8 ms. Found 0 JPA repository interfaces.
+2025-07-08 13:16:33.845 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:16:33.847 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2025-07-08 13:16:33.872 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 15 ms. Found 0 Redis repository interfaces.
+2025-07-08 13:16:35.013 [main] INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-07-08 13:16:35.245 [main] INFO  org.hibernate.Version - HHH000412: Hibernate ORM core version 6.5.3.Final
+2025-07-08 13:16:35.296 [main] INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2025-07-08 13:16:35.694 [main] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-07-08 13:16:35.720 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2025-07-08 13:16:37.066 [main] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-07-08 13:16:37.069 [main] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:16:38.322 [main] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2025-07-08 13:16:39.463 [main] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 2 endpoints beneath base path '/actuator'
+2025-07-08 13:16:40.624 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Starting...
+2025-07-08 13:16:40.625 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@19070326]]
+2025-07-08 13:16:40.626 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Started.
+2025-07-08 13:16:40.634 [main] INFO  c.i.i.c.c.VerificationCodeConfigTest - Started VerificationCodeConfigTest in 8.418 seconds (process running for 9.318)
+2025-07-08 13:16:41.242 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopping...
+2025-07-08 13:16:41.242 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@19070326]]
+2025-07-08 13:16:41.242 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopped.
+2025-07-08 13:16:41.278 [SpringApplicationShutdownHook] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:16:53.801 [background-preinit] INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.2.Final
+2025-07-08 13:16:53.839 [main] INFO  c.i.i.c.c.VerificationCodeConfigTest - Starting VerificationCodeConfigTest using Java 17.0.2 with PID 30424 (started by ASUS in D:\Project\im-communication-system)
+2025-07-08 13:16:53.841 [main] INFO  c.i.i.c.c.VerificationCodeConfigTest - No active profile set, falling back to 1 default profile: "default"
+2025-07-08 13:16:54.733 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:16:54.733 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-07-08 13:16:54.753 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 9 ms. Found 0 JPA repository interfaces.
+2025-07-08 13:16:55.165 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:16:55.166 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2025-07-08 13:16:55.185 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 12 ms. Found 0 Redis repository interfaces.
+2025-07-08 13:16:56.217 [main] INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-07-08 13:16:56.424 [main] INFO  org.hibernate.Version - HHH000412: Hibernate ORM core version 6.5.3.Final
+2025-07-08 13:16:56.488 [main] INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2025-07-08 13:16:56.805 [main] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-07-08 13:16:56.830 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2025-07-08 13:16:58.175 [main] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-07-08 13:16:58.179 [main] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:16:59.354 [main] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2025-07-08 13:17:00.394 [main] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 2 endpoints beneath base path '/actuator'
+2025-07-08 13:17:01.678 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Starting...
+2025-07-08 13:17:01.681 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@79864d6]]
+2025-07-08 13:17:01.683 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Started.
+2025-07-08 13:17:01.699 [main] INFO  c.i.i.c.c.VerificationCodeConfigTest - Started VerificationCodeConfigTest in 8.266 seconds (process running for 9.184)
+2025-07-08 13:17:03.198 [main] INFO  c.i.i.c.utils.VerificationCodeUtils - 验证码验证成功: identifier=test@example.com, type=EMAIL_REGISTER
+2025-07-08 13:17:03.237 [main] INFO  c.i.i.c.utils.VerificationCodeUtils - 生成验证码成功: identifier=test@example.com, type=EMAIL_REGISTER, length=6, expireMinutes=5
+2025-07-08 13:17:03.242 [main] INFO  c.i.i.c.utils.VerificationCodeUtils - 删除验证码: test@example.com
+2025-07-08 13:17:03.265 [main] INFO  o.s.t.c.s.AnnotationConfigContextLoaderUtils - Could not detect default configuration classes for test class [com.im.imcommunicationsystem.ImCommunicationSystemApplicationTests]: ImCommunicationSystemApplicationTests does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2025-07-08 13:17:03.278 [main] INFO  o.s.b.t.c.SpringBootTestContextBootstrapper - Found @SpringBootConfiguration com.im.imcommunicationsystem.ImCommunicationSystemApplication for test class com.im.imcommunicationsystem.ImCommunicationSystemApplicationTests
+2025-07-08 13:17:03.283 [main] INFO  o.s.b.d.r.RestartApplicationListener - Restart disabled due to context in which it is running
+2025-07-08 13:17:03.324 [main] INFO  c.i.i.ImCommunicationSystemApplicationTests - Starting ImCommunicationSystemApplicationTests using Java 17.0.2 with PID 30424 (started by ASUS in D:\Project\im-communication-system)
+2025-07-08 13:17:03.324 [main] INFO  c.i.i.ImCommunicationSystemApplicationTests - No active profile set, falling back to 1 default profile: "default"
+2025-07-08 13:17:03.603 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:17:03.604 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-07-08 13:17:03.608 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 4 ms. Found 0 JPA repository interfaces.
+2025-07-08 13:17:03.715 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:17:03.716 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2025-07-08 13:17:03.721 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 4 ms. Found 0 Redis repository interfaces.
+2025-07-08 13:17:03.939 [main] INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-07-08 13:17:03.943 [main] INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2025-07-08 13:17:03.958 [main] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-07-08 13:17:03.961 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Starting...
+2025-07-08 13:17:05.026 [main] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-07-08 13:17:05.027 [main] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:17:05.272 [main] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2025-07-08 13:17:05.532 [main] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 2 endpoints beneath base path '/actuator'
+2025-07-08 13:17:05.893 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Starting...
+2025-07-08 13:17:05.893 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@30369973]]
+2025-07-08 13:17:05.893 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Started.
+2025-07-08 13:17:05.906 [main] INFO  c.i.i.ImCommunicationSystemApplicationTests - Started ImCommunicationSystemApplicationTests in 2.624 seconds (process running for 13.392)
+2025-07-08 13:17:05.942 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopping...
+2025-07-08 13:17:05.943 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@79864d6]]
+2025-07-08 13:17:05.943 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopped.
+2025-07-08 13:17:06.014 [SpringApplicationShutdownHook] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:17:06.023 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopping...
+2025-07-08 13:17:06.023 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@30369973]]
+2025-07-08 13:17:06.023 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopped.
+2025-07-08 13:17:06.030 [SpringApplicationShutdownHook] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:20:38.742 [background-preinit] INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.2.Final
+2025-07-08 13:20:38.768 [main] INFO  c.i.i.c.c.VerificationCodeConfigTest - Starting VerificationCodeConfigTest using Java 17.0.2 with PID 20424 (started by ASUS in D:\Project\im-communication-system)
+2025-07-08 13:20:38.769 [main] INFO  c.i.i.c.c.VerificationCodeConfigTest - No active profile set, falling back to 1 default profile: "default"
+2025-07-08 13:20:39.577 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:20:39.577 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-07-08 13:20:39.592 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 7 ms. Found 0 JPA repository interfaces.
+2025-07-08 13:20:39.954 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:20:39.955 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2025-07-08 13:20:39.978 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 13 ms. Found 0 Redis repository interfaces.
+2025-07-08 13:20:41.058 [main] INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-07-08 13:20:41.284 [main] INFO  org.hibernate.Version - HHH000412: Hibernate ORM core version 6.5.3.Final
+2025-07-08 13:20:41.353 [main] INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2025-07-08 13:20:41.667 [main] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-07-08 13:20:41.691 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2025-07-08 13:20:43.026 [main] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-07-08 13:20:43.032 [main] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:20:44.203 [main] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2025-07-08 13:20:45.261 [main] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 2 endpoints beneath base path '/actuator'
+2025-07-08 13:20:46.061 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Starting...
+2025-07-08 13:20:46.062 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@79864d6]]
+2025-07-08 13:20:46.063 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Started.
+2025-07-08 13:20:46.076 [main] INFO  c.i.i.c.c.VerificationCodeConfigTest - Started VerificationCodeConfigTest in 7.684 seconds (process running for 8.558)
+2025-07-08 13:20:47.497 [main] INFO  c.i.i.c.utils.VerificationCodeUtils - 验证码验证成功: identifier=test@example.com, type=EMAIL_REGISTER
+2025-07-08 13:20:47.532 [main] INFO  c.i.i.c.utils.VerificationCodeUtils - 生成验证码成功: identifier=test@example.com, type=EMAIL_REGISTER, length=6, expireMinutes=5
+2025-07-08 13:20:47.537 [main] INFO  c.i.i.c.utils.VerificationCodeUtils - 删除验证码: test@example.com
+2025-07-08 13:20:47.554 [main] INFO  o.s.t.c.s.AnnotationConfigContextLoaderUtils - Could not detect default configuration classes for test class [com.im.imcommunicationsystem.ImCommunicationSystemApplicationTests]: ImCommunicationSystemApplicationTests does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2025-07-08 13:20:47.567 [main] INFO  o.s.b.t.c.SpringBootTestContextBootstrapper - Found @SpringBootConfiguration com.im.imcommunicationsystem.ImCommunicationSystemApplication for test class com.im.imcommunicationsystem.ImCommunicationSystemApplicationTests
+2025-07-08 13:20:47.571 [main] INFO  o.s.b.d.r.RestartApplicationListener - Restart disabled due to context in which it is running
+2025-07-08 13:20:47.613 [main] INFO  c.i.i.ImCommunicationSystemApplicationTests - Starting ImCommunicationSystemApplicationTests using Java 17.0.2 with PID 20424 (started by ASUS in D:\Project\im-communication-system)
+2025-07-08 13:20:47.614 [main] INFO  c.i.i.ImCommunicationSystemApplicationTests - No active profile set, falling back to 1 default profile: "default"
+2025-07-08 13:20:47.945 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:20:47.946 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-07-08 13:20:47.951 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 4 ms. Found 0 JPA repository interfaces.
+2025-07-08 13:20:48.046 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:20:48.046 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2025-07-08 13:20:48.051 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 4 ms. Found 0 Redis repository interfaces.
+2025-07-08 13:20:48.264 [main] INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-07-08 13:20:48.268 [main] INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2025-07-08 13:20:48.283 [main] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-07-08 13:20:48.286 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Starting...
+2025-07-08 13:20:49.324 [main] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-07-08 13:20:49.325 [main] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:20:49.552 [main] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2025-07-08 13:20:49.759 [main] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 2 endpoints beneath base path '/actuator'
+2025-07-08 13:20:50.044 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Starting...
+2025-07-08 13:20:50.045 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@3fdb6ae4]]
+2025-07-08 13:20:50.045 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Started.
+2025-07-08 13:20:50.058 [main] INFO  c.i.i.ImCommunicationSystemApplicationTests - Started ImCommunicationSystemApplicationTests in 2.487 seconds (process running for 12.54)
+2025-07-08 13:20:50.093 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopping...
+2025-07-08 13:20:50.093 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@79864d6]]
+2025-07-08 13:20:50.093 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopped.
+2025-07-08 13:20:50.149 [SpringApplicationShutdownHook] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:20:50.157 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopping...
+2025-07-08 13:20:50.157 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@3fdb6ae4]]
+2025-07-08 13:20:50.158 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopped.
+2025-07-08 13:20:50.177 [SpringApplicationShutdownHook] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:21:21.821 [background-preinit] INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.2.Final
+2025-07-08 13:21:21.846 [main] INFO  c.i.i.c.c.VerificationCodeConfigTest - Starting VerificationCodeConfigTest using Java 17.0.2 with PID 23916 (started by ASUS in D:\Project\im-communication-system)
+2025-07-08 13:21:21.848 [main] INFO  c.i.i.c.c.VerificationCodeConfigTest - No active profile set, falling back to 1 default profile: "default"
+2025-07-08 13:21:22.704 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:21:22.704 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-07-08 13:21:22.723 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 10 ms. Found 0 JPA repository interfaces.
+2025-07-08 13:21:23.079 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:21:23.080 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2025-07-08 13:21:23.101 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 14 ms. Found 0 Redis repository interfaces.
+2025-07-08 13:21:24.090 [main] INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-07-08 13:21:24.273 [main] INFO  org.hibernate.Version - HHH000412: Hibernate ORM core version 6.5.3.Final
+2025-07-08 13:21:24.345 [main] INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2025-07-08 13:21:24.716 [main] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-07-08 13:21:24.737 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2025-07-08 13:21:26.072 [main] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-07-08 13:21:26.076 [main] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:21:27.631 [main] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2025-07-08 13:21:28.636 [main] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 2 endpoints beneath base path '/actuator'
+2025-07-08 13:21:29.429 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Starting...
+2025-07-08 13:21:29.430 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@50c9b080]]
+2025-07-08 13:21:29.431 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Started.
+2025-07-08 13:21:29.444 [main] INFO  c.i.i.c.c.VerificationCodeConfigTest - Started VerificationCodeConfigTest in 8.015 seconds (process running for 8.93)
+2025-07-08 13:21:30.830 [main] INFO  c.i.i.c.utils.VerificationCodeUtils - 验证码验证成功: identifier=test@example.com, type=EMAIL_REGISTER
+2025-07-08 13:21:30.868 [main] INFO  c.i.i.c.utils.VerificationCodeUtils - 生成验证码成功: identifier=test@example.com, type=EMAIL_REGISTER, length=6, expireMinutes=5
+2025-07-08 13:21:30.875 [main] INFO  c.i.i.c.utils.VerificationCodeUtils - 删除验证码: test@example.com
+2025-07-08 13:21:30.898 [main] INFO  o.s.t.c.s.AnnotationConfigContextLoaderUtils - Could not detect default configuration classes for test class [com.im.imcommunicationsystem.ImCommunicationSystemApplicationTests]: ImCommunicationSystemApplicationTests does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2025-07-08 13:21:30.914 [main] INFO  o.s.b.t.c.SpringBootTestContextBootstrapper - Found @SpringBootConfiguration com.im.imcommunicationsystem.ImCommunicationSystemApplication for test class com.im.imcommunicationsystem.ImCommunicationSystemApplicationTests
+2025-07-08 13:21:30.918 [main] INFO  o.s.b.d.r.RestartApplicationListener - Restart disabled due to context in which it is running
+2025-07-08 13:21:30.957 [main] INFO  c.i.i.ImCommunicationSystemApplicationTests - Starting ImCommunicationSystemApplicationTests using Java 17.0.2 with PID 23916 (started by ASUS in D:\Project\im-communication-system)
+2025-07-08 13:21:30.958 [main] INFO  c.i.i.ImCommunicationSystemApplicationTests - No active profile set, falling back to 1 default profile: "default"
+2025-07-08 13:21:31.255 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:21:31.255 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-07-08 13:21:31.263 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 8 ms. Found 0 JPA repository interfaces.
+2025-07-08 13:21:31.362 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:21:31.362 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2025-07-08 13:21:31.368 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 5 ms. Found 0 Redis repository interfaces.
+2025-07-08 13:21:31.568 [main] INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-07-08 13:21:31.572 [main] INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2025-07-08 13:21:31.585 [main] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-07-08 13:21:31.587 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Starting...
+2025-07-08 13:21:32.626 [main] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-07-08 13:21:32.627 [main] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:21:32.838 [main] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2025-07-08 13:21:33.058 [main] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 2 endpoints beneath base path '/actuator'
+2025-07-08 13:21:33.353 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Starting...
+2025-07-08 13:21:33.353 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@eefc1bf]]
+2025-07-08 13:21:33.353 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Started.
+2025-07-08 13:21:33.361 [main] INFO  c.i.i.ImCommunicationSystemApplicationTests - Started ImCommunicationSystemApplicationTests in 2.443 seconds (process running for 12.847)
+2025-07-08 13:21:33.391 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopping...
+2025-07-08 13:21:33.391 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@50c9b080]]
+2025-07-08 13:21:33.391 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopped.
+2025-07-08 13:21:33.445 [SpringApplicationShutdownHook] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:21:33.452 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopping...
+2025-07-08 13:21:33.453 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@eefc1bf]]
+2025-07-08 13:21:33.453 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopped.
+2025-07-08 13:21:33.460 [SpringApplicationShutdownHook] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:22:07.377 [background-preinit] INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.2.Final
+2025-07-08 13:22:07.400 [main] INFO  c.i.i.c.c.VerificationCodeConfigTest - Starting VerificationCodeConfigTest using Java 17.0.2 with PID 27384 (started by ASUS in D:\Project\im-communication-system)
+2025-07-08 13:22:07.402 [main] INFO  c.i.i.c.c.VerificationCodeConfigTest - No active profile set, falling back to 1 default profile: "default"
+2025-07-08 13:22:08.349 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:22:08.350 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-07-08 13:22:08.366 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 10 ms. Found 0 JPA repository interfaces.
+2025-07-08 13:22:08.763 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:22:08.764 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2025-07-08 13:22:08.789 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 16 ms. Found 0 Redis repository interfaces.
+2025-07-08 13:22:10.054 [main] INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-07-08 13:22:10.240 [main] INFO  org.hibernate.Version - HHH000412: Hibernate ORM core version 6.5.3.Final
+2025-07-08 13:22:10.284 [main] INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2025-07-08 13:22:10.624 [main] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-07-08 13:22:10.649 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2025-07-08 13:22:11.997 [main] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-07-08 13:22:12.001 [main] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:22:13.250 [main] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2025-07-08 13:22:14.311 [main] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 2 endpoints beneath base path '/actuator'
+2025-07-08 13:22:15.327 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Starting...
+2025-07-08 13:22:15.327 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@a589070]]
+2025-07-08 13:22:15.328 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Started.
+2025-07-08 13:22:15.340 [main] INFO  c.i.i.c.c.VerificationCodeConfigTest - Started VerificationCodeConfigTest in 8.351 seconds (process running for 9.299)
+2025-07-08 13:22:16.816 [main] INFO  c.i.i.c.utils.VerificationCodeUtils - 验证码验证成功: identifier=test@example.com, type=EMAIL_REGISTER
+2025-07-08 13:22:16.860 [main] INFO  c.i.i.c.utils.VerificationCodeUtils - 生成验证码成功: identifier=test@example.com, type=EMAIL_REGISTER, length=6, expireMinutes=5
+2025-07-08 13:22:16.866 [main] INFO  c.i.i.c.utils.VerificationCodeUtils - 删除验证码: test@example.com
+2025-07-08 13:22:16.889 [main] INFO  o.s.t.c.s.AnnotationConfigContextLoaderUtils - Could not detect default configuration classes for test class [com.im.imcommunicationsystem.ImCommunicationSystemApplicationTests]: ImCommunicationSystemApplicationTests does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2025-07-08 13:22:16.908 [main] INFO  o.s.b.t.c.SpringBootTestContextBootstrapper - Found @SpringBootConfiguration com.im.imcommunicationsystem.ImCommunicationSystemApplication for test class com.im.imcommunicationsystem.ImCommunicationSystemApplicationTests
+2025-07-08 13:22:16.912 [main] INFO  o.s.b.d.r.RestartApplicationListener - Restart disabled due to context in which it is running
+2025-07-08 13:22:16.955 [main] INFO  c.i.i.ImCommunicationSystemApplicationTests - Starting ImCommunicationSystemApplicationTests using Java 17.0.2 with PID 27384 (started by ASUS in D:\Project\im-communication-system)
+2025-07-08 13:22:16.955 [main] INFO  c.i.i.ImCommunicationSystemApplicationTests - No active profile set, falling back to 1 default profile: "default"
+2025-07-08 13:22:17.227 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:22:17.228 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-07-08 13:22:17.238 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 10 ms. Found 0 JPA repository interfaces.
+2025-07-08 13:22:17.349 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:22:17.349 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2025-07-08 13:22:17.355 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 5 ms. Found 0 Redis repository interfaces.
+2025-07-08 13:22:17.563 [main] INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-07-08 13:22:17.567 [main] INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2025-07-08 13:22:17.583 [main] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-07-08 13:22:17.585 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Starting...
+2025-07-08 13:22:18.632 [main] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-07-08 13:22:18.633 [main] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:22:18.859 [main] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2025-07-08 13:22:19.086 [main] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 2 endpoints beneath base path '/actuator'
+2025-07-08 13:22:19.452 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Starting...
+2025-07-08 13:22:19.453 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@ad620fd]]
+2025-07-08 13:22:19.453 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Started.
+2025-07-08 13:22:19.468 [main] INFO  c.i.i.ImCommunicationSystemApplicationTests - Started ImCommunicationSystemApplicationTests in 2.557 seconds (process running for 13.428)
+2025-07-08 13:22:19.505 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopping...
+2025-07-08 13:22:19.505 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@a589070]]
+2025-07-08 13:22:19.506 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopped.
+2025-07-08 13:22:19.560 [SpringApplicationShutdownHook] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:22:19.569 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopping...
+2025-07-08 13:22:19.570 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@ad620fd]]
+2025-07-08 13:22:19.570 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopped.
+2025-07-08 13:22:19.577 [SpringApplicationShutdownHook] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:25:05.828 [background-preinit] INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.2.Final
+2025-07-08 13:25:05.857 [main] INFO  c.i.i.c.c.VerificationCodeConfigTest - Starting VerificationCodeConfigTest using Java 17.0.2 with PID 23468 (started by ASUS in D:\Project\im-communication-system)
+2025-07-08 13:25:05.858 [main] INFO  c.i.i.c.c.VerificationCodeConfigTest - No active profile set, falling back to 1 default profile: "default"
+2025-07-08 13:25:06.735 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:25:06.736 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-07-08 13:25:06.754 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 10 ms. Found 0 JPA repository interfaces.
+2025-07-08 13:25:07.118 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:25:07.120 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2025-07-08 13:25:07.153 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 14 ms. Found 0 Redis repository interfaces.
+2025-07-08 13:25:08.360 [main] INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-07-08 13:25:08.599 [main] INFO  org.hibernate.Version - HHH000412: Hibernate ORM core version 6.5.3.Final
+2025-07-08 13:25:08.653 [main] INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2025-07-08 13:25:09.070 [main] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-07-08 13:25:09.093 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2025-07-08 13:25:10.435 [main] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-07-08 13:25:10.439 [main] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:25:11.753 [main] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2025-07-08 13:25:12.849 [main] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 2 endpoints beneath base path '/actuator'
+2025-07-08 13:25:14.162 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Starting...
+2025-07-08 13:25:14.163 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@7b842e79]]
+2025-07-08 13:25:14.166 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Started.
+2025-07-08 13:25:14.179 [main] INFO  c.i.i.c.c.VerificationCodeConfigTest - Started VerificationCodeConfigTest in 8.736 seconds (process running for 9.696)
+2025-07-08 13:25:15.738 [main] INFO  c.i.i.c.utils.VerificationCodeUtils - 验证码验证成功: identifier=test@example.com, type=EMAIL_REGISTER
+2025-07-08 13:25:15.776 [main] INFO  c.i.i.c.utils.VerificationCodeUtils - 生成验证码成功: identifier=test@example.com, type=EMAIL_REGISTER, length=6, expireMinutes=5
+2025-07-08 13:25:15.784 [main] INFO  c.i.i.c.utils.VerificationCodeUtils - 删除验证码: test@example.com
+2025-07-08 13:25:15.815 [main] INFO  o.s.t.c.s.AnnotationConfigContextLoaderUtils - Could not detect default configuration classes for test class [com.im.imcommunicationsystem.ImCommunicationSystemApplicationTests]: ImCommunicationSystemApplicationTests does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2025-07-08 13:25:15.834 [main] INFO  o.s.b.t.c.SpringBootTestContextBootstrapper - Found @SpringBootConfiguration com.im.imcommunicationsystem.ImCommunicationSystemApplication for test class com.im.imcommunicationsystem.ImCommunicationSystemApplicationTests
+2025-07-08 13:25:15.838 [main] INFO  o.s.b.d.r.RestartApplicationListener - Restart disabled due to context in which it is running
+2025-07-08 13:25:15.884 [main] INFO  c.i.i.ImCommunicationSystemApplicationTests - Starting ImCommunicationSystemApplicationTests using Java 17.0.2 with PID 23468 (started by ASUS in D:\Project\im-communication-system)
+2025-07-08 13:25:15.884 [main] INFO  c.i.i.ImCommunicationSystemApplicationTests - No active profile set, falling back to 1 default profile: "default"
+2025-07-08 13:25:16.180 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:25:16.180 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-07-08 13:25:16.187 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 6 ms. Found 0 JPA repository interfaces.
+2025-07-08 13:25:16.294 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:25:16.294 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2025-07-08 13:25:16.301 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 6 ms. Found 0 Redis repository interfaces.
+2025-07-08 13:25:16.517 [main] INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-07-08 13:25:16.522 [main] INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2025-07-08 13:25:16.540 [main] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-07-08 13:25:16.543 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Starting...
+2025-07-08 13:25:17.591 [main] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-07-08 13:25:17.592 [main] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:25:17.833 [main] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2025-07-08 13:25:18.073 [main] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 2 endpoints beneath base path '/actuator'
+2025-07-08 13:25:18.381 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Starting...
+2025-07-08 13:25:18.381 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@313b6907]]
+2025-07-08 13:25:18.381 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Started.
+2025-07-08 13:25:18.395 [main] INFO  c.i.i.ImCommunicationSystemApplicationTests - Started ImCommunicationSystemApplicationTests in 2.558 seconds (process running for 13.912)
+2025-07-08 13:25:18.427 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopping...
+2025-07-08 13:25:18.427 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@7b842e79]]
+2025-07-08 13:25:18.427 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopped.
+2025-07-08 13:25:18.477 [SpringApplicationShutdownHook] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:25:18.486 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopping...
+2025-07-08 13:25:18.486 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@313b6907]]
+2025-07-08 13:25:18.486 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopped.
+2025-07-08 13:25:18.496 [SpringApplicationShutdownHook] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:29:19.321 [background-preinit] INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.2.Final
+2025-07-08 13:29:19.372 [main] INFO  c.i.i.c.c.VerificationCodeConfigTest - Starting VerificationCodeConfigTest using Java 17.0.2 with PID 7072 (started by ASUS in D:\Project\im-communication-system)
+2025-07-08 13:29:19.373 [main] INFO  c.i.i.c.c.VerificationCodeConfigTest - No active profile set, falling back to 1 default profile: "default"
+2025-07-08 13:29:20.214 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:29:20.215 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-07-08 13:29:20.238 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 11 ms. Found 0 JPA repository interfaces.
+2025-07-08 13:29:20.599 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:29:20.601 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2025-07-08 13:29:20.620 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 11 ms. Found 0 Redis repository interfaces.
+2025-07-08 13:29:21.650 [main] INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-07-08 13:29:21.836 [main] INFO  org.hibernate.Version - HHH000412: Hibernate ORM core version 6.5.3.Final
+2025-07-08 13:29:21.930 [main] INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2025-07-08 13:29:22.250 [main] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-07-08 13:29:22.273 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2025-07-08 13:29:23.606 [main] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-07-08 13:29:23.609 [main] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:29:24.914 [main] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2025-07-08 13:29:26.021 [main] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 2 endpoints beneath base path '/actuator'
+2025-07-08 13:29:26.839 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Starting...
+2025-07-08 13:29:26.839 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@ae4a043]]
+2025-07-08 13:29:26.841 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Started.
+2025-07-08 13:29:26.856 [main] INFO  c.i.i.c.c.VerificationCodeConfigTest - Started VerificationCodeConfigTest in 7.927 seconds (process running for 8.87)
+2025-07-08 13:29:28.287 [main] INFO  c.i.i.c.utils.VerificationCodeUtils - 验证码验证成功: identifier=test@example.com, type=EMAIL_REGISTER
+2025-07-08 13:29:28.322 [main] INFO  c.i.i.c.utils.VerificationCodeUtils - 生成验证码成功: identifier=test@example.com, type=EMAIL_REGISTER, length=6, expireMinutes=5
+2025-07-08 13:29:28.329 [main] INFO  c.i.i.c.utils.VerificationCodeUtils - 删除验证码: test@example.com
+2025-07-08 13:29:28.351 [main] INFO  o.s.t.c.s.AnnotationConfigContextLoaderUtils - Could not detect default configuration classes for test class [com.im.imcommunicationsystem.ImCommunicationSystemApplicationTests]: ImCommunicationSystemApplicationTests does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2025-07-08 13:29:28.369 [main] INFO  o.s.b.t.c.SpringBootTestContextBootstrapper - Found @SpringBootConfiguration com.im.imcommunicationsystem.ImCommunicationSystemApplication for test class com.im.imcommunicationsystem.ImCommunicationSystemApplicationTests
+2025-07-08 13:29:28.373 [main] INFO  o.s.b.d.r.RestartApplicationListener - Restart disabled due to context in which it is running
+2025-07-08 13:29:28.413 [main] INFO  c.i.i.ImCommunicationSystemApplicationTests - Starting ImCommunicationSystemApplicationTests using Java 17.0.2 with PID 7072 (started by ASUS in D:\Project\im-communication-system)
+2025-07-08 13:29:28.414 [main] INFO  c.i.i.ImCommunicationSystemApplicationTests - No active profile set, falling back to 1 default profile: "default"
+2025-07-08 13:29:28.713 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:29:28.713 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-07-08 13:29:28.723 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 9 ms. Found 0 JPA repository interfaces.
+2025-07-08 13:29:28.830 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:29:28.830 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2025-07-08 13:29:28.836 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 5 ms. Found 0 Redis repository interfaces.
+2025-07-08 13:29:29.051 [main] INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-07-08 13:29:29.054 [main] INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2025-07-08 13:29:29.070 [main] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-07-08 13:29:29.072 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Starting...
+2025-07-08 13:29:30.130 [main] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-07-08 13:29:30.131 [main] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:29:30.350 [main] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2025-07-08 13:29:30.565 [main] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 2 endpoints beneath base path '/actuator'
+2025-07-08 13:29:30.860 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Starting...
+2025-07-08 13:29:30.861 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@7546be68]]
+2025-07-08 13:29:30.861 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Started.
+2025-07-08 13:29:30.875 [main] INFO  c.i.i.ImCommunicationSystemApplicationTests - Started ImCommunicationSystemApplicationTests in 2.503 seconds (process running for 12.89)
+2025-07-08 13:29:30.907 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopping...
+2025-07-08 13:29:30.907 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@ae4a043]]
+2025-07-08 13:29:30.908 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopped.
+2025-07-08 13:29:30.967 [SpringApplicationShutdownHook] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:29:30.975 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopping...
+2025-07-08 13:29:30.975 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@7546be68]]
+2025-07-08 13:29:30.975 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopped.
+2025-07-08 13:29:30.981 [SpringApplicationShutdownHook] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:31:20.658 [background-preinit] INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.2.Final
+2025-07-08 13:31:20.681 [main] INFO  c.i.i.ImCommunicationSystemApplicationTests - Starting ImCommunicationSystemApplicationTests using Java 17.0.2 with PID 29072 (started by ASUS in D:\Project\im-communication-system)
+2025-07-08 13:31:20.683 [main] INFO  c.i.i.ImCommunicationSystemApplicationTests - No active profile set, falling back to 1 default profile: "default"
+2025-07-08 13:31:21.587 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:31:21.588 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-07-08 13:31:21.620 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 19 ms. Found 0 JPA repository interfaces.
+2025-07-08 13:31:22.010 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:31:22.012 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2025-07-08 13:31:22.038 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 13 ms. Found 0 Redis repository interfaces.
+2025-07-08 13:31:23.176 [main] INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-07-08 13:31:23.404 [main] INFO  org.hibernate.Version - HHH000412: Hibernate ORM core version 6.5.3.Final
+2025-07-08 13:31:23.468 [main] INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2025-07-08 13:31:23.789 [main] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-07-08 13:31:23.812 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2025-07-08 13:31:25.151 [main] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-07-08 13:31:25.154 [main] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:31:26.393 [main] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2025-07-08 13:31:27.509 [main] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 2 endpoints beneath base path '/actuator'
+2025-07-08 13:31:28.601 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Starting...
+2025-07-08 13:31:28.602 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@1caa1866]]
+2025-07-08 13:31:28.605 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Started.
+2025-07-08 13:31:28.620 [main] INFO  c.i.i.ImCommunicationSystemApplicationTests - Started ImCommunicationSystemApplicationTests in 8.416 seconds (process running for 9.288)
+2025-07-08 13:31:30.074 [main] INFO  c.i.i.c.utils.VerificationCodeUtils - 验证码验证成功: identifier=test@example.com, type=EMAIL_REGISTER
+2025-07-08 13:31:30.117 [main] INFO  c.i.i.c.utils.VerificationCodeUtils - 生成验证码成功: identifier=test@example.com, type=EMAIL_REGISTER, length=6, expireMinutes=5
+2025-07-08 13:31:30.126 [main] INFO  c.i.i.c.utils.VerificationCodeUtils - 删除验证码: test@example.com
+2025-07-08 13:31:30.150 [main] INFO  o.s.t.c.s.AnnotationConfigContextLoaderUtils - Could not detect default configuration classes for test class [com.im.imcommunicationsystem.common.config.VerificationCodeConfigTest]: VerificationCodeConfigTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2025-07-08 13:31:30.184 [main] INFO  o.s.b.t.c.SpringBootTestContextBootstrapper - Found @SpringBootConfiguration com.im.imcommunicationsystem.ImCommunicationSystemApplication for test class com.im.imcommunicationsystem.common.config.VerificationCodeConfigTest
+2025-07-08 13:31:30.200 [main] INFO  o.s.b.d.r.RestartApplicationListener - Restart disabled due to context in which it is running
+2025-07-08 13:31:30.250 [main] INFO  c.i.i.c.c.VerificationCodeConfigTest - Starting VerificationCodeConfigTest using Java 17.0.2 with PID 29072 (started by ASUS in D:\Project\im-communication-system)
+2025-07-08 13:31:30.250 [main] INFO  c.i.i.c.c.VerificationCodeConfigTest - No active profile set, falling back to 1 default profile: "default"
+2025-07-08 13:31:30.522 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:31:30.522 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-07-08 13:31:30.529 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 6 ms. Found 0 JPA repository interfaces.
+2025-07-08 13:31:30.643 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:31:30.643 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2025-07-08 13:31:30.650 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 6 ms. Found 0 Redis repository interfaces.
+2025-07-08 13:31:30.883 [main] INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-07-08 13:31:30.889 [main] INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2025-07-08 13:31:30.912 [main] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-07-08 13:31:30.915 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Starting...
+2025-07-08 13:31:31.954 [main] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-07-08 13:31:31.955 [main] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:31:32.197 [main] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2025-07-08 13:31:32.470 [main] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 2 endpoints beneath base path '/actuator'
+2025-07-08 13:31:32.861 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Starting...
+2025-07-08 13:31:32.861 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@588931b9]]
+2025-07-08 13:31:32.862 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Started.
+2025-07-08 13:31:32.876 [main] INFO  c.i.i.c.c.VerificationCodeConfigTest - Started VerificationCodeConfigTest in 2.676 seconds (process running for 13.545)
+2025-07-08 13:31:32.939 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopping...
+2025-07-08 13:31:32.939 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@1caa1866]]
+2025-07-08 13:31:32.939 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopped.
+2025-07-08 13:31:33.003 [SpringApplicationShutdownHook] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:31:33.011 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopping...
+2025-07-08 13:31:33.011 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@588931b9]]
+2025-07-08 13:31:33.011 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopped.
+2025-07-08 13:31:33.018 [SpringApplicationShutdownHook] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:38:33.843 [background-preinit] INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.2.Final
+2025-07-08 13:38:33.870 [main] INFO  c.i.i.ImCommunicationSystemApplicationTests - Starting ImCommunicationSystemApplicationTests using Java 17.0.2 with PID 15152 (started by ASUS in D:\Project\im-communication-system)
+2025-07-08 13:38:33.871 [main] INFO  c.i.i.ImCommunicationSystemApplicationTests - No active profile set, falling back to 1 default profile: "default"
+2025-07-08 13:38:34.991 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:38:34.991 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-07-08 13:38:35.014 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 13 ms. Found 0 JPA repository interfaces.
+2025-07-08 13:38:35.442 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:38:35.444 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2025-07-08 13:38:35.469 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 12 ms. Found 0 Redis repository interfaces.
+2025-07-08 13:38:36.785 [main] INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-07-08 13:38:37.051 [main] INFO  org.hibernate.Version - HHH000412: Hibernate ORM core version 6.5.3.Final
+2025-07-08 13:38:37.135 [main] INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2025-07-08 13:38:37.580 [main] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-07-08 13:38:37.607 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2025-07-08 13:38:38.976 [main] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-07-08 13:38:38.980 [main] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:38:40.412 [main] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2025-07-08 13:38:41.555 [main] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 2 endpoints beneath base path '/actuator'
+2025-07-08 13:38:42.456 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Starting...
+2025-07-08 13:38:42.458 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@11fb4f69]]
+2025-07-08 13:38:42.460 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Started.
+2025-07-08 13:38:42.471 [main] INFO  c.i.i.ImCommunicationSystemApplicationTests - Started ImCommunicationSystemApplicationTests in 9.13 seconds (process running for 10.11)
+2025-07-08 13:38:43.857 [main] INFO  c.i.i.c.utils.VerificationCodeUtils - 验证码验证成功: identifier=test@example.com, type=EMAIL_REGISTER
+2025-07-08 13:38:43.893 [main] INFO  c.i.i.c.utils.VerificationCodeUtils - 生成验证码成功: identifier=test@example.com, type=EMAIL_REGISTER, length=6, expireMinutes=5
+2025-07-08 13:38:43.901 [main] INFO  c.i.i.c.utils.VerificationCodeUtils - 删除验证码: test@example.com
+2025-07-08 13:38:43.926 [main] INFO  o.s.t.c.s.AnnotationConfigContextLoaderUtils - Could not detect default configuration classes for test class [com.im.imcommunicationsystem.common.config.VerificationCodeConfigTest]: VerificationCodeConfigTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2025-07-08 13:38:43.957 [main] INFO  o.s.b.t.c.SpringBootTestContextBootstrapper - Found @SpringBootConfiguration com.im.imcommunicationsystem.ImCommunicationSystemApplication for test class com.im.imcommunicationsystem.common.config.VerificationCodeConfigTest
+2025-07-08 13:38:43.972 [main] INFO  o.s.b.d.r.RestartApplicationListener - Restart disabled due to context in which it is running
+2025-07-08 13:38:44.028 [main] INFO  c.i.i.c.c.VerificationCodeConfigTest - Starting VerificationCodeConfigTest using Java 17.0.2 with PID 15152 (started by ASUS in D:\Project\im-communication-system)
+2025-07-08 13:38:44.028 [main] INFO  c.i.i.c.c.VerificationCodeConfigTest - No active profile set, falling back to 1 default profile: "default"
+2025-07-08 13:38:44.351 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:38:44.351 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-07-08 13:38:44.362 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 9 ms. Found 0 JPA repository interfaces.
+2025-07-08 13:38:44.470 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:38:44.470 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2025-07-08 13:38:44.477 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 6 ms. Found 0 Redis repository interfaces.
+2025-07-08 13:38:44.717 [main] INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-07-08 13:38:44.722 [main] INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2025-07-08 13:38:44.742 [main] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-07-08 13:38:44.745 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Starting...
+2025-07-08 13:38:45.807 [main] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-07-08 13:38:45.807 [main] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:38:46.043 [main] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2025-07-08 13:38:46.293 [main] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 2 endpoints beneath base path '/actuator'
+2025-07-08 13:38:46.650 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Starting...
+2025-07-08 13:38:46.650 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@4469046b]]
+2025-07-08 13:38:46.651 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Started.
+2025-07-08 13:38:46.664 [main] INFO  c.i.i.c.c.VerificationCodeConfigTest - Started VerificationCodeConfigTest in 2.692 seconds (process running for 14.302)
+2025-07-08 13:38:46.725 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopping...
+2025-07-08 13:38:46.725 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@11fb4f69]]
+2025-07-08 13:38:46.725 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopped.
+2025-07-08 13:38:46.796 [SpringApplicationShutdownHook] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:38:46.804 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopping...
+2025-07-08 13:38:46.804 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@4469046b]]
+2025-07-08 13:38:46.804 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopped.
+2025-07-08 13:38:46.812 [SpringApplicationShutdownHook] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:40:36.616 [background-preinit] INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.2.Final
+2025-07-08 13:40:36.641 [main] INFO  c.i.i.c.c.VerificationCodeConfigTest - Starting VerificationCodeConfigTest using Java 17.0.2 with PID 26240 (started by ASUS in D:\Project\im-communication-system)
+2025-07-08 13:40:36.642 [main] INFO  c.i.i.c.c.VerificationCodeConfigTest - No active profile set, falling back to 1 default profile: "default"
+2025-07-08 13:40:37.442 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:40:37.443 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-07-08 13:40:37.463 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 12 ms. Found 0 JPA repository interfaces.
+2025-07-08 13:40:37.834 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:40:37.836 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2025-07-08 13:40:37.861 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 16 ms. Found 0 Redis repository interfaces.
+2025-07-08 13:40:38.863 [main] INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-07-08 13:40:39.071 [main] INFO  org.hibernate.Version - HHH000412: Hibernate ORM core version 6.5.3.Final
+2025-07-08 13:40:39.118 [main] INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2025-07-08 13:40:39.499 [main] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-07-08 13:40:39.528 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2025-07-08 13:40:40.861 [main] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-07-08 13:40:40.865 [main] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:40:42.248 [main] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2025-07-08 13:40:43.281 [main] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 2 endpoints beneath base path '/actuator'
+2025-07-08 13:40:45.376 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Starting...
+2025-07-08 13:40:45.378 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@19070326]]
+2025-07-08 13:40:45.381 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Started.
+2025-07-08 13:40:45.400 [main] INFO  c.i.i.c.c.VerificationCodeConfigTest - Started VerificationCodeConfigTest in 9.129 seconds (process running for 10.023)
+2025-07-08 13:40:46.494 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopping...
+2025-07-08 13:40:46.494 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@19070326]]
+2025-07-08 13:40:46.494 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopped.
+2025-07-08 13:40:46.542 [SpringApplicationShutdownHook] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:44:07.741 [background-preinit] INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.2.Final
+2025-07-08 13:44:07.763 [main] INFO  c.i.i.c.c.VerificationCodeConfigTest - Starting VerificationCodeConfigTest using Java 17.0.2 with PID 27384 (started by ASUS in D:\Project\im-communication-system)
+2025-07-08 13:44:07.765 [main] INFO  c.i.i.c.c.VerificationCodeConfigTest - No active profile set, falling back to 1 default profile: "default"
+2025-07-08 13:44:08.723 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:44:08.723 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-07-08 13:44:08.744 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 12 ms. Found 0 JPA repository interfaces.
+2025-07-08 13:44:09.135 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:44:09.138 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2025-07-08 13:44:09.168 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 15 ms. Found 0 Redis repository interfaces.
+2025-07-08 13:44:10.265 [main] INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-07-08 13:44:10.483 [main] INFO  org.hibernate.Version - HHH000412: Hibernate ORM core version 6.5.3.Final
+2025-07-08 13:44:10.548 [main] INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2025-07-08 13:44:10.854 [main] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-07-08 13:44:10.887 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2025-07-08 13:44:11.071 [main] INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@34b462e0
+2025-07-08 13:44:11.074 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2025-07-08 13:44:11.412 [main] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-07-08 13:44:11.415 [main] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:44:13.032 [main] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2025-07-08 13:44:14.182 [main] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 2 endpoints beneath base path '/actuator'
+2025-07-08 13:44:15.266 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Starting...
+2025-07-08 13:44:15.268 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@442e7215]]
+2025-07-08 13:44:15.269 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Started.
+2025-07-08 13:44:15.279 [main] INFO  c.i.i.c.c.VerificationCodeConfigTest - Started VerificationCodeConfigTest in 7.923 seconds (process running for 8.919)
+2025-07-08 13:44:16.824 [main] INFO  c.i.i.c.utils.VerificationCodeUtils - 验证码验证成功: identifier=test@example.com, type=EMAIL_REGISTER
+2025-07-08 13:44:16.865 [main] INFO  c.i.i.c.utils.VerificationCodeUtils - 生成验证码成功: identifier=test@example.com, type=EMAIL_REGISTER, length=6, expireMinutes=5
+2025-07-08 13:44:16.870 [main] INFO  c.i.i.c.utils.VerificationCodeUtils - 删除验证码: test@example.com
+2025-07-08 13:44:16.896 [main] INFO  o.s.t.c.s.AnnotationConfigContextLoaderUtils - Could not detect default configuration classes for test class [com.im.imcommunicationsystem.ImCommunicationSystemApplicationTests]: ImCommunicationSystemApplicationTests does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2025-07-08 13:44:16.915 [main] INFO  o.s.b.t.c.SpringBootTestContextBootstrapper - Found @SpringBootConfiguration com.im.imcommunicationsystem.ImCommunicationSystemApplication for test class com.im.imcommunicationsystem.ImCommunicationSystemApplicationTests
+2025-07-08 13:44:16.920 [main] INFO  o.s.b.d.r.RestartApplicationListener - Restart disabled due to context in which it is running
+2025-07-08 13:44:16.962 [main] INFO  c.i.i.ImCommunicationSystemApplicationTests - Starting ImCommunicationSystemApplicationTests using Java 17.0.2 with PID 27384 (started by ASUS in D:\Project\im-communication-system)
+2025-07-08 13:44:16.962 [main] INFO  c.i.i.ImCommunicationSystemApplicationTests - No active profile set, falling back to 1 default profile: "default"
+2025-07-08 13:44:17.233 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:44:17.233 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-07-08 13:44:17.240 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 7 ms. Found 0 JPA repository interfaces.
+2025-07-08 13:44:17.345 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:44:17.345 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2025-07-08 13:44:17.351 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 5 ms. Found 0 Redis repository interfaces.
+2025-07-08 13:44:17.560 [main] INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-07-08 13:44:17.563 [main] INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2025-07-08 13:44:17.580 [main] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-07-08 13:44:17.582 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Starting...
+2025-07-08 13:44:17.596 [main] INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-2 - Added connection com.mysql.cj.jdbc.ConnectionImpl@50564f77
+2025-07-08 13:44:17.597 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Start completed.
+2025-07-08 13:44:17.621 [main] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-07-08 13:44:17.622 [main] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:44:17.884 [main] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2025-07-08 13:44:18.200 [main] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 2 endpoints beneath base path '/actuator'
+2025-07-08 13:44:18.535 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Starting...
+2025-07-08 13:44:18.535 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@ec9f91b]]
+2025-07-08 13:44:18.535 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Started.
+2025-07-08 13:44:18.547 [main] INFO  c.i.i.ImCommunicationSystemApplicationTests - Started ImCommunicationSystemApplicationTests in 1.628 seconds (process running for 12.187)
+2025-07-08 13:44:18.576 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopping...
+2025-07-08 13:44:18.576 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@442e7215]]
+2025-07-08 13:44:18.576 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopped.
+2025-07-08 13:44:18.627 [SpringApplicationShutdownHook] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:44:18.632 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2025-07-08 13:44:18.639 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
+2025-07-08 13:44:18.644 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopping...
+2025-07-08 13:44:18.644 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@ec9f91b]]
+2025-07-08 13:44:18.644 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopped.
+2025-07-08 13:44:18.651 [SpringApplicationShutdownHook] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:44:18.651 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Shutdown initiated...
+2025-07-08 13:44:18.656 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Shutdown completed.
+2025-07-08 13:45:28.881 [background-preinit] INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.2.Final
+2025-07-08 13:45:28.911 [main] INFO  c.i.i.c.c.VerificationCodeConfigTest - Starting VerificationCodeConfigTest using Java 17.0.2 with PID 11760 (started by ASUS in D:\Project\im-communication-system)
+2025-07-08 13:45:28.912 [main] INFO  c.i.i.c.c.VerificationCodeConfigTest - No active profile set, falling back to 1 default profile: "default"
+2025-07-08 13:45:29.770 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:45:29.771 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-07-08 13:45:29.787 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 9 ms. Found 0 JPA repository interfaces.
+2025-07-08 13:45:30.162 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:45:30.164 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2025-07-08 13:45:30.188 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 13 ms. Found 0 Redis repository interfaces.
+2025-07-08 13:45:31.220 [main] INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-07-08 13:45:31.369 [main] INFO  org.hibernate.Version - HHH000412: Hibernate ORM core version 6.5.3.Final
+2025-07-08 13:45:31.439 [main] INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2025-07-08 13:45:31.838 [main] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-07-08 13:45:31.862 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2025-07-08 13:45:31.990 [main] INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@1d67348a
+2025-07-08 13:45:31.991 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2025-07-08 13:45:32.277 [main] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-07-08 13:45:32.280 [main] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:45:33.557 [main] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2025-07-08 13:45:34.469 [main] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 2 endpoints beneath base path '/actuator'
+2025-07-08 13:45:35.584 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Starting...
+2025-07-08 13:45:35.588 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@7c590039]]
+2025-07-08 13:45:35.589 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Started.
+2025-07-08 13:45:35.600 [main] INFO  c.i.i.c.c.VerificationCodeConfigTest - Started VerificationCodeConfigTest in 7.118 seconds (process running for 8.058)
+2025-07-08 13:45:36.951 [main] INFO  c.i.i.c.utils.VerificationCodeUtils - 验证码验证成功: identifier=test@example.com, type=EMAIL_REGISTER
+2025-07-08 13:45:36.977 [main] INFO  c.i.i.c.utils.VerificationCodeUtils - 生成验证码成功: identifier=test@example.com, type=EMAIL_REGISTER, length=6, expireMinutes=5
+2025-07-08 13:45:36.981 [main] INFO  c.i.i.c.utils.VerificationCodeUtils - 删除验证码: test@example.com
+2025-07-08 13:45:37.001 [main] INFO  o.s.t.c.s.AnnotationConfigContextLoaderUtils - Could not detect default configuration classes for test class [com.im.imcommunicationsystem.ImCommunicationSystemApplicationTests]: ImCommunicationSystemApplicationTests does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2025-07-08 13:45:37.016 [main] INFO  o.s.b.t.c.SpringBootTestContextBootstrapper - Found @SpringBootConfiguration com.im.imcommunicationsystem.ImCommunicationSystemApplication for test class com.im.imcommunicationsystem.ImCommunicationSystemApplicationTests
+2025-07-08 13:45:37.021 [main] INFO  o.s.b.d.r.RestartApplicationListener - Restart disabled due to context in which it is running
+2025-07-08 13:45:37.062 [main] INFO  c.i.i.ImCommunicationSystemApplicationTests - Starting ImCommunicationSystemApplicationTests using Java 17.0.2 with PID 11760 (started by ASUS in D:\Project\im-communication-system)
+2025-07-08 13:45:37.062 [main] INFO  c.i.i.ImCommunicationSystemApplicationTests - No active profile set, falling back to 1 default profile: "default"
+2025-07-08 13:45:37.348 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:45:37.349 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-07-08 13:45:37.357 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 8 ms. Found 0 JPA repository interfaces.
+2025-07-08 13:45:37.456 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:45:37.456 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2025-07-08 13:45:37.462 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 5 ms. Found 0 Redis repository interfaces.
+2025-07-08 13:45:37.695 [main] INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-07-08 13:45:37.699 [main] INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2025-07-08 13:45:37.716 [main] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-07-08 13:45:37.719 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Starting...
+2025-07-08 13:45:37.738 [main] INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-2 - Added connection com.mysql.cj.jdbc.ConnectionImpl@6e236542
+2025-07-08 13:45:37.738 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Start completed.
+2025-07-08 13:45:37.761 [main] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-07-08 13:45:37.762 [main] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:45:38.074 [main] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2025-07-08 13:45:38.544 [main] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 2 endpoints beneath base path '/actuator'
+2025-07-08 13:45:39.037 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Starting...
+2025-07-08 13:45:39.037 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@63838642]]
+2025-07-08 13:45:39.037 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Started.
+2025-07-08 13:45:39.051 [main] INFO  c.i.i.ImCommunicationSystemApplicationTests - Started ImCommunicationSystemApplicationTests in 2.03 seconds (process running for 11.51)
+2025-07-08 13:45:39.085 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopping...
+2025-07-08 13:45:39.085 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@7c590039]]
+2025-07-08 13:45:39.085 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopped.
+2025-07-08 13:45:39.117 [SpringApplicationShutdownHook] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:45:39.122 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2025-07-08 13:45:39.134 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
+2025-07-08 13:45:39.139 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopping...
+2025-07-08 13:45:39.140 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@63838642]]
+2025-07-08 13:45:39.140 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopped.
+2025-07-08 13:45:39.148 [SpringApplicationShutdownHook] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:45:39.148 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Shutdown initiated...
+2025-07-08 13:45:39.151 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Shutdown completed.
+2025-07-08 13:46:06.450 [background-preinit] INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.2.Final
+2025-07-08 13:46:06.484 [main] INFO  c.i.i.c.c.VerificationCodeConfigTest - Starting VerificationCodeConfigTest using Java 17.0.2 with PID 31136 (started by ASUS in D:\Project\im-communication-system)
+2025-07-08 13:46:06.486 [main] INFO  c.i.i.c.c.VerificationCodeConfigTest - No active profile set, falling back to 1 default profile: "default"
+2025-07-08 13:46:07.291 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:46:07.292 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-07-08 13:46:07.306 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 8 ms. Found 0 JPA repository interfaces.
+2025-07-08 13:46:07.675 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:46:07.677 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2025-07-08 13:46:07.706 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 13 ms. Found 0 Redis repository interfaces.
+2025-07-08 13:46:08.659 [main] INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-07-08 13:46:08.727 [main] INFO  org.hibernate.Version - HHH000412: Hibernate ORM core version 6.5.3.Final
+2025-07-08 13:46:08.766 [main] INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2025-07-08 13:46:09.114 [main] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-07-08 13:46:09.138 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2025-07-08 13:46:09.274 [main] INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@1b5cf611
+2025-07-08 13:46:09.276 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2025-07-08 13:46:09.553 [main] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-07-08 13:46:09.556 [main] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:46:10.417 [main] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2025-07-08 13:46:10.990 [main] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 2 endpoints beneath base path '/actuator'
+2025-07-08 13:46:11.733 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Starting...
+2025-07-08 13:46:11.735 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@260af8f7]]
+2025-07-08 13:46:11.736 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Started.
+2025-07-08 13:46:11.748 [main] INFO  c.i.i.c.c.VerificationCodeConfigTest - Started VerificationCodeConfigTest in 5.703 seconds (process running for 6.666)
+2025-07-08 13:46:13.021 [main] INFO  c.i.i.c.utils.VerificationCodeUtils - 验证码验证成功: identifier=test@example.com, type=EMAIL_REGISTER
+2025-07-08 13:46:13.048 [main] INFO  c.i.i.c.utils.VerificationCodeUtils - 生成验证码成功: identifier=test@example.com, type=EMAIL_REGISTER, length=6, expireMinutes=5
+2025-07-08 13:46:13.052 [main] INFO  c.i.i.c.utils.VerificationCodeUtils - 删除验证码: test@example.com
+2025-07-08 13:46:13.065 [main] INFO  o.s.t.c.s.AnnotationConfigContextLoaderUtils - Could not detect default configuration classes for test class [com.im.imcommunicationsystem.ImCommunicationSystemApplicationTests]: ImCommunicationSystemApplicationTests does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2025-07-08 13:46:13.080 [main] INFO  o.s.b.t.c.SpringBootTestContextBootstrapper - Found @SpringBootConfiguration com.im.imcommunicationsystem.ImCommunicationSystemApplication for test class com.im.imcommunicationsystem.ImCommunicationSystemApplicationTests
+2025-07-08 13:46:13.084 [main] INFO  o.s.b.d.r.RestartApplicationListener - Restart disabled due to context in which it is running
+2025-07-08 13:46:13.125 [main] INFO  c.i.i.ImCommunicationSystemApplicationTests - Starting ImCommunicationSystemApplicationTests using Java 17.0.2 with PID 31136 (started by ASUS in D:\Project\im-communication-system)
+2025-07-08 13:46:13.126 [main] INFO  c.i.i.ImCommunicationSystemApplicationTests - No active profile set, falling back to 1 default profile: "default"
+2025-07-08 13:46:13.392 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:46:13.392 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-07-08 13:46:13.403 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 10 ms. Found 0 JPA repository interfaces.
+2025-07-08 13:46:13.492 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:46:13.492 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2025-07-08 13:46:13.498 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 5 ms. Found 0 Redis repository interfaces.
+2025-07-08 13:46:13.701 [main] INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-07-08 13:46:13.705 [main] INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2025-07-08 13:46:13.716 [main] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-07-08 13:46:13.717 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Starting...
+2025-07-08 13:46:13.729 [main] INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-2 - Added connection com.mysql.cj.jdbc.ConnectionImpl@6761bb4d
+2025-07-08 13:46:13.729 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Start completed.
+2025-07-08 13:46:13.752 [main] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-07-08 13:46:13.753 [main] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:46:14.018 [main] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2025-07-08 13:46:14.326 [main] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 2 endpoints beneath base path '/actuator'
+2025-07-08 13:46:14.658 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Starting...
+2025-07-08 13:46:14.658 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@2a801d1e]]
+2025-07-08 13:46:14.659 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Started.
+2025-07-08 13:46:14.680 [main] INFO  c.i.i.ImCommunicationSystemApplicationTests - Started ImCommunicationSystemApplicationTests in 1.597 seconds (process running for 9.598)
+2025-07-08 13:46:14.708 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopping...
+2025-07-08 13:46:14.709 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@260af8f7]]
+2025-07-08 13:46:14.709 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopped.
+2025-07-08 13:46:14.730 [SpringApplicationShutdownHook] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:46:14.732 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2025-07-08 13:46:14.738 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
+2025-07-08 13:46:14.742 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopping...
+2025-07-08 13:46:14.742 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@2a801d1e]]
+2025-07-08 13:46:14.742 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopped.
+2025-07-08 13:46:14.748 [SpringApplicationShutdownHook] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:46:14.748 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Shutdown initiated...
+2025-07-08 13:46:14.751 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Shutdown completed.
+2025-07-08 13:47:01.262 [background-preinit] INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.2.Final
+2025-07-08 13:47:01.280 [main] INFO  c.i.i.ImCommunicationSystemApplicationTests - Starting ImCommunicationSystemApplicationTests using Java 17.0.2 with PID 15540 (started by ASUS in D:\Project\im-communication-system)
+2025-07-08 13:47:01.281 [main] INFO  c.i.i.ImCommunicationSystemApplicationTests - No active profile set, falling back to 1 default profile: "default"
+2025-07-08 13:47:02.182 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:47:02.184 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-07-08 13:47:02.209 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 12 ms. Found 0 JPA repository interfaces.
+2025-07-08 13:47:02.585 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:47:02.586 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2025-07-08 13:47:02.613 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 14 ms. Found 0 Redis repository interfaces.
+2025-07-08 13:47:03.602 [main] INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-07-08 13:47:03.716 [main] INFO  org.hibernate.Version - HHH000412: Hibernate ORM core version 6.5.3.Final
+2025-07-08 13:47:03.794 [main] INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2025-07-08 13:47:04.127 [main] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-07-08 13:47:04.162 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2025-07-08 13:47:04.286 [main] INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@4e343265
+2025-07-08 13:47:04.288 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2025-07-08 13:47:04.572 [main] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-07-08 13:47:04.578 [main] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:47:05.609 [main] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2025-07-08 13:47:06.399 [main] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 2 endpoints beneath base path '/actuator'
+2025-07-08 13:47:07.356 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Starting...
+2025-07-08 13:47:07.359 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@7bb78381]]
+2025-07-08 13:47:07.360 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Started.
+2025-07-08 13:47:07.371 [main] INFO  c.i.i.ImCommunicationSystemApplicationTests - Started ImCommunicationSystemApplicationTests in 6.518 seconds (process running for 7.39)
+2025-07-08 13:47:08.007 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopping...
+2025-07-08 13:47:08.007 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@7bb78381]]
+2025-07-08 13:47:08.007 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopped.
+2025-07-08 13:47:08.033 [SpringApplicationShutdownHook] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:47:08.035 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2025-07-08 13:47:08.043 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
+2025-07-08 13:47:24.912 [background-preinit] INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.2.Final
+2025-07-08 13:47:24.941 [main] INFO  c.i.i.c.c.VerificationCodeConfigTest - Starting VerificationCodeConfigTest using Java 17.0.2 with PID 21280 (started by ASUS in D:\Project\im-communication-system)
+2025-07-08 13:47:24.942 [main] INFO  c.i.i.c.c.VerificationCodeConfigTest - No active profile set, falling back to 1 default profile: "default"
+2025-07-08 13:47:25.680 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:47:25.680 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-07-08 13:47:25.694 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 7 ms. Found 0 JPA repository interfaces.
+2025-07-08 13:47:26.043 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:47:26.045 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2025-07-08 13:47:26.064 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 10 ms. Found 0 Redis repository interfaces.
+2025-07-08 13:47:26.970 [main] INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-07-08 13:47:27.023 [main] INFO  org.hibernate.Version - HHH000412: Hibernate ORM core version 6.5.3.Final
+2025-07-08 13:47:27.062 [main] INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2025-07-08 13:47:27.419 [main] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-07-08 13:47:27.448 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2025-07-08 13:47:27.590 [main] INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@1c23e369
+2025-07-08 13:47:27.591 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2025-07-08 13:47:27.869 [main] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-07-08 13:47:27.872 [main] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:47:28.574 [main] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2025-07-08 13:47:29.101 [main] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 2 endpoints beneath base path '/actuator'
+2025-07-08 13:47:29.739 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Starting...
+2025-07-08 13:47:29.740 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@2b1818d1]]
+2025-07-08 13:47:29.741 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Started.
+2025-07-08 13:47:29.753 [main] INFO  c.i.i.c.c.VerificationCodeConfigTest - Started VerificationCodeConfigTest in 5.245 seconds (process running for 6.233)
+2025-07-08 13:47:31.007 [main] INFO  c.i.i.c.utils.VerificationCodeUtils - 验证码验证成功: identifier=test@example.com, type=EMAIL_REGISTER
+2025-07-08 13:47:31.035 [main] INFO  c.i.i.c.utils.VerificationCodeUtils - 生成验证码成功: identifier=test@example.com, type=EMAIL_REGISTER, length=6, expireMinutes=5
+2025-07-08 13:47:31.041 [main] INFO  c.i.i.c.utils.VerificationCodeUtils - 删除验证码: test@example.com
+2025-07-08 13:47:31.055 [main] INFO  o.s.t.c.s.AnnotationConfigContextLoaderUtils - Could not detect default configuration classes for test class [com.im.imcommunicationsystem.ImCommunicationSystemApplicationTests]: ImCommunicationSystemApplicationTests does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2025-07-08 13:47:31.074 [main] INFO  o.s.b.t.c.SpringBootTestContextBootstrapper - Found @SpringBootConfiguration com.im.imcommunicationsystem.ImCommunicationSystemApplication for test class com.im.imcommunicationsystem.ImCommunicationSystemApplicationTests
+2025-07-08 13:47:31.078 [main] INFO  o.s.b.d.r.RestartApplicationListener - Restart disabled due to context in which it is running
+2025-07-08 13:47:31.119 [main] INFO  c.i.i.ImCommunicationSystemApplicationTests - Starting ImCommunicationSystemApplicationTests using Java 17.0.2 with PID 21280 (started by ASUS in D:\Project\im-communication-system)
+2025-07-08 13:47:31.119 [main] INFO  c.i.i.ImCommunicationSystemApplicationTests - No active profile set, falling back to 1 default profile: "default"
+2025-07-08 13:47:31.363 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:47:31.363 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-07-08 13:47:31.371 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 7 ms. Found 0 JPA repository interfaces.
+2025-07-08 13:47:31.471 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:47:31.471 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2025-07-08 13:47:31.476 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 3 ms. Found 0 Redis repository interfaces.
+2025-07-08 13:47:31.675 [main] INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-07-08 13:47:31.680 [main] INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2025-07-08 13:47:31.691 [main] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-07-08 13:47:31.694 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Starting...
+2025-07-08 13:47:31.708 [main] INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-2 - Added connection com.mysql.cj.jdbc.ConnectionImpl@b78dcdf
+2025-07-08 13:47:31.709 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Start completed.
+2025-07-08 13:47:31.728 [main] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-07-08 13:47:31.729 [main] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:47:32.043 [main] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2025-07-08 13:47:32.425 [main] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 2 endpoints beneath base path '/actuator'
+2025-07-08 13:47:32.905 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Starting...
+2025-07-08 13:47:32.905 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@5d7efdb4]]
+2025-07-08 13:47:32.905 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Started.
+2025-07-08 13:47:32.915 [main] INFO  c.i.i.ImCommunicationSystemApplicationTests - Started ImCommunicationSystemApplicationTests in 1.835 seconds (process running for 9.394)
+2025-07-08 13:47:32.941 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopping...
+2025-07-08 13:47:32.941 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@2b1818d1]]
+2025-07-08 13:47:32.942 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopped.
+2025-07-08 13:47:32.968 [SpringApplicationShutdownHook] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:47:32.972 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2025-07-08 13:47:32.981 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
+2025-07-08 13:47:32.984 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopping...
+2025-07-08 13:47:32.984 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@5d7efdb4]]
+2025-07-08 13:47:32.984 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopped.
+2025-07-08 13:47:32.990 [SpringApplicationShutdownHook] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:47:32.991 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Shutdown initiated...
+2025-07-08 13:47:32.993 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Shutdown completed.
+2025-07-08 13:50:19.261 [background-preinit] INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.2.Final
+2025-07-08 13:50:19.289 [main] INFO  c.i.i.c.c.VerificationCodeConfigTest - Starting VerificationCodeConfigTest using Java 17.0.2 with PID 27812 (started by ASUS in D:\Project\im-communication-system)
+2025-07-08 13:50:19.291 [main] INFO  c.i.i.c.c.VerificationCodeConfigTest - No active profile set, falling back to 1 default profile: "default"
+2025-07-08 13:50:20.211 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:50:20.211 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-07-08 13:50:20.243 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 12 ms. Found 0 JPA repository interfaces.
+2025-07-08 13:50:20.648 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:50:20.650 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2025-07-08 13:50:20.670 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 12 ms. Found 0 Redis repository interfaces.
+2025-07-08 13:50:21.906 [main] INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-07-08 13:50:22.077 [main] INFO  org.hibernate.Version - HHH000412: Hibernate ORM core version 6.5.3.Final
+2025-07-08 13:50:22.144 [main] INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2025-07-08 13:50:22.529 [main] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-07-08 13:50:22.554 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2025-07-08 13:50:22.683 [main] INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@72bdbfe9
+2025-07-08 13:50:22.685 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2025-07-08 13:50:22.989 [main] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-07-08 13:50:22.992 [main] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:50:24.797 [main] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2025-07-08 13:50:26.054 [main] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 2 endpoints beneath base path '/actuator'
+2025-07-08 13:50:27.175 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Starting...
+2025-07-08 13:50:27.178 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@4dea763c]]
+2025-07-08 13:50:27.180 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Started.
+2025-07-08 13:50:27.190 [main] INFO  c.i.i.c.c.VerificationCodeConfigTest - Started VerificationCodeConfigTest in 8.319 seconds (process running for 9.335)
+2025-07-08 13:50:28.819 [main] INFO  c.i.i.c.utils.VerificationCodeUtils - 验证码验证成功: identifier=test@example.com, type=EMAIL_REGISTER
+2025-07-08 13:50:28.852 [main] INFO  c.i.i.c.utils.VerificationCodeUtils - 生成验证码成功: identifier=test@example.com, type=EMAIL_REGISTER, length=6, expireMinutes=5
+2025-07-08 13:50:28.856 [main] INFO  c.i.i.c.utils.VerificationCodeUtils - 删除验证码: test@example.com
+2025-07-08 13:50:28.876 [main] INFO  o.s.t.c.s.AnnotationConfigContextLoaderUtils - Could not detect default configuration classes for test class [com.im.imcommunicationsystem.ImCommunicationSystemApplicationTests]: ImCommunicationSystemApplicationTests does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2025-07-08 13:50:28.888 [main] INFO  o.s.b.t.c.SpringBootTestContextBootstrapper - Found @SpringBootConfiguration com.im.imcommunicationsystem.ImCommunicationSystemApplication for test class com.im.imcommunicationsystem.ImCommunicationSystemApplicationTests
+2025-07-08 13:50:28.894 [main] INFO  o.s.b.d.r.RestartApplicationListener - Restart disabled due to context in which it is running
+2025-07-08 13:50:28.940 [main] INFO  c.i.i.ImCommunicationSystemApplicationTests - Starting ImCommunicationSystemApplicationTests using Java 17.0.2 with PID 27812 (started by ASUS in D:\Project\im-communication-system)
+2025-07-08 13:50:28.940 [main] INFO  c.i.i.ImCommunicationSystemApplicationTests - No active profile set, falling back to 1 default profile: "default"
+2025-07-08 13:50:29.258 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:50:29.258 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-07-08 13:50:29.285 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 25 ms. Found 0 JPA repository interfaces.
+2025-07-08 13:50:29.411 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2025-07-08 13:50:29.411 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2025-07-08 13:50:29.417 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 5 ms. Found 0 Redis repository interfaces.
+2025-07-08 13:50:29.649 [main] INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-07-08 13:50:29.654 [main] INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2025-07-08 13:50:29.672 [main] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-07-08 13:50:29.674 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Starting...
+2025-07-08 13:50:29.687 [main] INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-2 - Added connection com.mysql.cj.jdbc.ConnectionImpl@66a75eab
+2025-07-08 13:50:29.687 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Start completed.
+2025-07-08 13:50:29.710 [main] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-07-08 13:50:29.710 [main] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:50:29.960 [main] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2025-07-08 13:50:30.278 [main] INFO  o.s.b.a.e.web.EndpointLinksResolver - Exposing 2 endpoints beneath base path '/actuator'
+2025-07-08 13:50:30.669 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Starting...
+2025-07-08 13:50:30.669 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@37ea5612]]
+2025-07-08 13:50:30.669 [main] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Started.
+2025-07-08 13:50:30.688 [main] INFO  c.i.i.ImCommunicationSystemApplicationTests - Started ImCommunicationSystemApplicationTests in 1.795 seconds (process running for 12.833)
+2025-07-08 13:50:30.743 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopping...
+2025-07-08 13:50:30.744 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@4dea763c]]
+2025-07-08 13:50:30.744 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopped.
+2025-07-08 13:50:30.814 [SpringApplicationShutdownHook] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:50:30.819 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2025-07-08 13:50:30.837 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
+2025-07-08 13:50:30.842 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopping...
+2025-07-08 13:50:30.843 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - BrokerAvailabilityEvent[available=false, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@37ea5612]]
+2025-07-08 13:50:30.843 [SpringApplicationShutdownHook] INFO  o.s.m.s.b.SimpleBrokerMessageHandler - Stopped.
+2025-07-08 13:50:30.851 [SpringApplicationShutdownHook] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-07-08 13:50:30.851 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Shutdown initiated...
+2025-07-08 13:50:30.855 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Shutdown completed.

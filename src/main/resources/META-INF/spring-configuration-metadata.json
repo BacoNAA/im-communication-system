@@ -1,0 +1,151 @@
+{
+  "properties": [
+    {
+      "name": "app.verification-code.default-length",
+      "type": "java.lang.Integer",
+      "description": "默认验证码长度",
+      "defaultValue": 6
+    },
+    {
+      "name": "app.verification-code.default-expire-minutes",
+      "type": "java.lang.Integer",
+      "description": "默认验证码过期时间（分钟）",
+      "defaultValue": 5
+    },
+    {
+      "name": "app.verification-code.send-interval-seconds",
+      "type": "java.lang.Integer",
+      "description": "验证码发送间隔时间（秒）",
+      "defaultValue": 60
+    },
+    {
+      "name": "app.verification-code.max-retry-count",
+      "type": "java.lang.Integer",
+      "description": "最大重试次数",
+      "defaultValue": 5
+    },
+    {
+      "name": "app.verification-code.code-types.email-register.length",
+      "type": "java.lang.Integer",
+      "description": "邮箱注册验证码长度"
+    },
+    {
+      "name": "app.verification-code.code-types.email-register.expire-minutes",
+      "type": "java.lang.Integer",
+      "description": "邮箱注册验证码过期时间（分钟）"
+    },
+    {
+      "name": "app.verification-code.code-types.email-register.prefix",
+      "type": "java.lang.String",
+      "description": "邮箱注册验证码Redis键前缀"
+    },
+    {
+      "name": "app.verification-code.code-types.email-login.length",
+      "type": "java.lang.Integer",
+      "description": "邮箱登录验证码长度"
+    },
+    {
+      "name": "app.verification-code.code-types.email-login.expire-minutes",
+      "type": "java.lang.Integer",
+      "description": "邮箱登录验证码过期时间（分钟）"
+    },
+    {
+      "name": "app.verification-code.code-types.email-login.prefix",
+      "type": "java.lang.String",
+      "description": "邮箱登录验证码Redis键前缀"
+    },
+    {
+      "name": "app.verification-code.code-types.password-reset.length",
+      "type": "java.lang.Integer",
+      "description": "密码重置验证码长度"
+    },
+    {
+      "name": "app.verification-code.code-types.password-reset.expire-minutes",
+      "type": "java.lang.Integer",
+      "description": "密码重置验证码过期时间（分钟）"
+    },
+    {
+      "name": "app.verification-code.code-types.password-reset.prefix",
+      "type": "java.lang.String",
+      "description": "密码重置验证码Redis键前缀"
+    },
+    {
+      "name": "app.verification-code.code-types.email-bind.length",
+      "type": "java.lang.Integer",
+      "description": "邮箱绑定验证码长度"
+    },
+    {
+      "name": "app.verification-code.code-types.email-bind.expire-minutes",
+      "type": "java.lang.Integer",
+      "description": "邮箱绑定验证码过期时间（分钟）"
+    },
+    {
+      "name": "app.verification-code.code-types.email-bind.prefix",
+      "type": "java.lang.String",
+      "description": "邮箱绑定验证码Redis键前缀"
+    },
+    {
+      "name": "app.verification-code.code-types.phone-verify.length",
+      "type": "java.lang.Integer",
+      "description": "手机验证码长度"
+    },
+    {
+      "name": "app.verification-code.code-types.phone-verify.expire-minutes",
+      "type": "java.lang.Integer",
+      "description": "手机验证码过期时间（分钟）"
+    },
+    {
+      "name": "app.verification-code.code-types.phone-verify.prefix",
+      "type": "java.lang.String",
+      "description": "手机验证码Redis键前缀"
+    },
+    {
+      "name": "app.verification-code.code-types.captcha.length",
+      "type": "java.lang.Integer",
+      "description": "图形验证码长度"
+    },
+    {
+      "name": "app.verification-code.code-types.captcha.expire-minutes",
+      "type": "java.lang.Integer",
+      "description": "图形验证码过期时间（分钟）"
+    },
+    {
+      "name": "app.verification-code.code-types.captcha.prefix",
+      "type": "java.lang.String",
+      "description": "图形验证码Redis键前缀"
+    },
+    {
+      "name": "app.verification-code.code-types.two-factor.length",
+      "type": "java.lang.Integer",
+      "description": "二次验证码长度"
+    },
+    {
+      "name": "app.verification-code.code-types.two-factor.expire-minutes",
+      "type": "java.lang.Integer",
+      "description": "二次验证码过期时间（分钟）"
+    },
+    {
+      "name": "app.verification-code.code-types.two-factor.prefix",
+      "type": "java.lang.String",
+      "description": "二次验证码Redis键前缀"
+    },
+    {
+      "name": "app.verification-code.security.enable-ip-limit",
+      "type": "java.lang.Boolean",
+      "description": "是否启用IP限制",
+      "defaultValue": true
+    },
+    {
+      "name": "app.verification-code.security.max-send-per-hour",
+      "type": "java.lang.Integer",
+      "description": "单个IP每小时最大发送次数",
+      "defaultValue": 10
+    },
+    {
+      "name": "app.verification-code.security.enable-complexity-check",
+      "type": "java.lang.Boolean",
+      "description": "是否启用验证码复杂度检查",
+      "defaultValue": false
+    }
+  ]
+}
