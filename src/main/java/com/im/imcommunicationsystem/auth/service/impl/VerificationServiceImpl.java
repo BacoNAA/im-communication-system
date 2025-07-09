@@ -2,7 +2,7 @@ package com.im.imcommunicationsystem.auth.service.impl;
 
 import com.im.imcommunicationsystem.auth.entity.VerificationCode;
 import com.im.imcommunicationsystem.auth.enums.VerificationCodeType;
-import com.im.imcommunicationsystem.auth.exception.BusinessException;
+import com.im.imcommunicationsystem.common.exception.BusinessException;
 import com.im.imcommunicationsystem.auth.repository.UserRepository;
 import com.im.imcommunicationsystem.auth.repository.VerificationCodeRepository;
 import com.im.imcommunicationsystem.auth.service.VerificationService;
@@ -79,6 +79,9 @@ public class VerificationServiceImpl implements VerificationService {
                     .data(null)
                     .build();
                     
+        } catch (BusinessException e) {
+            // 重新抛出业务异常，保持原有的错误信息
+            throw e;
         } catch (Exception e) {
             log.error("发送注册验证码失败: email={}, error={}", email, e.getMessage(), e);
             throw new BusinessException("发送验证码失败，请稍后重试");
@@ -91,13 +94,19 @@ public class VerificationServiceImpl implements VerificationService {
         log.info("开始发送登录验证码到: {}", email);
         
         try {
-            // 1. 删除该邮箱之前的登录验证码
+            // 1. 检查邮箱是否已注册
+            if (!userRepository.existsByEmail(email)) {
+                log.warn("邮箱未注册，拒绝发送登录验证码: {}", email);
+                throw new BusinessException("该邮箱尚未注册，请先注册账户");
+            }
+            
+            // 2. 删除该邮箱之前的登录验证码
             verificationCodeRepository.deleteByEmailAndCodeType(email, VerificationCodeType.login);
             
-            // 2. 生成新的验证码
+            // 3. 生成新的验证码
             String code = generateCode();
             
-            // 3. 保存验证码到数据库
+            // 4. 保存验证码到数据库
             VerificationCode verificationCode = VerificationCode.builder()
                     .email(email)
                     .code(code)
@@ -107,7 +116,7 @@ public class VerificationServiceImpl implements VerificationService {
             
             verificationCodeRepository.save(verificationCode);
             
-            // 4. 发送验证码邮件
+            // 5. 发送验证码邮件
             try {
                 emailService.sendVerificationCode(email, code, "【IM通信系统】登录验证码");
                 log.info("登录验证码邮件发送成功: email={}, code={}", email, code);
@@ -123,6 +132,9 @@ public class VerificationServiceImpl implements VerificationService {
                     .data(null)
                     .build();
                     
+        } catch (BusinessException e) {
+            // 重新抛出业务异常，保持原有的错误信息
+            throw e;
         } catch (Exception e) {
             log.error("发送登录验证码失败: email={}, error={}", email, e.getMessage(), e);
             throw new BusinessException("发送验证码失败，请稍后重试");
@@ -135,13 +147,19 @@ public class VerificationServiceImpl implements VerificationService {
         log.info("开始发送密码重置验证码到: {}", email);
         
         try {
-            // 1. 删除该邮箱之前的密码重置验证码
+            // 1. 检查邮箱是否已注册
+            if (!userRepository.existsByEmail(email)) {
+                log.warn("邮箱未注册，拒绝发送密码重置验证码: {}", email);
+                throw new BusinessException("该邮箱尚未注册，请先注册账户");
+            }
+            
+            // 2. 删除该邮箱之前的密码重置验证码
             verificationCodeRepository.deleteByEmailAndCodeType(email, VerificationCodeType.reset_password);
             
-            // 2. 生成新的验证码
+            // 3. 生成新的验证码
             String code = generateCode();
             
-            // 3. 保存验证码到数据库（密码重置验证码有效期延长到10分钟）
+            // 4. 保存验证码到数据库（密码重置验证码有效期延长到10分钟）
             VerificationCode verificationCode = VerificationCode.builder()
                     .email(email)
                     .code(code)
@@ -151,7 +169,7 @@ public class VerificationServiceImpl implements VerificationService {
             
             verificationCodeRepository.save(verificationCode);
             
-            // 4. 发送验证码邮件
+            // 5. 发送验证码邮件
             try {
                 emailService.sendVerificationCode(email, code, "【IM通信系统】密码重置验证码");
                 log.info("密码重置验证码邮件发送成功: email={}, code={}", email, code);
@@ -167,6 +185,9 @@ public class VerificationServiceImpl implements VerificationService {
                     .data(null)
                     .build();
                     
+        } catch (BusinessException e) {
+            // 重新抛出业务异常，保持原有的错误信息
+            throw e;
         } catch (Exception e) {
             log.error("发送密码重置验证码失败: email={}, error={}", email, e.getMessage(), e);
             throw new BusinessException("发送验证码失败，请稍后重试");
@@ -231,6 +252,30 @@ public class VerificationServiceImpl implements VerificationService {
             log.info("清理过期验证码完成");
         } catch (Exception e) {
             log.error("清理过期验证码失败: {}", e.getMessage(), e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void deleteVerificationCode(String email, String codeType) {
+        log.info("删除验证码: email={}, codeType={}", email, codeType);
+        
+        try {
+            // 将字符串类型转换为枚举类型
+            VerificationCodeType enumCodeType;
+            try {
+                enumCodeType = VerificationCodeType.valueOf(codeType);
+            } catch (IllegalArgumentException e) {
+                log.warn("无效的验证码类型: {}", codeType);
+                return;
+            }
+            
+            // 删除指定邮箱和类型的验证码
+            verificationCodeRepository.deleteByEmailAndCodeType(email, enumCodeType);
+            log.info("验证码删除成功: email={}, codeType={}", email, codeType);
+            
+        } catch (Exception e) {
+            log.error("删除验证码失败: email={}, codeType={}", email, codeType, e);
         }
     }
 }

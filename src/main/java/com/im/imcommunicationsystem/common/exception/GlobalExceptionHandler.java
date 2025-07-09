@@ -223,6 +223,48 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 处理用户ID冲突异常
+     * 
+     * @param e 用户ID冲突异常
+     * @param request HTTP请求
+     * @return 错误响应
+     */
+    @ExceptionHandler(com.im.imcommunicationsystem.user.exception.UserIdConflictException.class)
+    public ResponseEntity<?> handleUserIdConflictException(com.im.imcommunicationsystem.user.exception.UserIdConflictException e, HttpServletRequest request) {
+        log.warn("用户ID冲突: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ResponseUtils.error(400, e.getMessage()));
+    }
+
+    /**
+     * 处理个人ID验证异常
+     * 
+     * @param e 个人ID验证异常
+     * @param request HTTP请求
+     * @return 错误响应
+     */
+    @ExceptionHandler(com.im.imcommunicationsystem.user.exception.UserIdValidationException.class)
+    public ResponseEntity<?> handleUserIdValidationException(com.im.imcommunicationsystem.user.exception.UserIdValidationException e, HttpServletRequest request) {
+        log.warn("个人ID验证失败: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ResponseUtils.error(400, e.getMessage()));
+    }
+
+    /**
+     * 处理个人ID修改过于频繁异常
+     * 
+     * @param e 个人ID修改频率异常
+     * @param request HTTP请求
+     * @return 错误响应
+     */
+    @ExceptionHandler(com.im.imcommunicationsystem.user.exception.UserIdUpdateTooFrequentException.class)
+    public ResponseEntity<?> handleUserIdUpdateTooFrequentException(com.im.imcommunicationsystem.user.exception.UserIdUpdateTooFrequentException e, HttpServletRequest request) {
+        log.warn("个人ID修改过于频繁: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .body(ResponseUtils.error(429, e.getMessage()));
+    }
+
+    /**
      * 处理运行时异常
      * 
      * @param e 运行时异常

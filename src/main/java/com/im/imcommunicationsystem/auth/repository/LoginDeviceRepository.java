@@ -43,4 +43,11 @@ public interface LoginDeviceRepository extends JpaRepository<LoginDevice, Long> 
      * @return 设备信息
      */
     Optional<LoginDevice> findByUserIdAndDeviceType(Long userId, String deviceType);
+
+    /**
+     * 根据用户ID查找所有设备
+     * @param userId 用户ID
+     * @return 设备列表
+     */
+    List<LoginDevice> findByUserId(Long userId);
 }

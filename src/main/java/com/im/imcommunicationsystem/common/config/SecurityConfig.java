@@ -70,7 +70,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authz -> authz
                         // 公开访问的端点
                         .requestMatchers(
-                                "/api/auth/**",           // 认证相关接口
+                                "/api/auth/register/**",    // 注册相关接口
+                                "/api/auth/login/**",       // 登录相关接口
+                                "/api/auth/verification/**", // 验证码相关接口
+                                "/api/auth/password/reset",  // 重置密码接口（公开）
                                 "/api/verification/**",   // 验证码相关接口
                                 "/api/account-lock/**",   // 账号锁定管理接口
                                 "/api/public/**",        // 公开接口

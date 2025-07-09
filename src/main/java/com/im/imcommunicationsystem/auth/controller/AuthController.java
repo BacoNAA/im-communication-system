@@ -53,8 +53,12 @@ public class AuthController {
      */
     @PostMapping("/login/verification-code")
     public ApiResponse<AuthResponse> loginByVerificationCode(@Valid @RequestBody VerificationCodeLoginRequest request) {
-        // TODO: 实现验证码登录逻辑
-        return null;
+        try {
+            AuthResponse authResponse = authService.loginByVerificationCode(request);
+            return ApiResponse.success("登录成功", authResponse);
+        } catch (Exception e) {
+            return ApiResponse.serverError("登录失败: " + e.getMessage());
+        }
     }
 
     /**
@@ -112,7 +116,11 @@ public class AuthController {
      */
     @GetMapping("/me")
     public ApiResponse<UserInfoResponse> getCurrentUser() {
-        // TODO: 实现获取当前用户信息逻辑
-        return null;
+        try {
+            UserInfoResponse userInfo = authService.getCurrentUserInfo();
+            return ApiResponse.success("获取用户信息成功", userInfo);
+        } catch (Exception e) {
+            return ApiResponse.unauthorized("获取用户信息失败: " + e.getMessage());
+        }
     }
 }

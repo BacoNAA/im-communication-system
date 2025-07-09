@@ -185,6 +185,69 @@
             text-decoration: underline;
         }
 
+        .forgot-password-link a:hover {
+            color: #5a6fd8;
+            text-decoration: underline;
+        }
+
+        /* 模态框样式 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-dialog {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 20px 20px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #999;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-close:hover {
+            color: #666;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
         .loading {
             display: none;
             text-align: center;
@@ -225,6 +288,156 @@
             color: #16a34a;
         }
 
+        /* 登录方式切换标签 */
+        .login-tabs {
+            display: flex;
+            margin-bottom: 30px;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid #e1e5e9;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            background: #f8f9fa;
+            color: #666;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .tab-btn:hover:not(.active) {
+            background: #e9ecef;
+            color: #333;
+        }
+
+        /* 验证码输入组 - 美化版本 */
+        .verification-input-group {
+            display: flex;
+            gap: 12px;
+            align-items: stretch;
+            position: relative;
+        }
+
+        .verification-input-group input {
+            flex: 1;
+            padding: 16px 18px;
+            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: linear-gradient(145deg, #f8f9fa, #ffffff);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+        }
+
+        .verification-input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1), 0 4px 12px rgba(0, 0, 0, 0.05);
+            transform: translateY(-1px);
+        }
+
+        .verification-input-group input::placeholder {
+            color: #9ca3af;
+            font-weight: 400;
+        }
+
+        .send-code-btn {
+            padding: 16px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            white-space: nowrap;
+            min-width: 120px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        }
+
+        .send-code-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .send-code-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .send-code-btn:hover::before {
+            left: 100%;
+        }
+
+        .send-code-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        }
+
+        .send-code-btn:disabled {
+            background: linear-gradient(135deg, #d1d5db 0%, #9ca3af 100%);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .send-code-btn:disabled::before {
+            display: none;
+        }
+
+        /* 验证码输入框特殊样式 */
+        .verification-input-group input[type="text"] {
+            letter-spacing: 2px;
+            text-align: center;
+            font-weight: 600;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* 倒计时状态样式 */
+        .send-code-btn.countdown {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            cursor: default;
+        }
+
+        .send-code-btn.countdown:hover {
+            transform: none;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+        }
+
+        .login-form-content {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         @media (max-width: 480px) {
             .login-container {
                 margin: 10px;
@@ -236,6 +449,14 @@
             
             .login-form {
                 padding: 30px 20px;
+            }
+            
+            .verification-input-group {
+                flex-direction: column;
+            }
+            
+            .send-code-btn {
+                min-width: auto;
             }
         }
     </style>
@@ -250,7 +471,14 @@
         <div class="login-form">
             <div id="alertContainer"></div>
             
-            <form id="loginForm">
+            <!-- 登录方式切换 -->
+            <div class="login-tabs">
+                <button type="button" class="tab-btn active" id="passwordTab" onclick="switchLoginMode('password')">密码登录</button>
+                <button type="button" class="tab-btn" id="verificationTab" onclick="switchLoginMode('verification')">验证码登录</button>
+            </div>
+            
+            <!-- 密码登录表单 -->
+            <form id="passwordLoginForm" class="login-form-content">
                 <div class="form-group">
                     <label for="email">邮箱地址</label>
                     <input type="email" id="email" name="email" placeholder="请输入您的邮箱地址" required>
@@ -263,12 +491,36 @@
                     <div class="error-message" id="passwordError"></div>
                 </div>
                 
+                <div class="forgot-password-link" style="text-align: right; margin-bottom: 15px;">
+                    <a href="#" onclick="showResetPassword()" style="color: #667eea; text-decoration: none; font-size: 14px; font-weight: 500;">忘记密码？</a>
+                </div>
+                
                 <div class="remember-me">
                     <input type="checkbox" id="rememberMe" name="rememberMe">
                     <label for="rememberMe">记住登录状态</label>
                 </div>
                 
-                <button type="submit" class="login-btn" id="loginBtn">登录</button>
+                <button type="submit" class="login-btn" id="passwordLoginBtn">登录</button>
+            </form>
+            
+            <!-- 验证码登录表单 -->
+            <form id="verificationLoginForm" class="login-form-content" style="display: none;">
+                <div class="form-group">
+                    <label for="verificationEmail">邮箱地址</label>
+                    <input type="email" id="verificationEmail" name="verificationEmail" placeholder="请输入您的邮箱地址" required>
+                    <div class="error-message" id="verificationEmailError"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="verificationCode">验证码</label>
+                    <div class="verification-input-group">
+                        <input type="text" id="verificationCode" name="verificationCode" placeholder="请输入6位验证码" maxlength="6" required>
+                        <button type="button" class="send-code-btn" id="sendCodeBtn" onclick="sendVerificationCode()">获取验证码</button>
+                    </div>
+                    <div class="error-message" id="verificationCodeError"></div>
+                </div>
+                
+                <button type="submit" class="login-btn" id="verificationLoginBtn">登录</button>
             </form>
             
             <div class="loading" id="loading">
@@ -281,7 +533,42 @@
             </div>
             
             <div class="register-link">
-                还没有账户？<a href="/register.html">立即注册</a>
+                还没有账户？<a href="/register.html">立即注册</a></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 重置密码模态框 -->
+    <div id="resetPasswordModal" class="modal-overlay" style="display: none;">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h3 class="modal-title">重置密码</h3>
+                <button class="modal-close" onclick="closeResetPassword()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="resetStep1" class="reset-step">
+                    <div class="form-group">
+                        <label for="resetEmail">邮箱地址</label>
+                        <input type="email" id="resetEmail" placeholder="请输入您的邮箱地址" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="resetCode">验证码</label>
+                        <div class="verification-input-group">
+                            <input type="text" id="resetCode" placeholder="请输入验证码" maxlength="6" required>
+                            <button type="button" id="resetSendCodeBtn" class="send-code-btn" onclick="sendResetCode()">发送验证码</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="newPassword">新密码</label>
+                        <input type="password" id="newPassword" placeholder="请输入新密码" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassword">确认密码</label>
+                        <input type="password" id="confirmPassword" placeholder="请再次输入新密码" required>
+                    </div>
+                    <div id="resetErrorMessage" class="error-message" style="display: none;"></div>
+                    <button type="button" class="login-btn" onclick="resetPassword()" id="resetPasswordBtn">重置密码</button>
+                </div>
             </div>
         </div>
     </div>
@@ -342,12 +629,84 @@
 
         // 验证邮箱格式
         function validateEmail(email) {
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            return emailRegex.test(email);
+            // 更严格的邮箱格式验证
+            const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+            
+            // 基本格式检查
+            if (!emailRegex.test(email)) {
+                return false;
+            }
+            
+            // 长度检查
+            if (email.length > 254) {
+                return false;
+            }
+            
+            // 本地部分长度检查（@符号前的部分）
+            const localPart = email.split('@')[0];
+            if (localPart.length > 64) {
+                return false;
+            }
+            
+            // 域名部分检查
+            const domain = email.split('@')[1];
+            if (domain && domain.length > 253) {
+                return false;
+            }
+            
+            // 检查是否以点开头或结尾
+            if (email.startsWith('.') || email.endsWith('.')) {
+                return false;
+            }
+            
+            // 检查连续的点
+            if (email.includes('..')) {
+                return false;
+            }
+            
+            return true;
         }
 
-        // 验证表单
-        function validateForm() {
+        // 当前登录模式
+        let currentLoginMode = 'password';
+        let countdownTimer = null;
+        
+        // 切换登录模式
+        function switchLoginMode(mode) {
+            currentLoginMode = mode;
+            
+            const passwordTab = document.getElementById('passwordTab');
+            const verificationTab = document.getElementById('verificationTab');
+            const passwordForm = document.getElementById('passwordLoginForm');
+            const verificationForm = document.getElementById('verificationLoginForm');
+            
+            // 清除所有错误提示
+            clearAllErrors();
+            clearAlert();
+            
+            if (mode === 'password') {
+                passwordTab.classList.add('active');
+                verificationTab.classList.remove('active');
+                passwordForm.style.display = 'block';
+                verificationForm.style.display = 'none';
+            } else {
+                passwordTab.classList.remove('active');
+                verificationTab.classList.add('active');
+                passwordForm.style.display = 'none';
+                verificationForm.style.display = 'block';
+            }
+        }
+        
+        // 清除所有错误提示
+        function clearAllErrors() {
+            clearError('email');
+            clearError('password');
+            clearError('verificationEmail');
+            clearError('verificationCode');
+        }
+        
+        // 验证密码登录表单
+        function validatePasswordForm() {
             let isValid = true;
             
             // 清除之前的错误
@@ -375,18 +734,162 @@
             
             return isValid;
         }
-
-        // 处理登录
-        async function handleLogin(event) {
-            event.preventDefault();
+        
+        // 验证验证码格式
+        function validateVerificationCode(code) {
+            // 检查是否为空
+            if (!code || code.trim() === '') {
+                return { valid: false, message: '请输入验证码' };
+            }
             
-            if (!validateForm()) {
+            // 去除空格
+            code = code.trim();
+            
+            // 检查长度
+            if (code.length !== 6) {
+                return { valid: false, message: '验证码必须是6位数字' };
+            }
+            
+            // 检查是否全为数字
+            if (!/^\d{6}$/.test(code)) {
+                return { valid: false, message: '验证码只能包含数字' };
+            }
+            
+            // 检查是否为连续数字或重复数字（增强安全性）
+            const isSequential = /^(012345|123456|234567|345678|456789|567890|654321|543210|432109|321098|210987|109876)$/.test(code);
+            const isRepeated = /^(\d)\1{5}$/.test(code);
+            
+            if (isSequential || isRepeated) {
+                return { valid: false, message: '请输入有效的验证码' };
+            }
+            
+            return { valid: true, message: '' };
+        }
+        
+        // 验证验证码登录表单
+        function validateVerificationForm() {
+            let isValid = true;
+            
+            // 清除之前的错误
+            clearError('verificationEmail');
+            clearError('verificationCode');
+            clearAlert();
+            
+            const email = document.getElementById('verificationEmail').value.trim();
+            const code = document.getElementById('verificationCode').value.trim();
+            
+            // 验证邮箱
+            if (!email) {
+                showError('verificationEmail', '请输入邮箱地址');
+                isValid = false;
+            } else if (!validateEmail(email)) {
+                showError('verificationEmail', '请输入有效的邮箱地址');
+                isValid = false;
+            }
+            
+            // 验证验证码
+            const codeValidation = validateVerificationCode(code);
+            if (!codeValidation.valid) {
+                showError('verificationCode', codeValidation.message);
+                isValid = false;
+            }
+            
+            return isValid;
+        }
+
+        // 发送验证码
+        async function sendVerificationCode() {
+            const email = document.getElementById('verificationEmail').value.trim();
+            const sendCodeBtn = document.getElementById('sendCodeBtn');
+            
+            // 验证邮箱
+            if (!email) {
+                showError('verificationEmail', '请输入邮箱地址');
                 return;
             }
             
-            const loginBtn = document.getElementById('loginBtn');
+            if (!validateEmail(email)) {
+                showError('verificationEmail', '请输入有效的邮箱地址');
+                return;
+            }
+            
+            // 清除邮箱错误提示
+            clearError('verificationEmail');
+            
+            try {
+                // 禁用按钮
+                sendCodeBtn.disabled = true;
+                sendCodeBtn.textContent = '发送中...';
+                
+                const response = await fetch('/api/auth/verification/send/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: `email=${encodeURIComponent(email)}`
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    showAlert('验证码已发送到您的邮箱，请查收', 'success');
+                    
+                    // 开始倒计时
+                    startCountdown(60);
+                    
+                } else {
+                    const errorMessage = result.message || '发送验证码失败，请重试';
+                    showAlert(errorMessage, 'error');
+                    
+                    // 恢复按钮状态
+                    sendCodeBtn.disabled = false;
+                    sendCodeBtn.textContent = '获取验证码';
+                }
+                
+            } catch (error) {
+                console.error('发送验证码失败:', error);
+                showAlert('网络错误，请检查网络连接后重试', 'error');
+                
+                // 恢复按钮状态
+                sendCodeBtn.disabled = false;
+                sendCodeBtn.textContent = '获取验证码';
+            }
+        }
+        
+        // 倒计时功能
+        function startCountdown(seconds) {
+            const sendCodeBtn = document.getElementById('sendCodeBtn');
+            let remaining = seconds;
+            
+            // 清除之前的计时器
+            if (countdownTimer) {
+                clearInterval(countdownTimer);
+            }
+            
+            countdownTimer = setInterval(() => {
+                sendCodeBtn.textContent = `${remaining}秒后重发`;
+                remaining--;
+                
+                if (remaining < 0) {
+                    clearInterval(countdownTimer);
+                    sendCodeBtn.disabled = false;
+                    sendCodeBtn.textContent = '获取验证码';
+                    countdownTimer = null;
+                }
+            }, 1000);
+        }
+        
+        // 处理密码登录
+        async function handlePasswordLogin(event) {
+            event.preventDefault();
+            
+            if (!validatePasswordForm()) {
+                return;
+            }
+            
+            const loginBtn = document.getElementById('passwordLoginBtn');
             const loading = document.getElementById('loading');
-            const form = document.getElementById('loginForm');
+            const form = document.getElementById('passwordLoginForm');
             
             // 显示加载状态
             loginBtn.disabled = true;
@@ -520,21 +1023,301 @@
             }
         }
 
+        // 处理验证码登录
+        async function handleVerificationLogin(event) {
+            event.preventDefault();
+            
+            if (!validateVerificationForm()) {
+                return;
+            }
+            
+            const loginBtn = document.getElementById('verificationLoginBtn');
+            const loading = document.getElementById('loading');
+            const form = document.getElementById('verificationLoginForm');
+            
+            // 显示加载状态
+            loginBtn.disabled = true;
+            loading.style.display = 'block';
+            form.style.display = 'none';
+            
+            try {
+                const deviceInfo = getDeviceInfo();
+                const email = document.getElementById('verificationEmail').value.trim();
+                const verificationCode = document.getElementById('verificationCode').value.trim();
+                
+                const response = await fetch('/api/auth/login/verification-code', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        verificationCode: verificationCode,
+                        deviceType: deviceInfo.deviceType,
+                        deviceInfo: deviceInfo.deviceInfo
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    // 登录成功
+                    const authData = result.data;
+                    
+                    // 存储认证信息到sessionStorage（验证码登录不记住状态）
+                    sessionStorage.setItem('accessToken', authData.accessToken);
+                    sessionStorage.setItem('refreshToken', authData.refreshToken);
+                    sessionStorage.setItem('userInfo', JSON.stringify(authData.userInfo));
+                    
+                    // 清除localStorage中的登录信息
+                    localStorage.removeItem('accessToken');
+                    localStorage.removeItem('refreshToken');
+                    localStorage.removeItem('userInfo');
+                    localStorage.removeItem('savedEmail');
+                    localStorage.removeItem('savedPassword');
+                    localStorage.removeItem('rememberMe');
+                    
+                    showAlert('登录成功，正在跳转...', 'success');
+                    
+                    // 延迟跳转到主页
+                    setTimeout(() => {
+                        window.location.href = '/index.html';
+                    }, 1500);
+                    
+                } else {
+                    // 登录失败
+                    const errorMessage = result.message || '验证码错误或已失效，请重新获取';
+                    showAlert(errorMessage, 'error');
+                    
+                    // 恢复表单显示
+                    form.style.display = 'block';
+                    loading.style.display = 'none';
+                    loginBtn.disabled = false;
+                    
+                    // 清空验证码输入框
+                    document.getElementById('verificationCode').value = '';
+                }
+                
+            } catch (error) {
+                console.error('验证码登录失败:', error);
+                showAlert('网络错误，请检查网络连接后重试', 'error');
+                
+                // 恢复表单显示
+                form.style.display = 'block';
+                loading.style.display = 'none';
+                loginBtn.disabled = false;
+            }
+        }
+
+        // 显示重置密码模态框
+        function showResetPassword() {
+            document.getElementById('resetPasswordModal').style.display = 'flex';
+        }
+
+        // 关闭重置密码模态框
+        function closeResetPassword() {
+            document.getElementById('resetPasswordModal').style.display = 'none';
+            // 清空表单
+            document.getElementById('resetEmail').value = '';
+            document.getElementById('resetCode').value = '';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+            document.getElementById('resetErrorMessage').style.display = 'none';
+        }
+
+        // 发送重置密码验证码
+        async function sendResetCode() {
+            const email = document.getElementById('resetEmail').value.trim();
+            const sendBtn = document.getElementById('resetSendCodeBtn');
+            
+            if (!email) {
+                showResetError('请输入邮箱地址');
+                return;
+            }
+            
+            if (!validateEmail(email)) {
+                showResetError('请输入有效的邮箱地址');
+                return;
+            }
+            
+            try {
+                sendBtn.disabled = true;
+                sendBtn.textContent = '发送中...';
+                
+                const response = await fetch('/api/auth/verification/send/reset-password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: `email=${encodeURIComponent(email)}`
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    showResetError('验证码已发送到您的邮箱', 'success');
+                    startResetCountdown(60);
+                } else {
+                    showResetError(result.message || '发送失败，请重试');
+                    sendBtn.disabled = false;
+                    sendBtn.textContent = '发送验证码';
+                }
+            } catch (error) {
+                showResetError('网络错误，请重试');
+                sendBtn.disabled = false;
+                sendBtn.textContent = '发送验证码';
+            }
+        }
+
+        // 重置密码倒计时
+        function startResetCountdown(seconds) {
+            const sendBtn = document.getElementById('resetSendCodeBtn');
+            let remaining = seconds;
+            
+            const timer = setInterval(() => {
+                sendBtn.textContent = `${remaining}秒后重发`;
+                remaining--;
+                
+                if (remaining < 0) {
+                    clearInterval(timer);
+                    sendBtn.disabled = false;
+                    sendBtn.textContent = '发送验证码';
+                }
+            }, 1000);
+        }
+
+        // 重置密码
+        async function resetPassword() {
+            const email = document.getElementById('resetEmail').value.trim();
+            const code = document.getElementById('resetCode').value.trim();
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const resetBtn = document.getElementById('resetPasswordBtn');
+            
+            // 验证输入
+            if (!email || !code || !newPassword || !confirmPassword) {
+                showResetError('请填写所有字段');
+                return;
+            }
+            
+            if (!validateEmail(email)) {
+                showResetError('请输入有效的邮箱地址');
+                return;
+            }
+            
+            if (newPassword.length < 6) {
+                showResetError('密码长度至少6位');
+                return;
+            }
+            
+            if (newPassword !== confirmPassword) {
+                showResetError('两次输入的密码不一致');
+                return;
+            }
+            
+            try {
+                resetBtn.disabled = true;
+                resetBtn.textContent = '重置中...';
+                
+                const response = await fetch('/api/auth/password/reset', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        verificationCode: code,
+                        newPassword: newPassword,
+                        confirmPassword: confirmPassword
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    showResetError('密码重置成功，请使用新密码登录', 'success');
+                    setTimeout(() => {
+                        closeResetPassword();
+                    }, 2000);
+                } else {
+                    showResetError(result.message || '重置失败，请重试');
+                }
+            } catch (error) {
+                showResetError('网络错误，请重试');
+            } finally {
+                resetBtn.disabled = false;
+                resetBtn.textContent = '重置密码';
+            }
+        }
+
+        // 显示重置密码错误信息
+        function showResetError(message, type = 'error') {
+            const errorElement = document.getElementById('resetErrorMessage');
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+            errorElement.style.color = type === 'success' ? '#16a34a' : '#e74c3c';
+        }
+
         // 绑定事件
         document.addEventListener('DOMContentLoaded', function() {
-            const loginForm = document.getElementById('loginForm');
-            loginForm.addEventListener('submit', handleLogin);
+            const passwordLoginForm = document.getElementById('passwordLoginForm');
+            const verificationLoginForm = document.getElementById('verificationLoginForm');
+            
+            passwordLoginForm.addEventListener('submit', handlePasswordLogin);
+            verificationLoginForm.addEventListener('submit', handleVerificationLogin);
             
             // 加载保存的登录信息
             loadSavedLoginInfo();
             
-            // 输入时清除错误提示
+            // 输入时清除错误提示并进行实时验证
             document.getElementById('email').addEventListener('input', function() {
                 clearError('email');
+                const email = this.value.trim();
+                if (email && !validateEmail(email)) {
+                    showError('email', '请输入有效的邮箱地址');
+                }
             });
             
             document.getElementById('password').addEventListener('input', function() {
                 clearError('password');
+                const password = this.value;
+                if (password && password.length < 6) {
+                    showError('password', '密码长度至少6位');
+                }
+            });
+            
+            document.getElementById('verificationEmail').addEventListener('input', function() {
+                clearError('verificationEmail');
+                const email = this.value.trim();
+                if (email && !validateEmail(email)) {
+                    showError('verificationEmail', '请输入有效的邮箱地址');
+                }
+            });
+            
+            document.getElementById('verificationCode').addEventListener('input', function() {
+                clearError('verificationCode');
+                const code = this.value.trim();
+                if (code) {
+                    const validation = validateVerificationCode(code);
+                    if (!validation.valid) {
+                        showError('verificationCode', validation.message);
+                    }
+                }
+            });
+            
+            // 限制验证码输入框只能输入数字
+            document.getElementById('verificationCode').addEventListener('keypress', function(e) {
+                // 只允许数字输入
+                if (!/\d/.test(e.key) && !['Backspace', 'Delete', 'Tab', 'Enter'].includes(e.key)) {
+                    e.preventDefault();
+                }
+            });
+            
+            // 限制验证码输入框最大长度
+            document.getElementById('verificationCode').addEventListener('input', function() {
+                if (this.value.length > 6) {
+                    this.value = this.value.slice(0, 6);
+                }
             });
         });
     </script>

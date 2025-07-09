@@ -40,4 +40,13 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @return 是否存在
      */
     boolean existsByUserIdStr(String userIdStr);
+
+    /**
+     * 检查用户ID字符串是否存在（方法别名）
+     * @param userIdString 用户ID字符串
+     * @return 是否存在
+     */
+    default boolean existsByUserIdString(String userIdString) {
+        return existsByUserIdStr(userIdString);
+    }
 }

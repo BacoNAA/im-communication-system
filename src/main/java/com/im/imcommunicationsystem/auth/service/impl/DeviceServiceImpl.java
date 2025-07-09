@@ -77,25 +77,25 @@ public class DeviceServiceImpl implements DeviceService {
 
     @Override
     public void logoutDevice(Long userId, String deviceType) {
-        // TODO: 实现设备登出逻辑
+        // 注意：设备登出功能暂不实现，仅保留接口
         log.info("设备登出: userId={}, deviceType={}", userId, deviceType);
     }
 
     @Override
     public void logoutAllDevices(Long userId) {
-        // TODO: 实现所有设备登出逻辑
+        // 注意：所有设备登出功能暂不实现，仅保留接口
         log.info("所有设备登出: userId={}", userId);
     }
 
     @Override
     public void updateDeviceStatus(Long userId, String deviceType, boolean isActive) {
-        // TODO: 实现更新设备活跃状态逻辑
+        // 注意：设备状态更新功能暂不实现，仅保留接口
         log.info("更新设备状态: userId={}, deviceType={}, isActive={}", userId, deviceType, isActive);
     }
 
     @Override
     public boolean isDeviceActive(Long userId, String deviceType) {
-        // TODO: 实现检查设备是否活跃逻辑
+        // 注意：设备活跃状态检查功能暂不实现，仅保留接口
         log.info("检查设备是否活跃: userId={}, deviceType={}", userId, deviceType);
         return true;
     }

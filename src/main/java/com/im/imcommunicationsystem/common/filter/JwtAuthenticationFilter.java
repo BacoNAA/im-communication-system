@@ -113,7 +113,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String path = request.getRequestURI();
         
         // 公开端点，跳过JWT认证
-        return path.startsWith("/api/auth/") ||
+        return path.startsWith("/api/auth/register/") ||
+               path.startsWith("/api/auth/login/") ||
+               path.startsWith("/api/auth/verification/") ||
+               path.equals("/api/auth/password/reset") ||
                path.startsWith("/api/public/") ||
                path.startsWith("/api/test/") ||
                path.startsWith("/ws/") ||

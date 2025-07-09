@@ -48,4 +48,11 @@ public interface VerificationService {
      * 清理过期验证码
      */
     void cleanExpiredCodes();
+
+    /**
+     * 删除验证码
+     * @param email 邮箱地址
+     * @param codeType 验证码类型
+     */
+    void deleteVerificationCode(String email, String codeType);
 }

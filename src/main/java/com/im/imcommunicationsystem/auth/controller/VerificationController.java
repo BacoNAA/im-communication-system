@@ -25,6 +25,9 @@ public class VerificationController {
     public ApiResponse<Void> sendRegistrationCode(@RequestParam String email) {
         try {
             return verificationService.sendRegistrationCode(email);
+        } catch (com.im.imcommunicationsystem.common.exception.BusinessException e) {
+            // 保留业务异常的原始错误信息
+            return ApiResponse.error(e.getCode(), e.getMessage());
         } catch (Exception e) {
             return ApiResponse.serverError("发送验证码失败: " + e.getMessage());
         }
@@ -39,6 +42,9 @@ public class VerificationController {
     public ApiResponse<Void> sendLoginCode(@RequestParam String email) {
         try {
             return verificationService.sendLoginCode(email);
+        } catch (com.im.imcommunicationsystem.common.exception.BusinessException e) {
+            // 保留业务异常的原始错误信息
+            return ApiResponse.error(e.getCode(), e.getMessage());
         } catch (Exception e) {
             return ApiResponse.serverError("发送验证码失败: " + e.getMessage());
         }
@@ -53,6 +59,9 @@ public class VerificationController {
     public ApiResponse<Void> sendPasswordResetCode(@RequestParam String email) {
         try {
             return verificationService.sendPasswordResetCode(email);
+        } catch (com.im.imcommunicationsystem.common.exception.BusinessException e) {
+            // 保留业务异常的原始错误信息
+            return ApiResponse.error(e.getCode(), e.getMessage());
         } catch (Exception e) {
             return ApiResponse.serverError("发送验证码失败: " + e.getMessage());
         }

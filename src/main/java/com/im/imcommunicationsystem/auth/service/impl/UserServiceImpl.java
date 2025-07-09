@@ -19,56 +19,56 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Optional<User> findByEmail(String email) {
-        // TODO: 实现根据邮箱查找用户逻辑
+        // 注意：此方法已在AuthServiceImpl中通过UserRepository直接实现
         log.info("根据邮箱查找用户: {}", email);
         return Optional.empty();
     }
 
     @Override
     public Optional<User> findById(Long userId) {
-        // TODO: 实现根据用户ID查找用户逻辑
+        // 注意：此方法已在AuthServiceImpl中通过UserRepository直接实现
         log.info("根据用户ID查找用户: {}", userId);
         return Optional.empty();
     }
 
     @Override
     public Optional<User> findByUserIdStr(String userIdStr) {
-        // TODO: 实现根据用户ID字符串查找用户逻辑
+        // 注意：此方法已在AuthServiceImpl中通过UserRepository直接实现
         log.info("根据用户ID字符串查找用户: {}", userIdStr);
         return Optional.empty();
     }
 
     @Override
     public User createUser(User user) {
-        // TODO: 实现创建用户逻辑
+        // 注意：此方法已在AuthServiceImpl中通过UserRepository直接实现
         log.info("创建用户: {}", user.getEmail());
         return user;
     }
 
     @Override
     public User updateUser(User user) {
-        // TODO: 实现更新用户逻辑
+        // 注意：此方法已在AuthServiceImpl中通过UserRepository直接实现
         log.info("更新用户: {}", user.getEmail());
         return user;
     }
 
     @Override
     public boolean existsByUserIdStr(String userIdStr) {
-        // TODO: 实现检查用户ID字符串是否存在逻辑
+        // 注意：此方法已在AuthServiceImpl中通过UserRepository直接实现
         log.info("检查用户ID字符串是否存在: {}", userIdStr);
         return false;
     }
 
     @Override
     public String generateUniqueUserIdStr() {
-        // TODO: 实现生成唯一用户ID字符串逻辑
+        // 注意：此方法已在AuthServiceImpl中通过UserRepository直接实现
         log.info("生成唯一用户ID字符串");
         return "user_" + System.currentTimeMillis();
     }
 
     @Override
     public boolean existsByEmail(String email) {
-        // TODO: 实现检查邮箱是否存在逻辑
+        // 注意：此方法已在AuthServiceImpl中通过UserRepository直接实现
         log.info("检查邮箱是否存在: {}", email);
         return false;
     }

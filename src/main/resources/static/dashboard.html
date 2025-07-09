@@ -129,10 +129,10 @@
                     </button>
                 </div>
                 <div class="panel-body">
-                    <div class="profile-info">
+                    <div class="profile-info" onclick="editProfile()" style="cursor: pointer;">
                         <div class="profile-avatar">
                             <img id="profileAvatar" src="images/default-avatar.svg" alt="头像">
-                            <button class="avatar-edit" onclick="changeAvatar()">
+                            <button class="avatar-edit" onclick="changeAvatar(); event.stopPropagation();">
                                 <i class="icon-camera"></i>
                             </button>
                         </div>

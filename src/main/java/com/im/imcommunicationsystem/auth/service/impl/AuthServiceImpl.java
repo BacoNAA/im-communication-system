@@ -12,6 +12,8 @@ import com.im.imcommunicationsystem.auth.service.AuthService;
 import com.im.imcommunicationsystem.auth.service.DeviceService;
 import com.im.imcommunicationsystem.auth.service.VerificationService;
 import com.im.imcommunicationsystem.auth.utils.PasswordUtils;
+import com.im.imcommunicationsystem.common.utils.SecurityUtils;
+import com.im.imcommunicationsystem.common.utils.JwtUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -35,6 +37,8 @@ public class AuthServiceImpl implements AuthService {
     private final DeviceService deviceService;
     private final PasswordUtils passwordUtils;
     private final AccountLockService accountLockService;
+    private final SecurityUtils securityUtils;
+    private final JwtUtils jwtUtils;
 
     @Override
     @Transactional
@@ -169,16 +173,14 @@ public class AuthServiceImpl implements AuthService {
      * 生成访问令牌
      */
     private String generateAccessToken(User user) {
-        // TODO: 实现JWT令牌生成逻辑
-        return "access_token_" + user.getId() + "_" + System.currentTimeMillis();
+        return jwtUtils.generateAccessToken(user.getId(), user.getEmail(), "USER");
     }
     
     /**
      * 生成刷新令牌
      */
     private String generateRefreshToken(User user) {
-        // TODO: 实现JWT刷新令牌生成逻辑
-        return "refresh_token_" + user.getId() + "_" + System.currentTimeMillis();
+        return jwtUtils.generateRefreshToken(user.getId(), user.getEmail());
     }
 
     @Override
@@ -272,15 +274,62 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Transactional
     public AuthResponse loginByVerificationCode(VerificationCodeLoginRequest request) {
-        // TODO: 实现验证码登录逻辑
-        log.info("验证码登录请求: {}", request.getEmail());
+        log.info("开始处理验证码登录请求: {}", request.getEmail());
+        
+        // 1. 验证验证码
+        boolean isCodeValid = verificationService.verifyCode(
+            request.getEmail(), 
+            request.getVerificationCode(), 
+            VerificationCodeType.login.name()
+        );
+        if (!isCodeValid) {
+            log.warn("验证码验证失败: {}", request.getEmail());
+            throw new AuthenticationException("验证码错误或已失效");
+        }
+        
+        // 2. 检查用户是否存在
+        Optional<User> userOptional = userRepository.findByEmail(request.getEmail());
+        if (userOptional.isEmpty()) {
+            log.warn("验证码登录时用户不存在: {}", request.getEmail());
+            throw new AuthenticationException("该邮箱未注册");
+        }
+        
+        User user = userOptional.get();
+        log.info("验证码验证成功: userId={}, email={}", user.getId(), user.getEmail());
+        
+        // 3. 记录登录设备
+        if (StringUtils.hasText(request.getDeviceType())) {
+            deviceService.recordLoginDevice(user.getId(), request.getDeviceType(), request.getDeviceInfo(), null);
+        }
+        
+        // 4. 生成JWT令牌
+        String accessToken = generateAccessToken(user);
+        String refreshToken = generateRefreshToken(user);
+        
+        // 5. 构建用户信息响应
+        UserInfoResponse userInfo = UserInfoResponse.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .nickname(user.getNickname())
+                .avatarUrl(user.getAvatarUrl())
+                .signature(user.getSignature())
+                .userIdStr(user.getUserIdStr())
+                .personalizedStatus(user.getStatusJson())
+                .createdAt(user.getCreatedAt())
+                .updatedAt(user.getUpdatedAt())
+                .build();
+        
+        log.info("用户验证码登录成功: userId={}, email={}", user.getId(), user.getEmail());
+        
         return AuthResponse.builder()
-                .accessToken("temp_access_token")
-                .refreshToken("temp_refresh_token")
-                .expiresIn(3600L)
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .expiresIn(3600L) // 1小时
                 .tokenType("Bearer")
                 .requiresTwoFactor(false)
+                .userInfo(userInfo)
                 .build();
     }
 
@@ -367,5 +416,19 @@ public class AuthServiceImpl implements AuthService {
     public boolean checkEmailExists(String email) {
         log.info("检查邮箱是否存在: {}", email);
         return userRepository.existsByEmail(email);
+    }
+
+    @Override
+    public UserInfoResponse getCurrentUserInfo() {
+        log.info("获取当前用户信息");
+        
+        // 获取当前用户ID
+        Long currentUserId = securityUtils.getCurrentUserId();
+        if (currentUserId == null) {
+            throw new AuthenticationException("用户未登录或登录已过期");
+        }
+        
+        // 获取用户信息
+        return getUserInfo(currentUserId);
     }
 }

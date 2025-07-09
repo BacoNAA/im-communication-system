@@ -90,7 +90,7 @@ function publishMoment() {
  * 编辑个人资料
  */
 function editProfile() {
-    showMessage('编辑资料功能正在开发中...', 'info');
+    window.location.href = 'profile.html';
 }
 
 /**

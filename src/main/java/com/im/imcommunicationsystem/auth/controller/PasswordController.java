@@ -26,8 +26,7 @@ public class PasswordController {
      */
     @PostMapping("/change")
     public ApiResponse<Void> changePassword(@Valid @RequestBody ChangePasswordRequest request) {
-        // TODO: 实现修改密码逻辑
-        return null;
+        return passwordService.changePassword(request);
     }
 
     /**
@@ -37,7 +36,6 @@ public class PasswordController {
      */
     @PostMapping("/reset")
     public ApiResponse<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
-        // TODO: 实现重置密码逻辑
-        return null;
+        return passwordService.resetPassword(request);
     }
 }

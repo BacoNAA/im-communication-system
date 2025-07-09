@@ -72,6 +72,42 @@ public class User {
     private String statusJson;
 
     /**
+     * 个人ID最后修改时间
+     */
+    @Column(name = "user_id_updated_at")
+    private LocalDateTime userIdUpdatedAt;
+
+    /**
+     * 手机号码
+     */
+    @Column(name = "phone_number", length = 20)
+    private String phoneNumber;
+
+    /**
+     * 性别：男、女、保密
+     */
+    @Column(name = "gender", length = 10)
+    private String gender;
+
+    /**
+     * 生日
+     */
+    @Column(name = "birthday")
+    private java.time.LocalDate birthday;
+
+    /**
+     * 所在地
+     */
+    @Column(name = "location", length = 100)
+    private String location;
+
+    /**
+     * 职业
+     */
+    @Column(name = "occupation", length = 100)
+    private String occupation;
+
+    /**
      * 账户创建时间
      */
     @CreationTimestamp

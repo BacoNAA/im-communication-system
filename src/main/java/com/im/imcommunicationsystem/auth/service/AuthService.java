@@ -63,4 +63,10 @@ public interface AuthService {
      * @return 是否存在
      */
     boolean checkEmailExists(String email);
+
+    /**
+     * 获取当前用户信息
+     * @return 用户信息响应
+     */
+    UserInfoResponse getCurrentUserInfo();
 }
