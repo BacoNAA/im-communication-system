@@ -1568,7 +1568,6 @@
                     <div class="form-group">
                         <label for="profilePhoneNumber">手机号</label>
                         <input type="tel" id="profilePhoneNumber" placeholder="请输入手机号" maxlength="11">
-                        <small class="field-note">手机号用于账户安全验证</small>
                     </div>
                     <div class="form-group">
                         <label for="profileGender">性别</label>
@@ -1581,7 +1580,7 @@
                     </div>
                     <div class="form-group">
                         <label for="profileBirthday">生日</label>
-                        <input type="date" id="profileBirthday">
+                        <input type="date" id="profileBirthday" min="1900-01-01">
                         <small class="field-note">生日信息仅用于个人资料展示</small>
                     </div>
                     <div class="form-group">
@@ -2008,6 +2007,9 @@
 
         function openProfile() {
             document.getElementById('profileModal').style.display = 'flex';
+            // 设置生日输入框的最大日期为今天
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('profileBirthday').setAttribute('max', today);
             loadUserProfile();
         }
 
