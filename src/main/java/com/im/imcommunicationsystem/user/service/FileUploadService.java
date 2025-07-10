@@ -60,4 +60,23 @@ public interface FileUploadService {
      * @return 扩展名
      */
     String getFileExtension(String filename);
+
+    /**
+     * 获取用户文件列表（分页）
+     * 
+     * @param userId 用户ID
+     * @param fileType 文件类型（可为null）
+     * @param page 页码
+     * @param size 每页大小
+     * @return 文件列表
+     */
+    java.util.List<com.im.imcommunicationsystem.user.entity.FileUpload> getUserFiles(Long userId, com.im.imcommunicationsystem.user.entity.FileUpload.FileType fileType, int page, int size);
+
+    /**
+     * 获取用户文件统计信息
+     * 
+     * @param userId 用户ID
+     * @return 统计信息
+     */
+    java.util.Map<String, Object> getUserFileStats(Long userId);
 }

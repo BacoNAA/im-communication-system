@@ -946,6 +946,39 @@
             font-size: 18px;
             font-weight: 600;
             color: #000;
+            flex: 1;
+        }
+
+        .refresh-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: #07c160;
+            cursor: pointer;
+            padding: 8px;
+            margin-left: 16px;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .refresh-btn:hover {
+            background: #f0f9f0;
+            transform: scale(1.1);
+        }
+
+        .refresh-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
         }
 
         .security-functions {
@@ -1055,6 +1088,12 @@
             background: #fed7d7;
             color: #742a2a;
             border: 1px solid #fc8181;
+        }
+
+        .profile-alert.info {
+            background: #bee3f8;
+            color: #2a4365;
+            border: 1px solid #90cdf4;
         }
 
         .profile-avatar-section {
@@ -1262,6 +1301,318 @@
             border-top: 1px solid #e2e8f0;
         }
 
+        /* 文件管理页面样式 */
+        .file-manager-page {
+            padding: 20px;
+            background: #f7f7f7;
+        }
+
+        .file-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .stat-number {
+            font-size: 20px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 12px;
+        }
+
+        .file-tabs {
+            display: flex;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .file-tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            background: #f8f9fa;
+            color: #666;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .file-tab.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .file-tab-content {
+            display: none;
+        }
+
+        .file-tab-content.active {
+            display: block;
+        }
+
+        .file-alert {
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            min-width: 300px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: all 0.3s ease;
+        }
+
+        .file-alert.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            top: 20px;
+        }
+
+        .file-alert.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            top: 80px; /* 错误提示显示在成功提示下方 */
+        }
+
+        .upload-area {
+            background: white;
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .upload-area:hover {
+            border-color: #667eea;
+            background-color: #f8f9fa;
+        }
+
+        .upload-area.dragover {
+            border-color: #667eea;
+            background-color: #e3f2fd;
+        }
+
+        .upload-icon {
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+
+        .upload-text {
+            color: #333;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+
+        .upload-hint {
+            color: #999;
+            font-size: 12px;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .upload-options {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .option-group {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .option-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .option-group select,
+        .option-group input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .upload-buttons {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .upload-progress {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .file-filter {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+
+        .file-filter select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .file-loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .file-loading .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        .file-list {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .file-item:last-child {
+            border-bottom: none;
+        }
+
+        .file-icon {
+            width: 40px;
+            height: 40px;
+            margin-right: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            font-size: 18px;
+            color: white;
+        }
+
+        .file-icon.image { background: #28a745; }
+        .file-icon.video { background: #dc3545; }
+        .file-icon.audio { background: #ffc107; color: #333; }
+        .file-icon.document { background: #17a2b8; }
+        .file-icon.other { background: #6c757d; }
+
+        .file-info {
+            flex: 1;
+        }
+
+        .file-name {
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .file-details {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .file-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-small {
+            padding: 4px 8px;
+            font-size: 12px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-view {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-delete {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-copy {
+            background: #28a745;
+            color: white;
+        }
+
         /* 响应式设计 */
         @media (max-width: 768px) {
             .status-bar {
@@ -1293,6 +1644,126 @@
             .status-buttons {
                 flex-direction: column;
             }
+
+            .file-manager-page {
+                padding: 10px;
+            }
+
+            .upload-options {
+                flex-direction: column;
+            }
+
+            .file-filter {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .file-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .file-actions {
+                margin-top: 10px;
+                width: 100%;
+                justify-content: flex-end;
+            }
+        }
+
+        /* 删除确认对话框样式 */
+        .delete-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .delete-modal.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .delete-modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 320px;
+            width: 90%;
+            text-align: center;
+            transform: scale(0.8);
+            transition: transform 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .delete-modal.show .delete-modal-content {
+            transform: scale(1);
+        }
+
+        .delete-modal-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            color: #ff4444;
+        }
+
+        .delete-modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .delete-modal-message {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 24px;
+            line-height: 1.4;
+        }
+
+        .delete-modal-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .delete-modal-btn {
+            flex: 1;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .delete-modal-btn.cancel {
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .delete-modal-btn.cancel:hover {
+            background: #e8e8e8;
+        }
+
+        .delete-modal-btn.confirm {
+            background: #ff4444;
+            color: white;
+        }
+
+        .delete-modal-btn.confirm:hover {
+            background: #e63939;
+        }
+
+        .delete-modal-btn:active {
+            transform: scale(0.98);
         }
     </style>
 </head>
@@ -1387,9 +1858,9 @@
                     <button class="qr-btn" onclick="showQRCode(); event.stopPropagation();">📱</button>
                 </div>
                 <div class="me-functions">
-                    <div class="me-function-item" onclick="openMediaLibrary()">
+                    <div class="me-function-item" onclick="openFileManager()">
                         <div class="me-function-icon">📁</div>
-                        <div class="me-function-text">媒体库</div>
+                        <div class="me-function-text">文件管理</div>
                         <div class="me-function-arrow">›</div>
                     </div>
                     <div class="me-function-item" onclick="openAccountSecurity()">
@@ -1442,6 +1913,129 @@
                         <div class="security-function-text">隐私设置</div>
                         <div class="security-function-arrow">›</div>
                     </div>
+                </div>
+            </div>
+
+            <!-- 文件管理页面 -->
+            <div id="fileManagerTab" class="tab-content file-manager-page" style="display: none;">
+                <div class="page-header">
+                    <button class="back-btn" onclick="backToMe()">‹</button>
+                    <div class="page-title">文件管理</div>
+                    <button class="refresh-btn" onclick="refreshFileManager()" title="刷新数据">🔄</button>
+                </div>
+                
+                <!-- 统计信息 -->
+                <div class="file-stats">
+                    <div class="stat-item">
+                        <div class="stat-number" id="totalFiles">0</div>
+                        <div class="stat-label">总文件数</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="totalSize">0 MB</div>
+                        <div class="stat-label">总大小</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="imageCount">0</div>
+                        <div class="stat-label">图片</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="documentCount">0</div>
+                        <div class="stat-label">文档</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="videoCount">0</div>
+                        <div class="stat-label">视频</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="audioCount">0</div>
+                        <div class="stat-label">音频</div>
+                    </div>
+                </div>
+
+                <!-- 选项卡 -->
+                <div class="file-tabs">
+                    <div class="file-tab active" onclick="switchFileTab('upload')">文件上传</div>
+                    <div class="file-tab" onclick="switchFileTab('manage')">文件管理</div>
+                </div>
+
+                <!-- 上传选项卡 -->
+                <div id="uploadFileTab" class="file-tab-content active">
+                    <!-- 提示信息 -->
+                    <!-- 成功提示容器 -->
+        <div id="fileSuccessAlert" class="file-alert success" style="display: none;"></div>
+        <!-- 错误提示容器 -->
+        <div id="fileErrorAlert" class="file-alert error" style="display: none;"></div>
+
+                    <!-- 文件上传区域 -->
+                    <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                        <div class="upload-icon">📁</div>
+                        <div class="upload-text">点击选择文件或拖拽文件到此处</div>
+                        <div class="upload-hint">支持图片、视频、音频、文档等格式，单个文件最大50MB</div>
+                    </div>
+
+                    <input type="file" id="fileInput" class="file-input" multiple>
+
+                    <!-- 上传选项 -->
+                    <div class="upload-options">
+                        <div class="option-group">
+                            <label for="uploadType">上传类型</label>
+                            <select id="uploadType">
+                                <option value="file">普通文件</option>
+                                <option value="image">图片（自动压缩）</option>
+                            </select>
+                        </div>
+                        <div class="option-group" id="imageSizeOptions" style="display: none;">
+                            <label for="maxWidth">最大宽度</label>
+                            <input type="number" id="maxWidth" value="1920" min="100" max="4000">
+                        </div>
+                        <div class="option-group" id="imageHeightOptions" style="display: none;">
+                            <label for="maxHeight">最大高度</label>
+                            <input type="number" id="maxHeight" value="1080" min="100" max="4000">
+                        </div>
+                    </div>
+
+                    <!-- 上传按钮 -->
+                    <div class="upload-buttons">
+                        <button id="uploadBtn" class="btn btn-primary" onclick="uploadFiles()" disabled>
+                            开始上传
+                        </button>
+                        <button id="cancelUploadBtn" class="btn btn-secondary" onclick="cancelUpload()" style="display: none;">
+                            取消上传
+                        </button>
+                    </div>
+
+                    <!-- 上传进度 -->
+                    <div id="uploadProgress" class="upload-progress" style="display: none;">
+                        <div class="progress-bar">
+                            <div id="progressFill" class="progress-fill"></div>
+                        </div>
+                        <div id="progressText" class="progress-text">准备上传...</div>
+                    </div>
+                </div>
+
+                <!-- 管理选项卡 -->
+                <div id="manageFileTab" class="file-tab-content">
+                    <!-- 文件筛选 -->
+                    <div class="file-filter">
+                        <select id="fileTypeFilter" onchange="loadFileList()">
+                            <option value="">全部类型</option>
+                            <option value="IMAGE">图片</option>
+                            <option value="VIDEO">视频</option>
+                            <option value="AUDIO">音频</option>
+                            <option value="DOCUMENT">文档</option>
+                            <option value="OTHER">其他</option>
+                        </select>
+                        <button class="btn btn-secondary" onclick="refreshFileManager()">刷新列表</button>
+                    </div>
+
+                    <!-- 加载状态 -->
+                    <div id="fileLoading" class="file-loading" style="display: none;">
+                        <div class="spinner"></div>
+                        <div>加载中...</div>
+                    </div>
+
+                    <!-- 文件列表 -->
+                    <div id="fileList" class="file-list"></div>
                 </div>
             </div>
         </div>
@@ -1956,6 +2550,17 @@
                     document.getElementById('loadingContent').classList.remove('active');
                     document.getElementById('chatsTab').classList.add('active');
                     document.getElementById('tabBar').style.display = 'flex';
+                    
+                    // 延迟初始化文件管理功能，确保页面完全加载后再执行
+                    setTimeout(() => {
+                        try {
+                            setupFileEventListeners();
+                            loadFileList();
+                            loadFileStats();
+                        } catch (error) {
+                            console.error('文件管理初始化失败:', error);
+                        }
+                    }, 500); // 延迟500ms确保页面完全渲染
                 } else {
                     // token已过期，清除登录信息并跳转到登录页
                     clearLoginInfo();
@@ -2227,7 +2832,7 @@
                     return response.json();
                 })
                 .then(data => {
-                    document.getElementById('profileAvatarImg').src = data.avatarUrl;
+                    document.getElementById('profileAvatarImg').src = data.data.avatarUrl;
                     showProfileAlert('头像上传成功', 'success');
                     // 更新页面上的头像
                     updateUserInfoDisplay();
@@ -2238,6 +2843,78 @@
                 });
             };
             input.click();
+        }
+
+        function uploadProfileAvatar() {
+            const fileInput = document.getElementById('profileAvatarInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showProfileAlert('请选择头像文件', 'error');
+                return;
+            }
+            
+            // 验证文件类型
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+            if (!allowedTypes.includes(file.type)) {
+                showProfileAlert('请选择有效的图片格式（JPG、PNG、GIF、WebP）', 'error');
+                return;
+            }
+            
+            // 验证文件大小（5MB限制）
+            if (file.size > 5 * 1024 * 1024) {
+                showProfileAlert('图片大小不能超过5MB', 'error');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            const token = getAuthToken();
+            if (!token) {
+                showProfileAlert('请先登录', 'error');
+                return;
+            }
+            
+            // 显示上传进度
+            showProfileAlert('正在上传头像...', 'info');
+            
+            fetch('/api/user/profile/avatar', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                },
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(errorData => {
+                        throw new Error(errorData.message || '上传失败');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                // 更新头像显示
+                const avatarImg = document.getElementById('profileAvatarImg');
+                if (avatarImg && data.data && data.data.avatarUrl) {
+                    avatarImg.src = data.data.avatarUrl;
+                }
+                
+                showProfileAlert('头像上传成功', 'success');
+                
+                // 更新页面上其他位置的头像显示
+                updateUserInfoDisplay();
+                
+                // 清空文件输入框
+                fileInput.value = '';
+            })
+            .catch(error => {
+                console.error('Error uploading avatar:', error);
+                showProfileAlert('头像上传失败: ' + error.message, 'error');
+                // 清空文件输入框
+                fileInput.value = '';
+            });
         }
 
         function saveStatus() {
@@ -2379,8 +3056,44 @@
             }
         }
 
-        function openMediaLibrary() {
-            alert('媒体库功能正在开发中...');
+        function openFileManager() {
+            // 隐藏所有标签页内容
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // 显示文件管理页面
+            const fileManagerTab = document.getElementById('fileManagerTab');
+            if (fileManagerTab) {
+                fileManagerTab.classList.add('active');
+                fileManagerTab.style.display = 'block';
+            }
+            
+            // 隐藏底部标签栏
+            const tabBar = document.getElementById('tabBar');
+            if (tabBar) {
+                tabBar.style.display = 'none';
+            }
+            
+            // 更新页面标题
+            const pageTitle = document.getElementById('pageTitle');
+            if (pageTitle) {
+                pageTitle.textContent = '文件管理';
+            }
+            
+            // 隐藏右侧按钮
+            const rightBtn = document.getElementById('rightBtn');
+            if (rightBtn) {
+                rightBtn.style.display = 'none';
+            }
+            
+            // 检查是否已经初始化过文件管理功能
+            const fileList = document.getElementById('fileList');
+            if (!fileList || fileList.children.length === 0 || fileList.innerHTML.includes('暂无文件')) {
+                // 如果文件列表为空或显示"暂无文件"，则重新加载
+                initFileManager();
+            }
+            // 如果已经有文件列表，则不重新加载，保持现有状态
         }
 
         function openSettings() {
@@ -2430,6 +3143,13 @@
             if (accountSecurityTab) {
                 accountSecurityTab.classList.remove('active');
                 accountSecurityTab.style.display = 'none';
+            }
+            
+            // 隐藏文件管理页面
+            const fileManagerTab = document.getElementById('fileManagerTab');
+            if (fileManagerTab) {
+                fileManagerTab.classList.remove('active');
+                fileManagerTab.style.display = 'none';
             }
             
             // 显示我的页面
@@ -2664,6 +3384,724 @@
          }
 
         // 点击模态框外部关闭密码管理对话框已移除，只能通过取消按钮关闭
+
+        // 文件管理相关函数
+        let selectedFiles = [];
+        let currentPage = 0;
+        const pageSize = 20;
+        let uploadCancelled = false;
+        let currentUploadController = null;
+
+        function initFileManager() {
+            setupFileEventListeners();
+            
+            // 检查用户登录状态
+            const token = getAuthToken();
+            if (!token) {
+                showFileAlert('请先登录后再使用文件管理功能', 'error');
+                setTimeout(() => {
+                    window.location.href = '/login.html';
+                }, 2000);
+                return;
+            }
+            
+            // 初始化加载文件管理器数据
+            refreshFileManager();
+        }
+
+        function setupFileEventListeners() {
+            const uploadArea = document.querySelector('.upload-area');
+            const fileInput = document.getElementById('fileInput');
+            const uploadType = document.getElementById('uploadType');
+
+            if (fileInput) {
+                fileInput.addEventListener('change', handleFileSelect);
+            }
+
+            if (uploadArea) {
+                uploadArea.addEventListener('dragover', handleDragOver);
+                uploadArea.addEventListener('dragleave', handleDragLeave);
+                uploadArea.addEventListener('drop', handleDrop);
+            }
+
+            if (uploadType) {
+                uploadType.addEventListener('change', toggleImageOptions);
+            }
+        }
+
+        function switchFileTab(tabName) {
+            // 更新选项卡样式
+            document.querySelectorAll('.file-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.file-tab-content').forEach(content => content.classList.remove('active'));
+
+            // 激活选中的选项卡
+            event.target.classList.add('active');
+            document.getElementById(tabName + 'FileTab').classList.add('active');
+
+            // 如果切换到管理选项卡，刷新文件管理器数据
+            if (tabName === 'manage') {
+                refreshFileManager();
+            }
+        }
+
+        function toggleImageOptions() {
+            const uploadType = document.getElementById('uploadType').value;
+            const imageSizeOptions = document.getElementById('imageSizeOptions');
+            const imageHeightOptions = document.getElementById('imageHeightOptions');
+
+            if (uploadType === 'image') {
+                imageSizeOptions.style.display = 'block';
+                imageHeightOptions.style.display = 'block';
+            } else {
+                imageSizeOptions.style.display = 'none';
+                imageHeightOptions.style.display = 'none';
+            }
+        }
+
+        function handleFileSelect(event) {
+            const files = Array.from(event.target.files);
+            selectedFiles = files;
+            updateUploadButton();
+            
+            // 显示取消上传按钮（如果有文件选择）
+            const cancelBtn = document.getElementById('cancelUploadBtn');
+            if (files.length > 0) {
+                cancelBtn.style.display = 'inline-block';
+                showFileAlert('已选择 ' + files.length + ' 个文件，可以开始上传', 'success');
+            } else {
+                cancelBtn.style.display = 'none';
+            }
+        }
+
+        function handleDragOver(event) {
+            event.preventDefault();
+            event.currentTarget.classList.add('dragover');
+        }
+
+        function handleDragLeave(event) {
+            event.currentTarget.classList.remove('dragover');
+        }
+
+        function handleDrop(event) {
+            event.preventDefault();
+            event.currentTarget.classList.remove('dragover');
+            
+            const files = Array.from(event.dataTransfer.files);
+            selectedFiles = files;
+            updateUploadButton();
+            
+            // 显示取消上传按钮（如果有文件选择）
+            const cancelBtn = document.getElementById('cancelUploadBtn');
+            if (files.length > 0) {
+                cancelBtn.style.display = 'inline-block';
+                showFileAlert('已选择 ' + files.length + ' 个文件，可以开始上传', 'success');
+            } else {
+                cancelBtn.style.display = 'none';
+            }
+        }
+
+        function updateUploadButton() {
+            const uploadBtn = document.getElementById('uploadBtn');
+            if (uploadBtn) {
+                uploadBtn.disabled = selectedFiles.length === 0;
+                uploadBtn.textContent = selectedFiles.length > 0 ? 
+                    `上传 ${selectedFiles.length} 个文件` : '开始上传';
+            }
+        }
+
+        async function uploadFiles() {
+            if (selectedFiles.length === 0) {
+                showFileAlert('请先选择文件', 'error');
+                return;
+            }
+
+            const uploadType = document.getElementById('uploadType').value;
+            const maxWidth = document.getElementById('maxWidth').value;
+            const maxHeight = document.getElementById('maxHeight').value;
+
+            // 重置取消状态
+            uploadCancelled = false;
+            
+            // 显示进度条和取消按钮
+            const progressContainer = document.getElementById('uploadProgress');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            const uploadBtn = document.getElementById('uploadBtn');
+            const cancelBtn = document.getElementById('cancelUploadBtn');
+            
+            progressContainer.style.display = 'block';
+            uploadBtn.style.display = 'none';
+            cancelBtn.style.display = 'inline-block';
+
+            let successCount = 0;
+            let errorCount = 0;
+
+            for (let i = 0; i < selectedFiles.length; i++) {
+                // 检查是否已取消
+                if (uploadCancelled) {
+                    showFileAlert('上传已取消', 'warning');
+                    break;
+                }
+                
+                const file = selectedFiles[i];
+                const progress = ((i + 1) / selectedFiles.length) * 100;
+                
+                progressFill.style.width = progress + '%';
+                progressText.textContent = `正在上传: ${file.name} (${i + 1}/${selectedFiles.length})`;
+
+                try {
+                    const result = await uploadSingleFile(file, uploadType, maxWidth, maxHeight);
+                    if (result.success) {
+                        successCount++;
+                    } else {
+                        errorCount++;
+                        // 显示具体的错误信息，延长显示时间
+                        const errorMsg = result.message || '上传失败';
+                        showFileAlert(`文件 "${file.name}" 上传失败: ${errorMsg}`, 'error');
+                    }
+                } catch (error) {
+                    console.error('上传失败:', error);
+                    
+                    // 处理认证错误
+                    if (error.message.includes('登录') || error.message.includes('未登录')) {
+                        showFileAlert(error.message, 'error');
+                        clearLoginInfo();
+                        setTimeout(() => {
+                            window.location.href = '/login.html';
+                        }, 2000);
+                        return;
+                    }
+                    
+                    errorCount++;
+                    showFileAlert(`文件 "${file.name}" 上传失败: ${error.message}`, 'error');
+                }
+            }
+
+            // 隐藏进度条，显示上传按钮
+            progressContainer.style.display = 'none';
+            uploadBtn.style.display = 'inline-block';
+            cancelBtn.style.display = 'none';
+
+            // 显示最终结果
+            if (!uploadCancelled) {
+                if (errorCount === 0) {
+                    showFileAlert(`所有文件上传成功！共 ${successCount} 个文件`, 'success');
+                } else {
+                    showFileAlert(`上传完成：成功 ${successCount} 个，失败 ${errorCount} 个`, 'error');
+                }
+            }
+
+            // 重置
+            selectedFiles = [];
+            document.getElementById('fileInput').value = '';
+            updateUploadButton();
+            currentUploadController = null;
+            
+            // 刷新文件管理器数据
+            if (!uploadCancelled) {
+                await refreshFileManager();
+            }
+        }
+        
+        function cancelUpload() {
+            uploadCancelled = true;
+            if (currentUploadController) {
+                currentUploadController.abort();
+            }
+            
+            // 隐藏进度条，显示上传按钮
+            const progressContainer = document.getElementById('uploadProgress');
+            const uploadBtn = document.getElementById('uploadBtn');
+            const cancelBtn = document.getElementById('cancelUploadBtn');
+            
+            progressContainer.style.display = 'none';
+            uploadBtn.style.display = 'inline-block';
+            cancelBtn.style.display = 'none';
+            
+            // 重置文件选择
+            selectedFiles = [];
+            document.getElementById('fileInput').value = '';
+            updateUploadButton();
+            
+            showFileAlert('上传已取消', 'warning');
+        }
+
+        async function uploadSingleFile(file, uploadType, maxWidth, maxHeight) {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            let url = '/api/files/upload';
+            if (uploadType === 'image') {
+                url = '/api/files/upload/image';
+                formData.append('maxWidth', maxWidth);
+                formData.append('maxHeight', maxHeight);
+            }
+
+            const headers = getAuthHeaders();
+            
+            // 检查是否有有效的token
+            if (!headers.Authorization) {
+                throw new Error('用户未登录，请重新登录');
+            }
+            
+            delete headers['Content-Type']; // 让浏览器自动设置Content-Type
+
+            // 创建AbortController用于取消请求
+            currentUploadController = new AbortController();
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: headers,
+                body: formData,
+                signal: currentUploadController.signal
+            });
+
+            // 处理401未授权错误
+            if (response.status === 401) {
+                throw new Error('登录已过期，请重新登录');
+            }
+
+            // 检查响应状态
+            if (!response.ok) {
+                const errorResult = await response.json();
+                throw new Error(errorResult.message || '上传失败');
+            }
+
+            return await response.json();
+        }
+
+        async function loadFileList() {
+            const loading = document.getElementById('fileLoading');
+            const fileList = document.getElementById('fileList');
+            const fileTypeFilter = document.getElementById('fileTypeFilter').value;
+
+            loading.style.display = 'block';
+            fileList.innerHTML = '';
+
+            try {
+                let url = `/api/files/list?page=${currentPage}&size=${pageSize}`;
+                if (fileTypeFilter) {
+                    url += `&fileType=${fileTypeFilter}`;
+                }
+
+                const headers = getAuthHeaders();
+                
+                // 检查是否有有效的token
+                if (!headers.Authorization) {
+                    showFileAlert('用户未登录，请重新登录', 'error');
+                    setTimeout(() => {
+                        window.location.href = '/login.html';
+                    }, 2000);
+                    return;
+                }
+
+                const response = await fetch(url, {
+                    headers: headers
+                });
+
+                // 处理401未授权错误
+                if (response.status === 401) {
+                    showFileAlert('登录已过期，请重新登录', 'error');
+                    clearLoginInfo();
+                    setTimeout(() => {
+                        window.location.href = '/login.html';
+                    }, 2000);
+                    return;
+                }
+
+                const result = await response.json();
+                if (result.success) {
+                    displayFileList(result.data.files);
+                } else {
+                    showFileAlert('加载文件列表失败: ' + result.message, 'error');
+                }
+            } catch (error) {
+                console.error('加载文件列表失败:', error);
+                showFileAlert('加载文件列表失败: ' + error.message, 'error');
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        function displayFileList(files) {
+            const fileList = document.getElementById('fileList');
+            fileList.innerHTML = '';
+
+            if (!files || files.length === 0) {
+                fileList.innerHTML = '<div style="padding: 40px; text-align: center; color: #666;">暂无文件</div>';
+                return;
+            }
+
+            files.forEach(file => {
+                // 跳过空的文件对象（后端返回的空result）
+                if (!file || !file.fileId) {
+                    console.warn('跳过无效的文件对象:', file);
+                    return;
+                }
+                
+                const fileItem = createFileItem(file);
+                if (fileItem.innerHTML.trim()) { // 只添加有内容的文件项
+                    fileList.appendChild(fileItem);
+                }
+            });
+        }
+
+        function createFileItem(file) {
+            const item = document.createElement('div');
+            item.className = 'file-item';
+
+            const icon = getFileIcon(file.fileType);
+            const size = formatFileSize(file.fileSize);
+            const uploadTime = formatDate(new Date(file.createdAt));
+            
+            // 确保fileId不为null或undefined
+            const fileId = file.fileId || file.id;
+            if (!fileId) {
+                console.error('文件ID为空:', file);
+                return item; // 返回空的item，不显示删除按钮
+            }
+
+            item.innerHTML = `
+                <div class="file-icon ${file.fileType.toLowerCase()}">${icon}</div>
+                <div class="file-info">
+                    <div class="file-name">${escapeHtml(file.originalFilename)}</div>
+                    <div class="file-details">${size} • ${uploadTime}</div>
+                </div>
+                <div class="file-actions">
+                    <button class="btn-small btn-view" onclick="viewFile('${file.fileUrl}')">查看</button>
+                    <button class="btn-small btn-copy" onclick="copyFileUrl('${file.fileUrl}')">复制链接</button>
+                    <button class="btn-small btn-delete" onclick="deleteFile('${fileId}')">删除</button>
+                </div>
+            `;
+
+            return item;
+        }
+
+        function getFileIcon(fileType) {
+            switch (fileType) {
+                case 'IMAGE': return '🖼️';
+                case 'VIDEO': return '🎥';
+                case 'AUDIO': return '🎵';
+                case 'DOCUMENT': return '📄';
+                default: return '📁';
+            }
+        }
+
+        function viewFile(fileUrl) {
+            window.open(fileUrl, '_blank');
+        }
+
+        function copyFileUrl(fileUrl) {
+            const fullUrl = window.location.origin + fileUrl;
+            copyToClipboard(fullUrl);
+            showFileAlert('文件链接已复制到剪贴板', 'success');
+        }
+
+        // 当前要删除的文件ID
+        let currentDeleteFileId = null;
+
+        // 删除文件 - 显示确认对话框
+        function deleteFile(fileId) {
+            if (!fileId) {
+                showFileAlert('文件ID无效', 'error');
+                return;
+            }
+
+            currentDeleteFileId = fileId;
+            showDeleteModal();
+        }
+
+        // 显示删除确认模态框
+        function showDeleteModal() {
+            const modal = document.getElementById('deleteModal');
+            if (modal) {
+                modal.classList.add('show');
+            } else {
+                console.error('找不到删除模态框元素');
+            }
+        }
+
+        // 隐藏删除确认模态框
+        function hideDeleteModal() {
+            const modal = document.getElementById('deleteModal');
+            if (modal) {
+                modal.classList.remove('show');
+            }
+            currentDeleteFileId = null;
+        }
+
+        // 确认删除
+        function confirmDelete() {
+            if (!currentDeleteFileId) {
+                showFileAlert('文件ID无效', 'error');
+                hideDeleteModal();
+                return;
+            }
+
+            performDelete(currentDeleteFileId);
+            hideDeleteModal();
+        }
+
+        // 执行删除操作
+        async function performDelete(fileId) {
+            try {
+                const headers = getAuthHeaders();
+                
+                // 检查是否有有效的token
+                if (!headers.Authorization) {
+                    showFileAlert('用户未登录，请重新登录', 'error');
+                    setTimeout(() => {
+                        window.location.href = '/login.html';
+                    }, 2000);
+                    return;
+                }
+                
+                const response = await fetch(`/api/files/${fileId}`, {
+                    method: 'DELETE',
+                    headers: headers
+                });
+
+                // 处理401未授权错误
+                if (response.status === 401) {
+                    showFileAlert('登录已过期，请重新登录', 'error');
+                    clearLoginInfo();
+                    setTimeout(() => {
+                        window.location.href = '/login.html';
+                    }, 2000);
+                    return;
+                }
+
+                const result = await response.json();
+                if (result.success) {
+                    showFileAlert('文件删除成功', 'success');
+                    // 刷新文件列表和统计信息
+                    await refreshFileManager();
+                } else {
+                    showFileAlert('删除失败: ' + result.message, 'error');
+                }
+            } catch (error) {
+                console.error('删除文件失败:', error);
+                showFileAlert('删除失败: ' + error.message, 'error');
+            }
+        }
+
+        async function loadFileStats() {
+            try {
+                const headers = getAuthHeaders();
+                
+                // 检查是否有有效的token
+                if (!headers.Authorization) {
+                    return;
+                }
+                
+                const response = await fetch('/api/files/stats', {
+                    headers: headers
+                });
+
+                // 处理401未授权错误
+                if (response.status === 401) {
+                    showFileAlert('登录已过期，请重新登录', 'error');
+                    clearLoginInfo();
+                    setTimeout(() => {
+                        window.location.href = '/login.html';
+                    }, 2000);
+                    return;
+                }
+
+                const result = await response.json();
+                if (result.success) {
+                    updateFileStats(result.data);
+                }
+            } catch (error) {
+                console.error('加载统计信息失败:', error);
+            }
+        }
+
+        function updateFileStats(stats) {
+            console.log('收到的统计数据:', stats);
+            
+            document.getElementById('totalFiles').textContent = stats.totalFiles || 0;
+            document.getElementById('totalSize').textContent = formatFileSize(stats.totalSize || 0);
+            
+            // 从typeStats中获取各类型文件数量
+            const typeStats = stats.typeStats || {};
+            console.log('typeStats数据:', typeStats);
+            
+            document.getElementById('imageCount').textContent = typeStats.image || 0;
+            document.getElementById('documentCount').textContent = typeStats.document || 0;
+            document.getElementById('videoCount').textContent = typeStats.video || 0;
+            document.getElementById('audioCount').textContent = typeStats.audio || 0;
+            
+            console.log('设置后的显示值:', {
+                image: typeStats.image || 0,
+                document: typeStats.document || 0,
+                video: typeStats.video || 0,
+                audio: typeStats.audio || 0
+            });
+        }
+
+        // 用于管理提示消息的状态
+        let successAlertTimeout = null;
+        let errorAlertTimeout = null;
+
+        function showFileAlert(message, type, duration) {
+            // 根据消息类型设置默认显示时间
+            if (duration === undefined) {
+                if (type === 'success') {
+                    duration = 1500; // 成功提示1.5秒
+                } else {
+                    duration = 2000; // 错误提示2秒
+                }
+            }
+            
+            if (type === 'success') {
+                showSuccessAlert(message, duration);
+            } else {
+                showErrorAlert(message, duration);
+            }
+        }
+
+        function showSuccessAlert(message, duration) {
+            const alertDiv = document.getElementById('fileSuccessAlert');
+            if (!alertDiv) return;
+            
+            // 清除之前的定时器
+            if (successAlertTimeout) {
+                clearTimeout(successAlertTimeout);
+            }
+            
+            alertDiv.textContent = message;
+            alertDiv.style.display = 'block';
+            
+            successAlertTimeout = setTimeout(() => {
+                alertDiv.style.display = 'none';
+                successAlertTimeout = null;
+            }, duration);
+        }
+
+        function showErrorAlert(message, duration) {
+            const alertDiv = document.getElementById('fileErrorAlert');
+            if (!alertDiv) return;
+            
+            // 清除之前的定时器
+            if (errorAlertTimeout) {
+                clearTimeout(errorAlertTimeout);
+            }
+            
+            alertDiv.textContent = message;
+            alertDiv.style.display = 'block';
+            
+            errorAlertTimeout = setTimeout(() => {
+                alertDiv.style.display = 'none';
+                errorAlertTimeout = null;
+            }, duration);
+        }
+
+        // 辅助函数
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function formatDate(date) {
+            const now = new Date();
+            const diff = now - date;
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            
+            if (days === 0) {
+                return '今天 ' + date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+            } else if (days === 1) {
+                return '昨天 ' + date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+            } else if (days < 7) {
+                return days + '天前';
+            } else {
+                return date.toLocaleDateString('zh-CN');
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 刷新文件管理器数据
+        async function refreshFileManager() {
+            try {
+                // 显示加载状态
+                const refreshBtn = document.querySelector('.refresh-btn');
+                if (refreshBtn) {
+                    refreshBtn.style.animation = 'spin 1s linear infinite';
+                    refreshBtn.disabled = true;
+                }
+                
+                // 同时刷新文件列表和统计信息
+                await Promise.all([
+                    loadFileList(),
+                    loadFileStats()
+                ]);
+                
+                showFileAlert('数据刷新成功', 'success');
+                
+            } catch (error) {
+                console.error('刷新数据失败:', error);
+                showFileAlert('刷新失败: ' + error.message, 'error');
+            } finally {
+                // 恢复按钮状态
+                const refreshBtn = document.querySelector('.refresh-btn');
+                if (refreshBtn) {
+                    refreshBtn.style.animation = '';
+                    refreshBtn.disabled = false;
+                }
+            }
+        }
+
+        function copyToClipboard(text) {
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(text);
+            } else {
+                // 兼容旧浏览器
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+            }
+        }
+
+        // 点击模态框背景关闭
+        document.addEventListener('click', function(event) {
+            const modal = document.getElementById('deleteModal');
+            if (event.target === modal) {
+                hideDeleteModal();
+            }
+        });
+
+        // ESC键关闭模态框
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                hideDeleteModal();
+            }
+        });
     </script>
+    
+    <!-- 删除确认对话框 -->
+    <div id="deleteModal" class="delete-modal">
+        <div class="delete-modal-content">
+            <div class="delete-modal-icon">🗑️</div>
+            <div class="delete-modal-title">确认删除</div>
+            <div class="delete-modal-message">确定要删除这个文件吗？删除后无法恢复。</div>
+            <div class="delete-modal-buttons">
+                <button class="delete-modal-btn cancel" onclick="hideDeleteModal()">取消</button>
+                <button class="delete-modal-btn confirm" onclick="confirmDelete()">删除</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="js/common.js"></script>
 </body>
 </html>

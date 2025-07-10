@@ -221,6 +221,45 @@ function setUrlParameter(name, value) {
     window.history.pushState({}, '', url);
 }
 
+/**
+ * 检查用户认证状态
+ * 如果未登录，重定向到登录页面
+ */
+function checkAuth() {
+    const token = localStorage.getItem('token') || localStorage.getItem('accessToken') || 
+                  sessionStorage.getItem('token') || sessionStorage.getItem('accessToken');
+    
+    if (!token) {
+        console.warn('用户未登录，重定向到登录页面');
+        window.location.href = '/login.html';
+        return false;
+    }
+    
+    return true;
+}
+
+/**
+ * 获取认证令牌
+ * @returns {string|null} 认证令牌
+ */
+function getAuthToken() {
+    return localStorage.getItem('token') || localStorage.getItem('accessToken') || 
+           sessionStorage.getItem('token') || sessionStorage.getItem('accessToken');
+}
+
+/**
+ * 获取认证请求头
+ * @returns {Object} 包含Authorization头的对象
+ */
+function getAuthHeaders() {
+    const token = getAuthToken();
+    const headers = {};
+    if (token) {
+        headers['Authorization'] = 'Bearer ' + token;
+    }
+    return headers;
+}
+
 // 页面加载完成后的通用初始化
 document.addEventListener('DOMContentLoaded', function() {
     // 添加全局错误处理

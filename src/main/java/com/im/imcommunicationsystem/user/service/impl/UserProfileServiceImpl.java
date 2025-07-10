@@ -12,6 +12,7 @@ import com.im.imcommunicationsystem.user.exception.UserIdConflictException;
 import com.im.imcommunicationsystem.user.exception.UserNotFoundException;
 import com.im.imcommunicationsystem.auth.repository.UserRepository;
 import com.im.imcommunicationsystem.user.service.FileUploadService;
+import com.im.imcommunicationsystem.user.service.PublicFileUploadService;
 import com.im.imcommunicationsystem.user.service.UserProfileService;
 import com.im.imcommunicationsystem.user.util.UserValidationUtils;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +37,7 @@ public class UserProfileServiceImpl implements UserProfileService {
 
     private final UserRepository userRepository;
     private final FileUploadService fileUploadService;
+    private final PublicFileUploadService publicFileUploadService;
     private final ObjectMapper objectMapper;
 
     @Override
@@ -125,20 +127,27 @@ public class UserProfileServiceImpl implements UserProfileService {
     @Override
     @Transactional
     public String updateAvatar(Long userId, MultipartFile file) {
-        log.info("更新用户头像，用户ID: {}", userId);
+        log.info("开始更新用户头像: userId={}, fileName={}", userId, file.getOriginalFilename());
         
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("用户不存在，ID: " + userId));
-        
-        // 上传头像文件（设置头像最大尺寸为800x800）
-        String avatarUrl = fileUploadService.uploadImage(file, "avatar", 800, 800);
-        
-        // 更新用户头像URL
-        user.setAvatarUrl(avatarUrl);
-        userRepository.save(user);
-        
-        log.info("用户头像更新成功，用户ID: {}, 头像URL: {}", userId, avatarUrl);
-        return avatarUrl;
+        try {
+            // 验证用户是否存在
+            User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("用户不存在"));
+            
+            // 使用公开文件上传服务上传头像（头像属于公开文件）
+            String avatarUrl = publicFileUploadService.uploadAvatar(file, userId);
+            
+            // 更新用户头像URL
+            user.setAvatarUrl(avatarUrl);
+            userRepository.save(user);
+            
+            log.info("用户头像更新成功: userId={}, avatarUrl={}", userId, avatarUrl);
+            return avatarUrl;
+            
+        } catch (Exception e) {
+            log.error("更新用户头像失败: userId={}", userId, e);
+            throw new RuntimeException("更新头像失败: " + e.getMessage(), e);
+        }
     }
 
     @Override

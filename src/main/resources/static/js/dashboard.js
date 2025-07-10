@@ -90,7 +90,7 @@ function publishMoment() {
  * 编辑个人资料
  */
 function editProfile() {
-    window.location.href = 'profile.html';
+    window.location.href = 'index.html#profile';
 }
 
 /**

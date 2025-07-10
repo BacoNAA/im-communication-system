@@ -1,0 +1,153 @@
+# MinIO存储桶配置
+# 支持公开和私有文件的分离存储
+
+app:
+  minio:
+    # 公开存储桶配置（任何人都可以访问）
+    public:
+      default-bucket: im-public
+      image-bucket: im-public-images
+      video-bucket: im-public-videos
+      document-bucket: im-public-documents
+      audio-bucket: im-public-audios
+      other-bucket: im-public-others
+      
+    # 私有存储桶配置（仅文件所有者可以访问）
+    private:
+      default-bucket: im-private
+      image-bucket: im-private-images
+      video-bucket: im-private-videos
+      document-bucket: im-private-documents
+      audio-bucket: im-private-audios
+      other-bucket: im-private-others
+      
+    # 存储桶策略配置
+    bucket-policies:
+      # 公开存储桶策略（允许匿名读取）
+      public-read-policy: |
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {"AWS": "*"},
+              "Action": ["s3:GetObject"],
+              "Resource": ["arn:aws:s3:::${bucket-name}/*"]
+            }
+          ]
+        }
+        
+      # 私有存储桶策略（仅认证用户可访问）
+      private-policy: |
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Deny",
+              "Principal": {"AWS": "*"},
+              "Action": ["s3:*"],
+              "Resource": [
+                "arn:aws:s3:::${bucket-name}",
+                "arn:aws:s3:::${bucket-name}/*"
+              ],
+              "Condition": {
+                "StringNotEquals": {
+                  "aws:PrincipalType": "User"
+                }
+              }
+            }
+          ]
+        }
+        
+    # 文件类型与存储桶映射
+    file-type-mapping:
+      image:
+        public: im-public-images
+        private: im-private-images
+      video:
+        public: im-public-videos
+        private: im-private-videos
+      audio:
+        public: im-public-audios
+        private: im-private-audios
+      document:
+        public: im-public-documents
+        private: im-private-documents
+      other:
+        public: im-public-others
+        private: im-private-others
+        
+    # 存储桶生命周期配置
+    lifecycle:
+      # 公开文件生命周期（较长保存期）
+      public-files:
+        delete-after-days: 365  # 1年后删除
+        transition-to-ia-days: 30  # 30天后转为低频访问
+        
+      # 私有文件生命周期
+      private-files:
+        delete-after-days: 180  # 6个月后删除
+        transition-to-ia-days: 7   # 7天后转为低频访问
+        
+    # 存储桶配额限制
+    quotas:
+      # 每个用户的存储配额
+      per-user:
+        public-files-max-size: 1GB    # 公开文件最大1GB
+        private-files-max-size: 5GB   # 私有文件最大5GB
+        max-files-count: 10000        # 最大文件数量
+        
+      # 单个文件大小限制
+      file-size:
+        image-max-size: 10MB
+        video-max-size: 100MB
+        audio-max-size: 50MB
+        document-max-size: 20MB
+        other-max-size: 50MB
+        
+    # 访问控制配置
+    access-control:
+      # 公开文件访问配置
+      public-files:
+        allow-anonymous-read: true
+        allow-anonymous-download: true
+        enable-cdn: true
+        cache-control: "public, max-age=31536000"  # 1年缓存
+        
+      # 私有文件访问配置
+      private-files:
+        require-authentication: true
+        signed-url-expire-minutes: 60  # 签名URL 1小时过期
+        enable-access-log: true
+        cache-control: "private, no-cache"
+        
+    # 文件处理配置
+    processing:
+      # 图片处理
+      image:
+        auto-compress: true
+        quality: 85
+        max-width: 2048
+        max-height: 2048
+        generate-thumbnails: true
+        thumbnail-sizes: ["150x150", "300x300", "600x600"]
+        
+      # 视频处理
+      video:
+        generate-thumbnails: true
+        thumbnail-at-seconds: 5
+        max-duration-seconds: 3600  # 最大1小时
+        
+    # 监控和日志配置
+    monitoring:
+      enable-metrics: true
+      enable-access-log: true
+      log-level: INFO
+      metrics-interval-seconds: 60
+      
+    # 备份配置
+    backup:
+      enable-auto-backup: true
+      backup-interval-hours: 24
+      backup-retention-days: 30
+      backup-bucket-prefix: "backup-"

@@ -77,6 +77,7 @@ public class SecurityConfig {
                                 "/api/verification/**",   // 验证码相关接口
                                 "/api/account-lock/**",   // 账号锁定管理接口
                                 "/api/public/**",        // 公开接口
+                                "/api/placeholder/**",   // 占位符图片接口
                                 "/api/test/**",          // 测试接口
                                 "/ws/**",                // WebSocket端点
                                 "/ws-native/**",         // 原生WebSocket端点

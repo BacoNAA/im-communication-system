@@ -186,5 +186,40 @@ app:
       size: 800
       default-avatar: /images/default-avatar.png
       directory: avatars
+  
+  # MinIO对象存储配置
+  minio:
+    endpoint: http://localhost:9000
+    access-key: minioadmin
+    secret-key: minioadmin
+    default-bucket: im-files
+    # 新的存储桶配置 - 按访问级别分类
+    public-bucket: im-public-files
+    private-bucket: im-private-files
+
+  
+  # 文件清理配置
+  file:
+    cleanup:
+      enabled: true  # 是否启用定时清理
+      daily-cleanup-days: 30  # 每日清理：删除30天前的软删除文件
+      weekly-cleanup-days: 90  # 每周清理：删除90天前的软删除文件
+    # 临时文件清理配置
+    temporary-cleanup:
+      enabled: true  # 是否启用临时文件清理
+      default-expiration-days: 7  # 默认临时文件过期天数
+      minio-lifecycle-enabled: true  # 是否启用MinIO生命周期规则
+  
+  # 数据一致性监控配置
+  data-consistency:
+    monitor:
+      enabled: true
+      auto-repair: true
+      check-interval-hours: 1
+    url-expire-seconds: 3600  # 1小时
+    enable-https: false
+    connect-timeout: 10000
+    write-timeout: 60000
+    read-timeout: 10000
 
 

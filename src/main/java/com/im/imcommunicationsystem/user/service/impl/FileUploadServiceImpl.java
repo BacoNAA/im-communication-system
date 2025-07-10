@@ -1,6 +1,7 @@
 package com.im.imcommunicationsystem.user.service.impl;
 
 import com.im.imcommunicationsystem.user.config.FileUploadConfig;
+import com.im.imcommunicationsystem.user.entity.FileUpload;
 import com.im.imcommunicationsystem.user.exception.FileUploadException;
 import com.im.imcommunicationsystem.user.service.FileUploadService;
 import lombok.RequiredArgsConstructor;
@@ -11,7 +12,6 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -19,8 +19,11 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.UUID;
+import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.ArrayList;
 
 /**
  * 文件上传服务实现类
@@ -195,6 +198,22 @@ public class FileUploadServiceImpl implements FileUploadService {
         }
         
         return filename.substring(lastDotIndex + 1);
+    }
+
+    @Override
+    public List<FileUpload> getUserFiles(Long userId, FileUpload.FileType fileType, int page, int size) {
+        // 本地文件存储实现暂不支持数据库查询，返回空列表
+        return new ArrayList<>();
+    }
+
+    @Override
+    public Map<String, Object> getUserFileStats(Long userId) {
+        // 本地文件存储实现暂不支持统计功能，返回默认值
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("totalFiles", 0);
+        stats.put("totalSize", 0L);
+        stats.put("typeStats", new HashMap<String, Object>());
+        return stats;
     }
 
     /**
