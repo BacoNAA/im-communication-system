@@ -1,9 +1,12 @@
 package com.im.imcommunicationsystem.auth.repository;
 
 import com.im.imcommunicationsystem.auth.entity.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -49,4 +52,25 @@ public interface UserRepository extends JpaRepository<User, Long> {
     default boolean existsByUserIdString(String userIdString) {
         return existsByUserIdStr(userIdString);
     }
+
+    /**
+     * 查找所有有状态的用户
+     * @return 有状态的用户列表
+     */
+    List<User> findByStatusJsonIsNotNull();
+
+    /**
+     * 根据昵称模糊搜索用户（忽略大小写）
+     * @param nickname 昵称关键词
+     * @param pageable 分页参数
+     * @return 用户列表
+     */
+    Page<User> findByNicknameContainingIgnoreCase(String nickname, Pageable pageable);
+
+    /**
+     * 根据昵称模糊搜索用户（忽略大小写，不分页）
+     * @param nickname 昵称关键词
+     * @return 用户列表
+     */
+    List<User> findByNicknameContainingIgnoreCase(String nickname);
 }

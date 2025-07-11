@@ -577,12 +577,12 @@
         // 获取设备信息
         function getDeviceInfo() {
             const userAgent = navigator.userAgent;
-            let deviceType = 'web';
+            let deviceType = 'Web';
             
             if (/Mobile|Android|iPhone|iPad/.test(userAgent)) {
-                deviceType = 'mobile';
+                deviceType = 'Mobile';
             } else if (/Tablet|iPad/.test(userAgent)) {
-                deviceType = 'tablet';
+                deviceType = 'Tablet';
             }
             
             return {

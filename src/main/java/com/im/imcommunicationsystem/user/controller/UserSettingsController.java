@@ -28,8 +28,11 @@ public class UserSettingsController {
      */
     @GetMapping("/settings")
     public ResponseEntity<ApiResponse<UserSettingsResponse>> getUserSettings() {
-        // TODO: 实现获取用户设置逻辑
-        return ResponseEntity.ok(ApiResponse.success(null));
+        // 从JWT token中获取用户ID
+        Long userId = 1L; // 暂时使用固定用户ID
+        
+        UserSettingsResponse response = userSettingsService.getUserSettings(userId);
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     /**
@@ -40,7 +43,10 @@ public class UserSettingsController {
      */
     @PutMapping("/settings")
     public ResponseEntity<ApiResponse<Void>> updateUserSettings(@Valid @RequestBody UpdateSettingsRequest request) {
-        // TODO: 实现更新用户设置逻辑
+        // 从JWT token中获取用户ID
+        Long userId = 1L; // 暂时使用固定用户ID
+        
+        userSettingsService.updateUserSettings(userId, request);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
@@ -51,7 +57,10 @@ public class UserSettingsController {
      */
     @PostMapping("/settings/reset")
     public ResponseEntity<ApiResponse<Void>> resetToDefault() {
-        // TODO: 实现重置为默认设置逻辑
+        // 从JWT token中获取用户ID
+        Long userId = 1L; // 暂时使用固定用户ID
+        
+        userSettingsService.resetToDefaultSettings(userId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

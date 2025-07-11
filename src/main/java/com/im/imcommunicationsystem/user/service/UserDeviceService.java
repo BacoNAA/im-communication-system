@@ -21,7 +21,7 @@ public interface UserDeviceService {
     DeviceListResponse getUserDevices(Long userId);
 
     /**
-     * 移除用户设备
+     * 强制下线用户设备
      * 
      * @param userId 用户ID
      * @param deviceId 设备ID
@@ -52,4 +52,13 @@ public interface UserDeviceService {
      * @return 活跃设备列表
      */
     List<LoginDevice> getActiveDevices(Long userId);
+
+    /**
+     * 强制下线所有其他设备
+     * 
+     * @param userId 用户ID
+     * @param currentDeviceInfo 当前设备信息
+     * @return 下线设备数量
+     */
+    int logoutAllOtherDevices(Long userId, String currentDeviceInfo);
 }

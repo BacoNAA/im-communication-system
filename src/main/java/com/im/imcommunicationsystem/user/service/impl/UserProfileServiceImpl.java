@@ -69,10 +69,18 @@ public class UserProfileServiceImpl implements UserProfileService {
         
         // 验证个性签名
         if (request.getSignature() != null) {
-            if (!UserValidationUtils.validateSignature(request.getSignature())) {
-                throw new BusinessException("个性签名格式不正确");
+            if (request.getSignature().trim().isEmpty()) {
+                // 允许设置为空
+                user.setSignature(null);
+            } else {
+                if (!UserValidationUtils.validateSignature(request.getSignature())) {
+                    throw new BusinessException("个性签名格式不正确");
+                }
+                user.setSignature(request.getSignature().trim());
             }
-            user.setSignature(request.getSignature().trim());
+        } else {
+            // 前端发送null时，也设置为null
+            user.setSignature(null);
         }
         
         // 更新头像URL（如果提供）
@@ -81,11 +89,19 @@ public class UserProfileServiceImpl implements UserProfileService {
         }
         
         // 更新手机号码
-        if (request.getPhoneNumber() != null && !request.getPhoneNumber().trim().isEmpty()) {
-            if (!UserValidationUtils.validatePhoneNumber(request.getPhoneNumber())) {
-                throw new BusinessException("手机号格式不正确");
+        if (request.getPhoneNumber() != null) {
+            if (request.getPhoneNumber().trim().isEmpty()) {
+                // 允许设置为空
+                user.setPhoneNumber(null);
+            } else {
+                if (!UserValidationUtils.validatePhoneNumber(request.getPhoneNumber())) {
+                    throw new BusinessException("手机号格式不正确");
+                }
+                user.setPhoneNumber(request.getPhoneNumber().trim());
             }
-            user.setPhoneNumber(request.getPhoneNumber().trim());
+        } else {
+            // 前端发送null时，也设置为null
+            user.setPhoneNumber(null);
         }
         
         // 更新性别
@@ -105,19 +121,35 @@ public class UserProfileServiceImpl implements UserProfileService {
         }
         
         // 更新所在地
-        if (request.getLocation() != null && !request.getLocation().trim().isEmpty()) {
-            if (!UserValidationUtils.validateLocation(request.getLocation())) {
-                throw new BusinessException("所在地格式不正确");
+        if (request.getLocation() != null) {
+            if (request.getLocation().trim().isEmpty()) {
+                // 允许设置为空
+                user.setLocation(null);
+            } else {
+                if (!UserValidationUtils.validateLocation(request.getLocation())) {
+                    throw new BusinessException("所在地格式不正确");
+                }
+                user.setLocation(request.getLocation().trim());
             }
-            user.setLocation(request.getLocation().trim());
+        } else {
+            // 前端发送null时，也设置为null
+            user.setLocation(null);
         }
         
         // 更新职业
-        if (request.getOccupation() != null && !request.getOccupation().trim().isEmpty()) {
-            if (!UserValidationUtils.validateOccupation(request.getOccupation())) {
-                throw new BusinessException("职业格式不正确");
+        if (request.getOccupation() != null) {
+            if (request.getOccupation().trim().isEmpty()) {
+                // 允许设置为空
+                user.setOccupation(null);
+            } else {
+                if (!UserValidationUtils.validateOccupation(request.getOccupation())) {
+                    throw new BusinessException("职业格式不正确");
+                }
+                user.setOccupation(request.getOccupation().trim());
             }
-            user.setOccupation(request.getOccupation().trim());
+        } else {
+            // 前端发送null时，也设置为null
+            user.setOccupation(null);
         }
         
         userRepository.save(user);
@@ -216,7 +248,9 @@ public class UserProfileServiceImpl implements UserProfileService {
             statusMap.put("emoji", request.getEmoji().trim());
         }
         if (request.getExpiresAt() != null) {
+            // 保存为ISO格式字符串，确保与前端格式一致
             statusMap.put("expiresAt", request.getExpiresAt().toString());
+            log.info("设置状态过期时间: {}", request.getExpiresAt().toString());
         }
         statusMap.put("updatedAt", LocalDateTime.now().toString());
         
@@ -265,15 +299,29 @@ public class UserProfileServiceImpl implements UserProfileService {
         response.setUpdatedAt(user.getUpdatedAt());
         
         // 解析状态JSON
+        log.info("=== 调试信息 - 用户ID: {} ===", user.getId());
+        log.info("=== 数据库中的statusJson: {} ===", user.getStatusJson());
+        
         if (user.getStatusJson() != null && !user.getStatusJson().trim().isEmpty()) {
             try {
                 @SuppressWarnings("unchecked")
                 Map<String, Object> statusMap = objectMapper.readValue(user.getStatusJson(), Map.class);
+                log.info("=== 解析后的statusMap: {} ===", statusMap);
+                log.info("=== statusMap的键: {} ===", statusMap.keySet());
+                if (statusMap.containsKey("text")) {
+                    log.info("=== 状态文本: {} ===", statusMap.get("text"));
+                }
+                if (statusMap.containsKey("emoji")) {
+                    log.info("=== 状态表情: {} ===", statusMap.get("emoji"));
+                }
                 response.setStatus(statusMap);
             } catch (JsonProcessingException e) {
                 log.warn("解析用户状态JSON失败，用户ID: {}", user.getId(), e);
                 response.setStatus(null);
             }
+        } else {
+            log.info("=== 用户没有状态数据 ===");
+            response.setStatus(null);
         }
         
         return response;

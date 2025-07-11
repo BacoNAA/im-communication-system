@@ -11,6 +11,7 @@ public class QRCodeResponse {
     private String qrCodeImageUrl;
     private String qrCodeBase64;
     private Long userId;
+    private String userIdString;
     private String userNickname;
     private String userAvatarUrl;
     private LocalDateTime generatedAt;
@@ -20,12 +21,13 @@ public class QRCodeResponse {
     public QRCodeResponse() {}
 
     public QRCodeResponse(String qrCodeData, String qrCodeImageUrl, String qrCodeBase64, 
-                         Long userId, String userNickname, String userAvatarUrl, 
+                         Long userId, String userIdString, String userNickname, String userAvatarUrl, 
                          LocalDateTime generatedAt, LocalDateTime expiresAt) {
         this.qrCodeData = qrCodeData;
         this.qrCodeImageUrl = qrCodeImageUrl;
         this.qrCodeBase64 = qrCodeBase64;
         this.userId = userId;
+        this.userIdString = userIdString;
         this.userNickname = userNickname;
         this.userAvatarUrl = userAvatarUrl;
         this.generatedAt = generatedAt;
@@ -63,6 +65,14 @@ public class QRCodeResponse {
 
     public void setUserId(Long userId) {
         this.userId = userId;
+    }
+
+    public String getUserIdString() {
+        return userIdString;
+    }
+
+    public void setUserIdString(String userIdString) {
+        this.userIdString = userIdString;
     }
 
     public String getUserNickname() {
@@ -104,6 +114,7 @@ public class QRCodeResponse {
                 ", qrCodeImageUrl='" + qrCodeImageUrl + '\'' +
                 ", qrCodeBase64='" + qrCodeBase64 + '\'' +
                 ", userId=" + userId +
+                ", userIdString='" + userIdString + '\'' +
                 ", userNickname='" + userNickname + '\'' +
                 ", userAvatarUrl='" + userAvatarUrl + '\'' +
                 ", generatedAt=" + generatedAt +

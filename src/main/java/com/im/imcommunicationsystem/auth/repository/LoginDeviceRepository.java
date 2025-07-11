@@ -50,4 +50,19 @@ public interface LoginDeviceRepository extends JpaRepository<LoginDevice, Long> 
      * @return 设备列表
      */
     List<LoginDevice> findByUserId(Long userId);
+
+    /**
+     * 根据用户ID和设备信息查找设备
+     * @param userId 用户ID
+     * @param deviceInfo 设备信息
+     * @return 设备信息
+     */
+    Optional<LoginDevice> findByUserIdAndDeviceInfo(Long userId, String deviceInfo);
+
+    /**
+     * 删除指定用户的特定设备（根据设备信息）
+     * @param userId 用户ID
+     * @param deviceInfo 设备信息
+     */
+    void deleteByUserIdAndDeviceInfo(Long userId, String deviceInfo);
 }

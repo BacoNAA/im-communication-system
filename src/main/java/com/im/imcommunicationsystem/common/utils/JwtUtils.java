@@ -82,6 +82,20 @@ public class JwtUtils {
         
         return createToken(claims, username, getAccessTokenExpiration());
     }
+    
+    /**
+     * 生成包含设备类型的访问令牌
+     */
+    public String generateAccessToken(Long userId, String username, String roles, String deviceType) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("userId", userId);
+        claims.put("username", username);
+        claims.put("roles", roles);
+        claims.put("type", "access");
+        claims.put("deviceType", deviceType);
+        
+        return createToken(claims, username, getAccessTokenExpiration());
+    }
 
     /**
      * 生成刷新令牌
@@ -162,6 +176,14 @@ public class JwtUtils {
     public String getTokenTypeFromToken(String token) {
         Claims claims = getAllClaimsFromToken(token);
         return claims.get("type", String.class);
+    }
+    
+    /**
+     * 从JWT令牌中获取设备类型
+     */
+    public String getDeviceTypeFromToken(String token) {
+        Claims claims = getAllClaimsFromToken(token);
+        return claims.get("deviceType", String.class);
     }
 
     /**

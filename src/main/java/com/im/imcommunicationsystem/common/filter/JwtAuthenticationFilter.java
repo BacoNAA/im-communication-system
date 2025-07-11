@@ -1,5 +1,6 @@
 package com.im.imcommunicationsystem.common.filter;
 
+import com.im.imcommunicationsystem.auth.service.DeviceService;
 import com.im.imcommunicationsystem.common.utils.JwtUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -10,8 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -33,6 +34,7 @@ import java.util.stream.Collectors;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtils jwtUtils;
+    private final DeviceService deviceService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, 
@@ -51,8 +53,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     String username = jwtUtils.getUsernameFromToken(token);
                     Long userId = jwtUtils.getUserIdFromToken(token);
                     String roles = jwtUtils.getRolesFromToken(token);
+                    String deviceType = jwtUtils.getDeviceTypeFromToken(token);
                     
                     if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                        // 检查设备会话是否有效
+                        if (deviceType != null && !deviceService.isDeviceSessionValid(userId, deviceType)) {
+                            log.warn("设备会话已失效，拒绝访问: userId={}, deviceType={}", userId, deviceType);
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.getWriter().write("{\"error\":\"DEVICE_SESSION_INVALID\",\"message\":\"设备会话已失效，请重新登录\"}");
+                            return;
+                        }
+                        
                         // 解析角色
                         List<SimpleGrantedAuthority> authorities = parseRoles(roles);
                         
@@ -61,12 +73,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                             new UsernamePasswordAuthenticationToken(username, null, authorities);
                         
                         // 设置详细信息
-                        authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                        authToken.setDetails(request.getRemoteAddr());
                         
                         // 设置到安全上下文
                         SecurityContextHolder.getContext().setAuthentication(authToken);
                         
-                        log.debug("JWT认证成功，用户: {}, 用户ID: {}, 角色: {}", username, userId, roles);
+                        log.debug("JWT认证成功，用户: {}, 用户ID: {}, 角色: {}, 设备: {}", username, userId, roles, deviceType);
                     }
                 } else {
                     log.debug("JWT令牌无效或已过期");

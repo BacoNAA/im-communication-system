@@ -2,6 +2,7 @@ package com.im.imcommunicationsystem.user.service.impl;
 
 import com.im.imcommunicationsystem.auth.entity.LoginDevice;
 import com.im.imcommunicationsystem.auth.repository.LoginDeviceRepository;
+import com.im.imcommunicationsystem.auth.service.DeviceService;
 import com.im.imcommunicationsystem.user.dto.response.DeviceListResponse;
 import com.im.imcommunicationsystem.user.service.UserDeviceService;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,7 @@ import java.util.stream.Collectors;
 public class UserDeviceServiceImpl implements UserDeviceService {
 
     private final LoginDeviceRepository loginDeviceRepository;
+    private final DeviceService deviceService;
 
     @Override
     @Transactional(readOnly = true)
@@ -57,25 +59,34 @@ public class UserDeviceServiceImpl implements UserDeviceService {
     @Override
     @Transactional
     public void removeUserDevice(Long userId, Long deviceId) {
-        log.info("移除用户设备: userId={}, deviceId={}", userId, deviceId);
+        log.info("强制下线用户设备: userId={}, deviceId={}", userId, deviceId);
         
         try {
             Optional<LoginDevice> deviceOptional = loginDeviceRepository.findById(deviceId);
             if (deviceOptional.isPresent()) {
                 LoginDevice device = deviceOptional.get();
                 if (device.getUserId().equals(userId)) {
-                    loginDeviceRepository.delete(device);
-                    log.info("成功移除用户设备: userId={}, deviceId={}", userId, deviceId);
+                    // 将设备状态设为非活跃，实现强制下线
+                    device.setIsActive(false);
+                    loginDeviceRepository.save(device);
+                    
+                    // 调用auth模块的设备服务更新状态（使用基于设备信息的方法）
+                    deviceService.updateDeviceStatusByInfo(userId, device.getDeviceInfo(), false);
+                    
+                    log.info("成功强制下线用户设备: userId={}, deviceId={}, deviceType={}", 
+                            userId, deviceId, device.getDeviceType());
                 } else {
                     log.warn("设备不属于该用户: userId={}, deviceId={}, deviceUserId={}", 
                             userId, deviceId, device.getUserId());
+                    throw new RuntimeException("设备不属于当前用户");
                 }
             } else {
                 log.warn("设备不存在: deviceId={}", deviceId);
+                throw new RuntimeException("设备不存在");
             }
         } catch (Exception e) {
-            log.error("移除用户设备失败: userId={}, deviceId={}, error={}", userId, deviceId, e.getMessage(), e);
-            throw new RuntimeException("移除设备失败", e);
+            log.error("强制下线用户设备失败: userId={}, deviceId={}, error={}", userId, deviceId, e.getMessage(), e);
+            throw new RuntimeException("强制下线设备失败: " + e.getMessage(), e);
         }
     }
 
@@ -144,6 +155,40 @@ public class UserDeviceServiceImpl implements UserDeviceService {
         } catch (Exception e) {
             log.error("获取用户活跃设备列表失败: userId={}, error={}", userId, e.getMessage(), e);
             return List.of();
+        }
+    }
+
+    @Override
+    @Transactional
+    public int logoutAllOtherDevices(Long userId, String currentDeviceInfo) {
+        log.info("强制下线所有其他设备: userId={}, currentDeviceInfo={}", userId, currentDeviceInfo);
+        
+        try {
+            List<LoginDevice> activeDevices = loginDeviceRepository.findByUserIdAndIsActiveTrue(userId);
+            int logoutCount = 0;
+            
+            for (LoginDevice device : activeDevices) {
+                // 跳过当前设备（根据设备信息判断）
+                if (!device.getDeviceInfo().equals(currentDeviceInfo)) {
+                    device.setIsActive(false);
+                    loginDeviceRepository.save(device);
+                    
+                    // 调用auth模块的设备服务更新状态（使用基于设备信息的方法）
+                    deviceService.logoutDeviceByInfo(userId, device.getDeviceInfo());
+                    
+                    logoutCount++;
+                    log.info("强制下线设备: userId={}, deviceId={}, deviceInfo={}, deviceType={}", 
+                            userId, device.getId(), device.getDeviceInfo(), device.getDeviceType());
+                }
+            }
+            
+            log.info("成功强制下线所有其他设备: userId={}, currentDeviceInfo={}, 下线设备数量={}", 
+                    userId, currentDeviceInfo, logoutCount);
+            return logoutCount;
+        } catch (Exception e) {
+            log.error("强制下线所有其他设备失败: userId={}, currentDeviceInfo={}, error={}", 
+                    userId, currentDeviceInfo, e.getMessage(), e);
+            throw new RuntimeException("强制下线所有其他设备失败: " + e.getMessage(), e);
         }
     }
 }

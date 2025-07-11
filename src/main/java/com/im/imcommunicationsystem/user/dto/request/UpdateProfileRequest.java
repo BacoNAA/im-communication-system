@@ -20,10 +20,10 @@ public class UpdateProfileRequest {
 
     private String avatarUrl;
 
-    @Pattern(regexp = "^1[3-9]\\d{9}$", message = "手机号格式不正确")
+    @Pattern(regexp = "^$|^1[3-9]\\d{9}$", message = "手机号格式不正确")
     private String phoneNumber;
 
-    @Pattern(regexp = "^(男|女|保密)$", message = "性别只能是：男、女、保密")
+    @Pattern(regexp = "^$|^(男|女|保密)$", message = "性别只能是：男、女、保密")
     private String gender;
 
     @Past(message = "生日必须是过去的日期")

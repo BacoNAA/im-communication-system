@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.awt.image.BufferedImage;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -40,29 +41,52 @@ public class UserQRCodeServiceImpl implements UserQRCodeService {
             
             User user = userOptional.get();
             
+            // 构建用户信息
+            Map<String, Object> userInfo = new HashMap<>();
+            userInfo.put("userId", user.getId());
+            userInfo.put("nickname", user.getNickname());
+            if (qrCodeConfig.getUserInfo().isIncludeAvatar() && user.getAvatarUrl() != null) {
+                userInfo.put("avatarUrl", user.getAvatarUrl());
+            }
+            if (qrCodeConfig.getUserInfo().isIncludeSignature() && user.getSignature() != null) {
+                userInfo.put("signature", user.getSignature());
+            }
+            userInfo.put("timestamp", System.currentTimeMillis());
+            
             // 编码用户信息
-            String qrCodeData = encodeUserInfo(userId);
+            String qrCodeData = QRCodeUtils.encodeUserInfo(userInfo);
             
-            // 生成二维码Base64字符串（暂时返回占位符）
-            String qrCodeBase64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
-            
-            // 生成响应
-            QRCodeResponse response = new QRCodeResponse(
-                    qrCodeData,
-                    null, // qrCodeImageUrl - 暂不实现
-                    qrCodeBase64,
-                    userId,
-                    user.getNickname(),
-                    user.getAvatarUrl(),
-                    LocalDateTime.now(),
-                    LocalDateTime.now().plusHours(qrCodeConfig.getExpirationHours())
+            // 生成二维码图片
+            BufferedImage qrCodeImage = QRCodeUtils.generateQRCode(
+                qrCodeData, 
+                qrCodeConfig.getWidth(), 
+                qrCodeConfig.getHeight()
             );
             
-            log.info("成功生成用户二维码: userId={}", userId);
+            // 转换为Base64
+            String qrCodeBase64 = QRCodeUtils.imageToBase64(qrCodeImage, qrCodeConfig.getFormat());
+            
+            // 计算过期时间
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime expiresAt = now.plusHours(qrCodeConfig.getExpirationHours());
+            
+            // 构建响应
+            QRCodeResponse response = new QRCodeResponse();
+            response.setQrCodeData(qrCodeData);
+            response.setQrCodeBase64(qrCodeBase64);
+            response.setUserId(user.getId());
+            response.setUserIdString(user.getUserIdStr());
+            response.setUserNickname(user.getNickname());
+            response.setUserAvatarUrl(user.getAvatarUrl());
+            response.setGeneratedAt(now);
+            response.setExpiresAt(expiresAt);
+            
+            log.info("用户二维码生成成功: userId={}", userId);
             return response;
+            
         } catch (Exception e) {
             log.error("生成用户二维码失败: userId={}, error={}", userId, e.getMessage(), e);
-            throw new RuntimeException("生成二维码失败", e);
+            throw new RuntimeException("生成二维码失败: " + e.getMessage());
         }
     }
 
@@ -71,15 +95,39 @@ public class UserQRCodeServiceImpl implements UserQRCodeService {
         log.info("解析用户二维码: fileName={}", file.getOriginalFilename());
         
         try {
-            // 暂时返回空结果，实际实现需要调用 QRCodeUtils.parseQRCodeFile
-            Map<String, Object> result = new HashMap<>();
-            result.put("message", "二维码解析功能正在开发中");
+            // 解析二维码内容
+            String qrCodeContent = QRCodeUtils.parseQRCodeFile(file);
             
-            log.info("二维码解析完成: fileName={}", file.getOriginalFilename());
-            return result;
+            if (qrCodeContent == null || qrCodeContent.trim().isEmpty()) {
+                throw new RuntimeException("无法识别二维码内容");
+            }
+            
+            // 解码用户信息
+            Map<String, Object> userInfo = QRCodeUtils.decodeUserInfo(qrCodeContent);
+            
+            if (userInfo.isEmpty()) {
+                throw new RuntimeException("二维码内容格式不正确");
+            }
+            
+            // 验证用户是否存在
+            Long userId = (Long) userInfo.get("userId");
+            if (userId != null) {
+                Optional<User> userOptional = userRepository.findById(userId);
+                if (userOptional.isPresent()) {
+                    User user = userOptional.get();
+                    userInfo.put("userExists", true);
+                    userInfo.put("currentNickname", user.getNickname());
+                    userInfo.put("currentAvatarUrl", user.getAvatarUrl());
+                } else {
+                    userInfo.put("userExists", false);
+                }
+            }
+            
+            log.info("二维码解析完成: fileName={}, userId={}", file.getOriginalFilename(), userId);
+            return userInfo;
         } catch (Exception e) {
             log.error("解析二维码失败: fileName={}, error={}", file.getOriginalFilename(), e.getMessage(), e);
-            throw new RuntimeException("解析二维码失败", e);
+            throw new RuntimeException("解析二维码失败: " + e.getMessage());
         }
     }
 

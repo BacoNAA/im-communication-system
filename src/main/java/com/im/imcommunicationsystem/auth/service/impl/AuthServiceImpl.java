@@ -176,6 +176,14 @@ public class AuthServiceImpl implements AuthService {
         return jwtUtils.generateAccessToken(user.getId(), user.getEmail(), "USER");
     }
     
+    private String generateAccessToken(User user, String deviceType) {
+        if (deviceType != null && !deviceType.trim().isEmpty()) {
+            return jwtUtils.generateAccessToken(user.getId(), user.getEmail(), "USER", deviceType);
+        } else {
+            return jwtUtils.generateAccessToken(user.getId(), user.getEmail(), "USER");
+        }
+    }
+    
     /**
      * 生成刷新令牌
      */
@@ -235,7 +243,7 @@ public class AuthServiceImpl implements AuthService {
         }
         
         // 4. 生成JWT令牌
-        String accessToken = generateAccessToken(user);
+        String accessToken = generateAccessToken(user, request.getDeviceType());
         String refreshToken = generateRefreshToken(user);
         
         // 5. 根据rememberMe设置token过期时间
@@ -305,7 +313,7 @@ public class AuthServiceImpl implements AuthService {
         }
         
         // 4. 生成JWT令牌
-        String accessToken = generateAccessToken(user);
+        String accessToken = generateAccessToken(user, request.getDeviceType());
         String refreshToken = generateRefreshToken(user);
         
         // 5. 构建用户信息响应

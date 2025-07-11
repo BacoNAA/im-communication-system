@@ -52,6 +52,8 @@
 - **[email-registration-development-log.md](email-registration-development-log.md)** - 邮箱注册功能开发
 - **[password-login-development-log.md](password-login-development-log.md)** - 密码登录功能开发
 - **[verification-code-login-development-log.md](verification-code-login-development-log.md)** - 验证码登录功能开发
+- **[personalized-status-development-log.md](development-logs/personalized-status-development-log.md)** - 个性化状态设置功能开发
+- **[device-management-development-log.md](development-logs/device-management-development-log.md)** - 登录设备管理功能开发
 
 ## 文档使用指南
 
@@ -107,6 +109,14 @@
 2. verification-code-system.md - 了解验证码机制
 3. email-registration-development-log.md - 了解注册流程
 4. password-login-development-log.md - 了解登录流程
+
+**个性化状态设置功能**
+1. development-logs/personalized-status-development-log.md - 了解状态管理实现
+2. project-modification-log.md - 了解在项目中的集成
+
+**登录设备管理功能**
+1. development-logs/device-management-development-log.md - 了解设备管理实现
+2. project-modification-log.md - 了解安全策略实现
 
 ## 文档维护规范
 
@@ -191,5 +201,10 @@
 ---
 
 **最后更新**: 2025年1月12日  
-**文档版本**: v1.0  
+**文档版本**: v1.1  
 **维护状态**: 持续更新中
+
+**本次更新内容**:
+- 新增个性化状态设置功能开发日志
+- 新增登录设备管理功能开发日志
+- 完善功能阅读指南

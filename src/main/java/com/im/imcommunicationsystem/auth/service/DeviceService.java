@@ -49,10 +49,49 @@ public interface DeviceService {
     void updateDeviceStatus(Long userId, String deviceType, boolean isActive);
 
     /**
-     * 检查设备是否活跃
+     * 检查设备是否处于活跃状态
      * @param userId 用户ID
      * @param deviceType 设备类型
      * @return 是否活跃
      */
     boolean isDeviceActive(Long userId, String deviceType);
+    
+    /**
+     * 检查用户设备会话是否有效
+     * @param userId 用户ID
+     * @param deviceType 设备类型
+     * @return 会话是否有效
+     */
+    boolean isDeviceSessionValid(Long userId, String deviceType);
+
+    /**
+     * 注销指定设备（根据设备信息）
+     * @param userId 用户ID
+     * @param deviceInfo 设备信息
+     */
+    void logoutDeviceByInfo(Long userId, String deviceInfo);
+
+    /**
+     * 更新设备活跃状态（根据设备信息）
+     * @param userId 用户ID
+     * @param deviceInfo 设备信息
+     * @param isActive 是否活跃
+     */
+    void updateDeviceStatusByInfo(Long userId, String deviceInfo, boolean isActive);
+
+    /**
+     * 检查设备是否处于活跃状态（根据设备信息）
+     * @param userId 用户ID
+     * @param deviceInfo 设备信息
+     * @return 是否活跃
+     */
+    boolean isDeviceActiveByInfo(Long userId, String deviceInfo);
+
+    /**
+     * 检查用户设备会话是否有效（根据设备信息）
+     * @param userId 用户ID
+     * @param deviceInfo 设备信息
+     * @return 会话是否有效
+     */
+    boolean isDeviceSessionValidByInfo(Long userId, String deviceInfo);
 }
