@@ -54,6 +54,24 @@ public interface UserRepository extends JpaRepository<User, Long> {
     }
 
     /**
+     * 检查除了指定用户之外是否存在相同的用户ID字符串
+     * @param userIdStr 用户ID字符串
+     * @param excludeUserId 要排除的用户ID
+     * @return 是否存在
+     */
+    boolean existsByUserIdStrAndIdNot(String userIdStr, Long excludeUserId);
+
+    /**
+     * 检查除了指定用户之外是否存在相同的用户ID字符串（方法别名）
+     * @param userIdString 用户ID字符串
+     * @param excludeUserId 要排除的用户ID
+     * @return 是否存在
+     */
+    default boolean existsByUserIdStringAndIdNot(String userIdString, Long excludeUserId) {
+        return existsByUserIdStrAndIdNot(userIdString, excludeUserId);
+    }
+
+    /**
      * 查找所有有状态的用户
      * @return 有状态的用户列表
      */

@@ -93,9 +93,10 @@ public class FileUploadConfig {
      */
     public static class ImageCompressionConfig {
         private boolean enabled = true;
-        private float quality = 0.8f;
+        private float quality = 0.85f; // 提高默认质量，减少压缩损失
         private int maxWidth = 1920;
         private int maxHeight = 1080;
+        private long maxFileSizeForCompression = 2 * 1024 * 1024; // 2MB以上才进行压缩
 
         public boolean isEnabled() {
             return enabled;
@@ -127,6 +128,14 @@ public class FileUploadConfig {
 
         public void setMaxHeight(int maxHeight) {
             this.maxHeight = maxHeight;
+        }
+
+        public long getMaxFileSizeForCompression() {
+            return maxFileSizeForCompression;
+        }
+
+        public void setMaxFileSizeForCompression(long maxFileSizeForCompression) {
+            this.maxFileSizeForCompression = maxFileSizeForCompression;
         }
     }
 

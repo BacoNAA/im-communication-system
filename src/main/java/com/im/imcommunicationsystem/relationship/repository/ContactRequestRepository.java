@@ -79,8 +79,8 @@ public interface ContactRequestRepository extends JpaRepository<ContactRequest, 
      * @return 删除的记录数
      */
     @Modifying
-    @Query("DELETE FROM ContactRequest cr WHERE cr.status = 'PENDING' AND cr.createdAt < :expireTime")
-    int deleteExpiredRequests(@Param("expireTime") LocalDateTime expireTime);
+    @Query("DELETE FROM ContactRequest cr WHERE cr.status = :status AND cr.createdAt < :expireTime")
+    int deleteExpiredRequests(@Param("expireTime") LocalDateTime expireTime, @Param("status") ContactRequestStatus status);
 
     /**
      * 统计用户收到的待处理请求数量
@@ -113,4 +113,86 @@ public interface ContactRequestRepository extends JpaRepository<ContactRequest, 
     @Query("SELECT cr FROM ContactRequest cr WHERE cr.recipientId = :recipientId " +
            "ORDER BY cr.createdAt DESC LIMIT :limit")
     List<ContactRequest> findRecentRequests(@Param("recipientId") Long recipientId, @Param("limit") int limit);
+
+    /**
+     * 删除指定时间之前的特定状态请求
+     * @param dateTime 时间点
+     * @param status 请求状态
+     * @return 删除的记录数
+     */
+    @Modifying
+    @Query("DELETE FROM ContactRequest cr WHERE cr.createdAt < :dateTime AND cr.status = :status")
+    int deleteByCreatedAtBeforeAndStatus(@Param("dateTime") LocalDateTime dateTime, @Param("status") ContactRequestStatus status);
+
+    /**
+     * 查找用户最近的好友请求（作为请求者或接收者）
+     * @param userId 用户ID
+     * @param limit 限制数量
+     * @return 最近的好友请求列表
+     */
+    @Query("SELECT cr FROM ContactRequest cr WHERE cr.requesterId = :userId OR cr.recipientId = :userId " +
+           "ORDER BY cr.createdAt DESC LIMIT :limit")
+    List<ContactRequest> findRecentRequestsByUserId(@Param("userId") Long userId, @Param("limit") int limit);
+
+    /**
+     * 查找接收到的好友请求（按创建时间倒序）
+     * @param recipientId 接收者ID
+     * @return 接收到的好友请求列表
+     */
+    List<ContactRequest> findByRecipientIdOrderByCreatedAtDesc(Long recipientId);
+
+    /**
+     * 查找接收到的特定状态好友请求（按创建时间倒序）
+     * @param recipientId 接收者ID
+     * @param status 请求状态
+     * @return 好友请求列表
+     */
+    List<ContactRequest> findByRecipientIdAndStatusOrderByCreatedAtDesc(Long recipientId, ContactRequestStatus status);
+
+    /**
+     * 查找发送的好友请求（按创建时间倒序）
+     * @param requesterId 请求者ID
+     * @return 发送的好友请求列表
+     */
+    List<ContactRequest> findByRequesterIdOrderByCreatedAtDesc(Long requesterId);
+
+    /**
+     * 查找发送的特定状态好友请求（按创建时间倒序）
+     * @param requesterId 请求者ID
+     * @param status 请求状态
+     * @return 好友请求列表
+     */
+    List<ContactRequest> findByRequesterIdAndStatusOrderByCreatedAtDesc(Long requesterId, ContactRequestStatus status);
+    
+    /**
+     * 统计用户收到的总请求数量
+     * @param recipientId 接收者ID
+     * @return 总请求数量
+     */
+    long countByRecipientId(Long recipientId);
+    
+    /**
+     * 统计用户发送的总请求数量
+     * @param requesterId 请求者ID
+     * @return 总请求数量
+     */
+    long countByRequesterId(Long requesterId);
+    
+    /**
+     * 统计用户在指定时间范围内收到的请求数量
+     * @param recipientId 接收者ID
+     * @param startTime 开始时间
+     * @param endTime 结束时间
+     * @return 请求数量
+     */
+    long countByRecipientIdAndCreatedAtBetween(Long recipientId, LocalDateTime startTime, LocalDateTime endTime);
+    
+    /**
+     * 统计用户在指定时间范围内发送的请求数量
+     * @param requesterId 请求者ID
+     * @param startTime 开始时间
+     * @param endTime 结束时间
+     * @return 请求数量
+     */
+    long countByRequesterIdAndCreatedAtBetween(Long requesterId, LocalDateTime startTime, LocalDateTime endTime);
 }

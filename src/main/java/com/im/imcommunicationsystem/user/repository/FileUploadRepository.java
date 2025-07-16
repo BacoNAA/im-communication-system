@@ -305,4 +305,101 @@ public interface FileUploadRepository extends JpaRepository<FileUpload, Long> {
      */
     @Query("SELECT f FROM FileUpload f WHERE f.bucketName = :bucketName AND f.fileTag = 'TEMPORARY' AND f.expiresAt < :currentTime AND f.isDeleted = false")
     List<FileUpload> findExpiredTemporaryFilesByBucket(@Param("bucketName") String bucketName, @Param("currentTime") LocalDateTime currentTime);
+
+    // ==================== 消息模块特有查询方法 ====================
+
+    /**
+     * 根据会话ID查询媒体文件列表（未删除）
+     *
+     * @param conversationId 会话ID
+     * @param pageable 分页参数
+     * @return 文件列表
+     */
+    @Query("SELECT f FROM FileUpload f WHERE f.conversationId = :conversationId AND f.isDeleted = false ORDER BY f.createdAt DESC")
+    Page<FileUpload> findByConversationIdAndIsDeletedFalse(@Param("conversationId") Long conversationId, Pageable pageable);
+
+    /**
+     * 根据消息ID查询媒体文件（未删除）
+     *
+     * @param messageId 消息ID
+     * @return 文件记录
+     */
+    Optional<FileUpload> findByMessageIdAndIsDeletedFalse(Long messageId);
+
+    /**
+     * 根据上传者ID查询媒体文件列表（未删除）
+     *
+     * @param uploaderId 上传者ID
+     * @param pageable 分页参数
+     * @return 文件列表
+     */
+    @Query("SELECT f FROM FileUpload f WHERE f.userId = :uploaderId AND f.conversationId IS NOT NULL AND f.isDeleted = false ORDER BY f.createdAt DESC")
+    Page<FileUpload> findMediaFilesByUploaderIdAndIsDeletedFalse(@Param("uploaderId") Long uploaderId, Pageable pageable);
+
+    /**
+     * 根据会话ID和文件类型查询媒体文件列表（未删除）
+     *
+     * @param conversationId 会话ID
+     * @param fileType 文件类型
+     * @param pageable 分页参数
+     * @return 文件列表
+     */
+    @Query("SELECT f FROM FileUpload f WHERE f.conversationId = :conversationId AND f.fileType = :fileType AND f.isDeleted = false ORDER BY f.createdAt DESC")
+    Page<FileUpload> findByConversationIdAndFileTypeAndIsDeletedFalse(@Param("conversationId") Long conversationId, 
+                                                                      @Param("fileType") FileUpload.FileType fileType, 
+                                                                      Pageable pageable);
+
+    /**
+     * 统计会话中的媒体文件数量（未删除）
+     *
+     * @param conversationId 会话ID
+     * @return 文件数量
+     */
+    @Query("SELECT COUNT(f) FROM FileUpload f WHERE f.conversationId = :conversationId AND f.isDeleted = false")
+    Long countByConversationIdAndIsDeletedFalse(@Param("conversationId") Long conversationId);
+
+    /**
+     * 统计会话中指定类型的媒体文件数量（未删除）
+     *
+     * @param conversationId 会话ID
+     * @param fileType 文件类型
+     * @return 文件数量
+     */
+    @Query("SELECT COUNT(f) FROM FileUpload f WHERE f.conversationId = :conversationId AND f.fileType = :fileType AND f.isDeleted = false")
+    Long countByConversationIdAndFileTypeAndIsDeletedFalse(@Param("conversationId") Long conversationId, 
+                                                           @Param("fileType") FileUpload.FileType fileType);
+
+    /**
+     * 更新文件的会话和消息关联
+     *
+     * @param fileId 文件ID
+     * @param conversationId 会话ID
+     * @param messageId 消息ID
+     * @return 影响的行数
+     */
+    @Modifying
+    @Query("UPDATE FileUpload f SET f.conversationId = :conversationId, f.messageId = :messageId WHERE f.id = :fileId AND f.isDeleted = false")
+    int updateFileAssociation(@Param("fileId") Long fileId, 
+                              @Param("conversationId") Long conversationId, 
+                              @Param("messageId") Long messageId);
+
+    /**
+     * 软删除文件（不需要用户ID验证，用于系统级删除）
+     *
+     * @param fileId 文件ID
+     * @param deletedAt 删除时间
+     * @return 影响的行数
+     */
+    @Modifying
+    @Query("UPDATE FileUpload f SET f.isDeleted = true, f.deletedAt = :deletedAt WHERE f.id = :fileId AND f.isDeleted = false")
+    int softDeleteById(@Param("fileId") Long fileId, @Param("deletedAt") LocalDateTime deletedAt);
+
+    /**
+     * 查询会话中的所有媒体文件（不分页，用于导出等场景）
+     *
+     * @param conversationId 会话ID
+     * @return 文件列表
+     */
+    @Query("SELECT f FROM FileUpload f WHERE f.conversationId = :conversationId AND f.isDeleted = false ORDER BY f.createdAt ASC")
+    List<FileUpload> findAllByConversationIdAndIsDeletedFalse(@Param("conversationId") Long conversationId);
 }

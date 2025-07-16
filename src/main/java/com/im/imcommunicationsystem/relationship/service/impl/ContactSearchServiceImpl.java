@@ -227,16 +227,21 @@ public class ContactSearchServiceImpl implements ContactSearchService {
         }
         
         // 检查是否有待处理的好友请求
-        Optional<ContactRequest> sentRequest = contactRequestRepository
-                .findByRequesterIdAndRecipientIdAndStatus(currentUserId, targetUserId, ContactRequestStatus.PENDING);
-        if (sentRequest.isPresent()) {
-            return "已发送请求";
-        }
-        
-        Optional<ContactRequest> receivedRequest = contactRequestRepository
-                .findByRequesterIdAndRecipientIdAndStatus(targetUserId, currentUserId, ContactRequestStatus.PENDING);
-        if (receivedRequest.isPresent()) {
-            return "待处理请求";
+        try {
+            Optional<ContactRequest> sentRequest = contactRequestRepository
+                    .findByRequesterIdAndRecipientIdAndStatus(currentUserId, targetUserId, ContactRequestStatus.PENDING);
+            if (sentRequest.isPresent()) {
+                return "已发送请求";
+            }
+            
+            Optional<ContactRequest> receivedRequest = contactRequestRepository
+                    .findByRequesterIdAndRecipientIdAndStatus(targetUserId, currentUserId, ContactRequestStatus.PENDING);
+            if (receivedRequest.isPresent()) {
+                return "待处理请求";
+            }
+        } catch (Exception e) {
+            log.warn("检查好友请求状态时发生错误: currentUserId={}, targetUserId={}, error={}", currentUserId, targetUserId, e.getMessage());
+            // 如果查询失败，继续执行，返回陌生人状态
         }
         
         return "陌生人";

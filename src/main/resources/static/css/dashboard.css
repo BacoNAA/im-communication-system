@@ -712,7 +712,7 @@
 /* 二维码模态框样式 */
 .modal {
     position: fixed;
-    z-index: 1000;
+    z-index: 10001;
     left: 0;
     top: 0;
     width: 100%;

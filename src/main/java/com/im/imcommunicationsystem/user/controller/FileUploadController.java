@@ -6,11 +6,17 @@ import com.im.imcommunicationsystem.user.entity.FileUpload;
 import com.im.imcommunicationsystem.user.service.impl.MinioFileUploadServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -313,6 +319,70 @@ public class FileUploadController {
         } catch (Exception e) {
             log.error("获取文件统计信息失败", e);
             return ApiResponse.serverError("获取文件统计信息失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 下载文件
+     */
+    @GetMapping("/download/{fileId}")
+    public ResponseEntity<Resource> downloadFile(@PathVariable String fileId, Authentication authentication) {
+        try {
+            // 获取当前用户ID
+            Long userId = securityUtils.getCurrentUserId();
+            if (userId == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+            
+            log.info("用户 {} 请求下载文件: {}", userId, fileId);
+            
+            // 获取文件信息
+            Optional<FileUpload> fileOptional = fileUploadService.getFileInfo(fileId);
+            if (fileOptional.isEmpty()) {
+                log.warn("文件不存在: {}", fileId);
+                return ResponseEntity.notFound().build();
+            }
+            
+            FileUpload fileUpload = fileOptional.get();
+            
+            // 检查文件所有权
+            if (!fileUpload.getUserId().equals(userId)) {
+                log.warn("用户 {} 尝试下载不属于自己的文件: {}", userId, fileId);
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+            
+            // 检查文件是否已删除
+            if (fileUpload.getIsDeleted()) {
+                log.warn("文件已被删除: {}", fileId);
+                return ResponseEntity.notFound().build();
+            }
+            
+            // 获取文件流
+            InputStream fileStream = fileUploadService.downloadFile(fileId, userId);
+            if (fileStream == null) {
+                log.error("无法获取文件流: {}", fileId);
+                return ResponseEntity.notFound().build();
+            }
+            
+            // 创建资源
+            InputStreamResource resource = new InputStreamResource(fileStream);
+            
+            // 设置响应头
+            HttpHeaders headers = new HttpHeaders();
+            headers.add(HttpHeaders.CONTENT_DISPOSITION, 
+                "attachment; filename=\"" + fileUpload.getOriginalName() + "\"");
+            headers.add(HttpHeaders.CONTENT_TYPE, fileUpload.getContentType());
+            headers.add(HttpHeaders.CONTENT_LENGTH, String.valueOf(fileUpload.getFileSize()));
+            
+            log.info("文件下载成功: {}, 用户: {}", fileId, userId);
+            
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(resource);
+                    
+        } catch (Exception e) {
+            log.error("下载文件失败，文件ID: {}", fileId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 

@@ -181,6 +181,24 @@ public class FileUpload {
     private LocalDateTime expiresAt;
 
     /**
+     * 会话ID（可选，如果是在会话中发送的媒体文件）
+     */
+    @Column(name = "conversation_id")
+    private Long conversationId;
+
+    /**
+     * 消息ID（可选，如果是消息中的媒体文件）
+     */
+    @Column(name = "message_id")
+    private Long messageId;
+
+    /**
+     * 文件元数据（JSON格式）
+     */
+    @Column(name = "metadata", columnDefinition = "TEXT")
+    private String metadata;
+
+    /**
      * 文件类型枚举
      */
     public enum FileType {
@@ -229,6 +247,12 @@ public class FileUpload {
         minio,
         s3,
         oss;
+        
+        // 兼容性常量
+        public static final StorageType LOCAL = local;
+        public static final StorageType MINIO = minio;
+        public static final StorageType S3 = s3;
+        public static final StorageType OSS = oss;
 
         /**
          * 获取枚举值
@@ -313,5 +337,154 @@ public class FileUpload {
         public boolean isPermanent() {
             return this == PERMANENT;
         }
+    }
+
+    // ==================== 便利方法 ====================
+
+    /**
+     * 检查是否为图片文件
+     * 
+     * @return 是否为图片
+     */
+    public boolean isImage() {
+        return fileType == FileType.image;
+    }
+
+    /**
+     * 检查是否为视频文件
+     * 
+     * @return 是否为视频
+     */
+    public boolean isVideo() {
+        return fileType == FileType.video;
+    }
+
+    /**
+     * 检查是否为音频文件
+     * 
+     * @return 是否为音频
+     */
+    public boolean isAudio() {
+        return fileType == FileType.audio;
+    }
+
+    /**
+     * 检查是否为文档文件
+     * 
+     * @return 是否为文档
+     */
+    public boolean isDocument() {
+        return fileType == FileType.document;
+    }
+
+    /**
+     * 检查是否为其他类型文件
+     * 
+     * @return 是否为其他类型
+     */
+    public boolean isOther() {
+        return fileType == FileType.other;
+    }
+
+    /**
+     * 检查文件是否已删除
+     * 
+     * @return 是否已删除
+     */
+    public boolean isDeleted() {
+        return isDeleted || deletedAt != null;
+    }
+
+    /**
+     * 检查是否有缩略图
+     * 
+     * @return 是否有缩略图
+     */
+    public boolean hasThumbnail() {
+        return thumbnailUrl != null && !thumbnailUrl.trim().isEmpty();
+    }
+
+    /**
+     * 检查是否有尺寸信息
+     * 
+     * @return 是否有尺寸信息
+     */
+    public boolean hasDimensions() {
+        return width != null && height != null && width > 0 && height > 0;
+    }
+
+    /**
+     * 检查是否有时长信息
+     * 
+     * @return 是否有时长信息
+     */
+    public boolean hasDuration() {
+        return duration != null && duration > 0;
+    }
+
+    /**
+     * 检查是否关联了会话
+     * 
+     * @return 是否关联了会话
+     */
+    public boolean hasConversation() {
+        return conversationId != null;
+    }
+
+    /**
+     * 检查是否关联了消息
+     * 
+     * @return 是否关联了消息
+     */
+    public boolean hasMessage() {
+        return messageId != null;
+    }
+
+    /**
+     * 获取文件大小的可读格式
+     * 
+     * @return 可读的文件大小
+     */
+    public String getReadableFileSize() {
+        if (fileSize == null) {
+            return "未知";
+        }
+        
+        long size = fileSize;
+        String[] units = {"B", "KB", "MB", "GB", "TB"};
+        int unitIndex = 0;
+        
+        while (size >= 1024 && unitIndex < units.length - 1) {
+            size /= 1024;
+            unitIndex++;
+        }
+        
+        return String.format("%.1f %s", (double) size, units[unitIndex]);
+    }
+
+    /**
+     * 软删除文件
+     */
+    public void softDelete() {
+        this.isDeleted = true;
+        this.deletedAt = LocalDateTime.now();
+    }
+    
+    /**
+     * 设置MIME类型（兼容性方法）
+     * 
+     * @param mimeType MIME类型
+     */
+    public void setMimeType(String mimeType) {
+        this.contentType = mimeType;
+    }
+    
+    /**
+     * 获取MIME类型（兼容性方法）
+     * 
+     * @return MIME类型
+     */
+    public String getMimeType() {
+        return this.contentType;
     }
 }

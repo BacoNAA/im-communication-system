@@ -61,6 +61,23 @@ public class UserProfileController {
     }
 
     /**
+     * 根据用户ID字符串获取用户公开资料
+     * 
+     * @param userIdStr 用户ID字符串
+     * @return 用户公开资料信息
+     */
+    @GetMapping("/public-profile/by-user-id/{userIdStr}")
+    public ResponseEntity<ApiResponse<UserProfileResponse>> getPublicUserProfileByUserIdStr(
+            @PathVariable String userIdStr) {
+        try {
+            UserProfileResponse profile = userProfileService.getUserProfileByUserIdStr(userIdStr);
+            return ResponseEntity.ok(ApiResponse.success(profile));
+        } catch (Exception e) {
+            return ResponseEntity.ok(ApiResponse.error(404, "用户不存在或资料不公开"));
+        }
+    }
+
+    /**
      * 更新用户个人资料
      * 
      * @param request 更新资料请求

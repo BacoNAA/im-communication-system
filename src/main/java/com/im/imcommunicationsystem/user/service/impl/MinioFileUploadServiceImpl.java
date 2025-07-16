@@ -17,12 +17,16 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.ImageIO;
-import javax.imageio.ImageWriter;
 import javax.imageio.ImageWriteParam;
+import javax.imageio.ImageWriter;
 import javax.imageio.IIOImage;
 import javax.imageio.stream.ImageOutputStream;
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.InputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -36,6 +40,8 @@ import java.util.stream.Collectors;
 import java.util.List;
 import java.util.Arrays;
 import java.util.UUID;
+import java.util.Optional;
+import java.util.ArrayList;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -175,9 +181,30 @@ public class MinioFileUploadServiceImpl implements FileUploadService {
                 throw new FileUploadException("无法读取图片文件");
             }
 
-            // 压缩图片
-            BufferedImage resizedImage = resizeImage(originalImage, maxWidth, maxHeight);
-            byte[] compressedImageBytes = imageToBytes(resizedImage, fileExtension);
+            // 智能压缩：根据文件大小和尺寸决定是否需要压缩
+            long originalFileSize = file.getSize();
+            boolean needsCompression = shouldCompressImage(originalImage, originalFileSize, maxWidth, maxHeight);
+            
+            BufferedImage processedImage;
+            if (needsCompression) {
+                log.info("图片需要压缩，原始大小: {} bytes, 尺寸: {}x{}", 
+                    originalFileSize, originalImage.getWidth(), originalImage.getHeight());
+                processedImage = resizeImage(originalImage, maxWidth, maxHeight);
+            } else {
+                log.info("图片无需压缩，保持原样，大小: {} bytes, 尺寸: {}x{}", 
+                    originalFileSize, originalImage.getWidth(), originalImage.getHeight());
+                processedImage = originalImage;
+            }
+            
+            byte[] compressedImageBytes = imageToBytes(processedImage, fileExtension);
+            
+            // 如果压缩后文件反而变大，使用原始文件
+            if (compressedImageBytes.length > originalFileSize) {
+                log.warn("压缩后文件变大 ({} -> {} bytes)，使用原始文件", 
+                    originalFileSize, compressedImageBytes.length);
+                compressedImageBytes = file.getBytes();
+                processedImage = originalImage;
+            }
 
             // 上传压缩后的图片
             ByteArrayInputStream compressedStream = new ByteArrayInputStream(compressedImageBytes);
@@ -195,12 +222,12 @@ public class MinioFileUploadServiceImpl implements FileUploadService {
             );
 
             // 设置图片信息
-            fileUpload.setWidth(resizedImage.getWidth());
-            fileUpload.setHeight(resizedImage.getHeight());
+            fileUpload.setWidth(processedImage.getWidth());
+            fileUpload.setHeight(processedImage.getHeight());
             fileUpload.setFileSize((long) compressedImageBytes.length);
 
             // 生成缩略图
-            generateThumbnail(resizedImage, fileUpload, fileExtension);
+            generateThumbnail(processedImage, fileUpload, fileExtension);
 
             // 保存到数据库
             fileUpload = fileUploadRepository.save(fileUpload);
@@ -576,7 +603,7 @@ public class MinioFileUploadServiceImpl implements FileUploadService {
         fileUpload.setBucketName(bucketName);
         fileUpload.setObjectKey(objectKey);
         fileUpload.setAccessLevel(FileUpload.AccessLevel.PRIVATE); // 设置为私有访问
-        fileUpload.setIsPublic(false); // 兼容性字段
+        // 注意：setIsPublic方法已弃用，使用setAccessLevel代替
         fileUpload.setIsDeleted(false);
         fileUpload.setCreatedAt(LocalDateTime.now());
         fileUpload.setUpdatedAt(LocalDateTime.now());
@@ -611,10 +638,18 @@ public class MinioFileUploadServiceImpl implements FileUploadService {
         double heightRatio = (double) maxHeight / originalHeight;
         double ratio = Math.min(widthRatio, heightRatio);
         
-        // 如果比例大于等于1，说明原图已经小于等于目标尺寸，但仍需要进行质量压缩
-        // 所以我们仍然创建新的BufferedImage以确保后续的质量压缩能够生效
+        // 如果原图尺寸已经小于等于目标尺寸，直接返回原图，避免不必要的质量损失
+        if (ratio >= 1.0) {
+            log.debug("图片尺寸 {}x{} 已小于目标尺寸 {}x{}，无需缩放", 
+                originalWidth, originalHeight, maxWidth, maxHeight);
+            return originalImage;
+        }
+        
         int newWidth = (int) (originalWidth * ratio);
         int newHeight = (int) (originalHeight * ratio);
+        
+        log.debug("图片缩放：{}x{} -> {}x{}，缩放比例: {}", 
+            originalWidth, originalHeight, newWidth, newHeight, ratio);
         
         // 保持原图的颜色模型和透明度
         int imageType = originalImage.getType();
@@ -625,9 +660,12 @@ public class MinioFileUploadServiceImpl implements FileUploadService {
         BufferedImage resizedImage = new BufferedImage(newWidth, newHeight, imageType);
         Graphics2D g2d = resizedImage.createGraphics();
         
-        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        // 使用高质量的渲染设置
+        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
         g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2d.setRenderingHint(RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_QUALITY);
+        g2d.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
         
         g2d.drawImage(originalImage, 0, 0, newWidth, newHeight, null);
         g2d.dispose();
@@ -636,15 +674,24 @@ public class MinioFileUploadServiceImpl implements FileUploadService {
     }
 
     /**
-     * 图片转字节数组（支持压缩质量控制）
+     * 图片转字节数组（支持压缩质量控制和智能格式选择）
      */
-    private byte[] imageToBytes(BufferedImage image, String format) throws IOException {
+    private byte[] imageToBytes(BufferedImage image, String originalFormat) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        String formatName = format.toLowerCase();
+        String formatName = originalFormat.toLowerCase();
         
-        if ("jpg".equals(formatName) || "jpeg".equals(formatName)) {
+        // 智能选择输出格式
+        String outputFormat = chooseOptimalFormat(image, formatName);
+        
+        if ("jpg".equals(outputFormat) || "jpeg".equals(outputFormat)) {
             // JPEG格式支持质量压缩
-            formatName = "jpg";
+            outputFormat = "jpg";
+            
+            // 如果原图有透明通道，需要先处理透明度
+            BufferedImage processedImage = image;
+            if (image.getColorModel().hasAlpha()) {
+                processedImage = removeTransparency(image);
+            }
             
             // 获取JPEG写入器
             Iterator<ImageWriter> writers = ImageIO.getImageWritersByFormatName("jpg");
@@ -654,25 +701,107 @@ public class MinioFileUploadServiceImpl implements FileUploadService {
                 
                 // 设置压缩质量
                 param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
-                param.setCompressionQuality(fileUploadConfig.getImageCompression().getQuality());
+                float quality = fileUploadConfig.getImageCompression().getQuality();
+                param.setCompressionQuality(quality);
+                
+                log.debug("使用JPEG压缩，质量: {}", quality);
                 
                 // 写入图片
                 ImageOutputStream ios = ImageIO.createImageOutputStream(baos);
                 writer.setOutput(ios);
-                writer.write(null, new IIOImage(image, null, null), param);
+                writer.write(null, new IIOImage(processedImage, null, null), param);
                 
                 ios.close();
                 writer.dispose();
             } else {
                 // 如果没有JPEG写入器，使用默认方式
-                ImageIO.write(image, formatName, baos);
+                ImageIO.write(processedImage, outputFormat, baos);
             }
         } else {
-            // 其他格式使用默认方式
-            ImageIO.write(image, formatName, baos);
+            // PNG等无损格式保持原格式，避免不必要的转换
+            log.debug("使用原格式: {}", outputFormat);
+            ImageIO.write(image, outputFormat, baos);
         }
         
-        return baos.toByteArray();
+        byte[] result = baos.toByteArray();
+        log.debug("图片压缩完成，输出格式: {}, 文件大小: {} bytes", outputFormat, result.length);
+        
+        return result;
+    }
+    
+    /**
+     * 选择最优的输出格式
+     */
+    private String chooseOptimalFormat(BufferedImage image, String originalFormat) {
+        // 如果原格式是JPEG，保持JPEG格式以支持质量压缩
+        if ("jpg".equals(originalFormat) || "jpeg".equals(originalFormat)) {
+            return "jpg";
+        }
+        
+        // 如果图片没有透明通道且像素较多，考虑转换为JPEG以获得更好的压缩比
+        boolean hasAlpha = image.getColorModel().hasAlpha();
+        int pixelCount = image.getWidth() * image.getHeight();
+        
+        if (!hasAlpha && pixelCount > 100000) { // 大于100k像素的不透明图片
+            log.debug("大尺寸不透明图片，转换为JPEG格式以获得更好压缩");
+            return "jpg";
+        }
+        
+        // 其他情况保持原格式
+        return originalFormat;
+    }
+    
+    /**
+     * 移除图片透明度（用于JPEG转换）
+     */
+    private BufferedImage removeTransparency(BufferedImage image) {
+        BufferedImage newImage = new BufferedImage(
+            image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_RGB);
+        Graphics2D g2d = newImage.createGraphics();
+        
+        // 设置白色背景
+        g2d.setColor(Color.WHITE);
+        g2d.fillRect(0, 0, image.getWidth(), image.getHeight());
+        
+        // 绘制原图
+        g2d.drawImage(image, 0, 0, null);
+        g2d.dispose();
+        
+        return newImage;
+    }
+    
+    /**
+     * 判断是否需要压缩图片
+     */
+    private boolean shouldCompressImage(BufferedImage image, long fileSize, int maxWidth, int maxHeight) {
+        // 如果压缩功能被禁用，不压缩
+        if (!fileUploadConfig.getImageCompression().isEnabled()) {
+            return false;
+        }
+        
+        // 如果文件大小小于阈值，不压缩
+        if (fileSize < fileUploadConfig.getImageCompression().getMaxFileSizeForCompression()) {
+            log.debug("文件大小 {} bytes 小于压缩阈值 {} bytes，跳过压缩", 
+                fileSize, fileUploadConfig.getImageCompression().getMaxFileSizeForCompression());
+            return false;
+        }
+        
+        // 如果图片尺寸超过限制，需要压缩
+        int width = image.getWidth();
+        int height = image.getHeight();
+        
+        if (width > maxWidth || height > maxHeight) {
+            log.debug("图片尺寸 {}x{} 超过限制 {}x{}，需要压缩", width, height, maxWidth, maxHeight);
+            return true;
+        }
+        
+        // 大文件即使尺寸合适也进行质量压缩（仅对JPEG）
+        if (fileSize > 5 * 1024 * 1024) { // 5MB以上
+            log.debug("大文件 {} bytes，进行质量压缩", fileSize);
+            return true;
+        }
+        
+        return false;
     }
 
     /**
@@ -863,4 +992,194 @@ public class MinioFileUploadServiceImpl implements FileUploadService {
         String timestamp = String.valueOf(System.currentTimeMillis());
         return uuid + "_" + timestamp + "." + extension;
     }
+    
+    @Override
+    public boolean updateFileAssociation(Long fileId, Long conversationId, Long messageId) {
+        try {
+            log.info("更新文件关联信息 - 文件ID: {}, 会话ID: {}, 消息ID: {}", fileId, conversationId, messageId);
+            
+            int result = fileUploadRepository.updateFileAssociation(fileId, conversationId, messageId);
+            boolean success = result > 0;
+            
+            if (success) {
+                log.info("文件关联信息更新成功 - 文件ID: {}", fileId);
+            } else {
+                log.warn("文件关联信息更新失败 - 文件ID: {}, 可能文件不存在", fileId);
+            }
+            
+            return success;
+        } catch (Exception e) {
+            log.error("更新文件关联信息失败 - 文件ID: {}", fileId, e);
+            return false;
+        }
+    }
+    
+    @Override
+    public boolean softDeleteFile(Long fileId) {
+        try {
+            log.info("软删除文件 - 文件ID: {}", fileId);
+            
+            Optional<FileUpload> fileOptional = fileUploadRepository.findById(fileId);
+            if (fileOptional.isEmpty()) {
+                log.warn("文件不存在 - 文件ID: {}", fileId);
+                return false;
+            }
+            
+            FileUpload fileUpload = fileOptional.get();
+            if (fileUpload.getIsDeleted()) {
+                log.info("文件已经被删除 - 文件ID: {}", fileId);
+                return true;
+            }
+            
+            // 执行软删除
+            fileUpload.softDelete();
+            fileUploadRepository.save(fileUpload);
+            
+            log.info("文件软删除成功 - 文件ID: {}", fileId);
+            
+            // 发布文件删除事件
+            try {
+                FileOperationEvent deleteEvent = new FileOperationEvent(
+                    this, 
+                    fileUpload.getId().toString(), 
+                    fileUpload.getUserId(), 
+                    FileOperationEvent.OperationType.DELETE, 
+                    fileUpload.getObjectKey(),
+                    fileUpload.getOriginalName()
+                );
+                eventPublisher.publishEvent(deleteEvent);
+                log.debug("已发布文件删除事件: fileId={}", fileUpload.getId());
+            } catch (Exception e) {
+                log.warn("发布文件删除事件失败: fileId={}", fileUpload.getId(), e);
+            }
+            
+            return true;
+        } catch (Exception e) {
+            log.error("软删除文件失败 - 文件ID: {}", fileId, e);
+            return false;
+        }
+    }
+    
+    @Override
+    public FileUpload uploadMediaFile(MultipartFile file, Long uploaderId, Long conversationId, Long messageId) {
+        try {
+            log.info("上传媒体文件 - 上传者ID: {}, 会话ID: {}, 消息ID: {}", uploaderId, conversationId, messageId);
+            
+            // 使用现有的上传方法
+            FileUpload fileUpload = uploadFile(file, uploaderId);
+            
+            // 更新关联信息
+            if (conversationId != null || messageId != null) {
+                fileUpload.setConversationId(conversationId);
+                fileUpload.setMessageId(messageId);
+                fileUpload = fileUploadRepository.save(fileUpload);
+            }
+            
+            return fileUpload;
+        } catch (Exception e) {
+            log.error("上传媒体文件失败", e);
+            throw new FileUploadException("上传媒体文件失败: " + e.getMessage());
+        }
+    }
+    
+    @Override
+    public FileUpload getFileById(Long fileId) {
+        try {
+            log.debug("根据ID获取文件 - 文件ID: {}", fileId);
+            Optional<FileUpload> fileOptional = fileUploadRepository.findById(fileId);
+            return fileOptional.orElse(null);
+        } catch (Exception e) {
+            log.error("根据ID获取文件失败 - 文件ID: {}", fileId, e);
+            return null;
+        }
+    }
+    
+    @Override
+    public List<FileUpload> getFilesByConversationId(Long conversationId, int page, int size) {
+        try {
+            log.debug("根据会话ID获取文件列表 - 会话ID: {}, 页码: {}, 大小: {}", conversationId, page, size);
+            Pageable pageable = PageRequest.of(page, size);
+            Page<FileUpload> filePage = fileUploadRepository.findByConversationIdAndIsDeletedFalse(conversationId, pageable);
+            return filePage.getContent();
+        } catch (Exception e) {
+            log.error("根据会话ID获取文件列表失败 - 会话ID: {}", conversationId, e);
+            return new ArrayList<>();
+        }
+    }
+    
+    @Override
+    public FileUpload getFileByMessageId(Long messageId) {
+        try {
+            log.debug("根据消息ID获取文件 - 消息ID: {}", messageId);
+            Optional<FileUpload> fileOptional = fileUploadRepository.findByMessageIdAndIsDeletedFalse(messageId);
+            return fileOptional.orElse(null);
+        } catch (Exception e) {
+            log.error("根据消息ID获取文件失败 - 消息ID: {}", messageId, e);
+            return null;
+        }
+    }
+    
+    @Override
+    public List<FileUpload> getFilesByUploaderId(Long uploaderId, int page, int size) {
+        try {
+            log.debug("根据上传者ID获取文件列表 - 上传者ID: {}, 页码: {}, 大小: {}", uploaderId, page, size);
+            Pageable pageable = PageRequest.of(page, size);
+            Page<FileUpload> filePage = fileUploadRepository.findByUserIdAndIsDeletedFalse(uploaderId, pageable);
+            return filePage.getContent();
+        } catch (Exception e) {
+            log.error("根据上传者ID获取文件列表失败 - 上传者ID: {}", uploaderId, e);
+            return new ArrayList<>();
+        }
+    }
+    
+    /**
+     * 下载文件
+     */
+    public InputStream downloadFile(String fileId, Long userId) {
+        try {
+            log.info("开始下载文件 - 文件ID: {}, 用户ID: {}", fileId, userId);
+            
+            // 获取文件信息
+            Optional<FileUpload> fileOptional = getFileInfo(fileId);
+            if (fileOptional.isEmpty()) {
+                log.warn("文件不存在 - 文件ID: {}", fileId);
+                return null;
+            }
+            
+            FileUpload fileUpload = fileOptional.get();
+            
+            // 检查文件所有权
+            if (!fileUpload.getUserId().equals(userId)) {
+                log.warn("用户 {} 尝试下载不属于自己的文件: {}", userId, fileId);
+                return null;
+            }
+            
+            // 检查文件是否已删除
+            if (fileUpload.getIsDeleted()) {
+                log.warn("文件已被删除 - 文件ID: {}", fileId);
+                return null;
+            }
+            
+            // 从MinIO下载文件
+            String bucketName = minioConfig.getBucketName(null, true); // 使用私有默认存储桶
+            String objectKey = fileUpload.getObjectKey();
+            
+            log.info("从MinIO下载文件 - bucket: {}, objectKey: {}", bucketName, objectKey);
+            InputStream inputStream = minioService.downloadFile(bucketName, objectKey);
+            
+            if (inputStream != null) {
+                log.info("文件下载成功 - 文件ID: {}", fileId);
+            } else {
+                log.error("文件下载失败 - 文件ID: {}", fileId);
+            }
+            
+            return inputStream;
+            
+        } catch (Exception e) {
+            log.error("下载文件失败 - 文件ID: {}", fileId, e);
+            return null;
+        }
+    }
+    
+    // getFileExtension方法已在上面实现，此处删除重复方法
 }

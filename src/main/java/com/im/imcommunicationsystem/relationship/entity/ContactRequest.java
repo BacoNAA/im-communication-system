@@ -1,6 +1,7 @@
 package com.im.imcommunicationsystem.relationship.entity;
 
 import com.im.imcommunicationsystem.relationship.enums.ContactRequestStatus;
+import com.im.imcommunicationsystem.relationship.converter.ContactRequestStatusConverter;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -51,7 +52,7 @@ public class ContactRequest {
     /**
      * 请求状态
      */
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = ContactRequestStatusConverter.class)
     @Column(name = "status", nullable = false)
     @Builder.Default
     private ContactRequestStatus status = ContactRequestStatus.PENDING;

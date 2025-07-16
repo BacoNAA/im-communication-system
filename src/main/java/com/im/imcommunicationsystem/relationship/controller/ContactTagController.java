@@ -31,8 +31,8 @@ public class ContactTagController {
     @Operation(summary = "创建好友标签", description = "创建新的好友标签")
     @PostMapping
     public ApiResponse<ContactTagResponse> createTag(@Valid @RequestBody ContactTagCreateRequest request) {
-        // 实现创建好友标签逻辑
-        return null;
+        ContactTagResponse response = contactTagService.createTag(request);
+        return ApiResponse.success(response);
     }
 
     /**
@@ -44,8 +44,8 @@ public class ContactTagController {
             @Parameter(description = "标签ID") @PathVariable Long tagId,
             @Valid @RequestBody ContactTagUpdateRequest request,
             @Parameter(description = "用户ID") @RequestParam Long userId) {
-        // 实现更新好友标签逻辑
-        return null;
+        ContactTagResponse response = contactTagService.updateTag(tagId, request, userId);
+        return ApiResponse.success(response);
     }
 
     /**
@@ -56,8 +56,8 @@ public class ContactTagController {
     public ApiResponse<Void> deleteTag(
             @Parameter(description = "标签ID") @PathVariable Long tagId,
             @Parameter(description = "用户ID") @RequestParam Long userId) {
-        // 实现删除好友标签逻辑
-        return null;
+        contactTagService.deleteTag(tagId, userId);
+        return ApiResponse.success(null);
     }
 
     /**
@@ -67,8 +67,8 @@ public class ContactTagController {
     @GetMapping
     public ApiResponse<List<ContactTagResponse>> getUserTags(
             @Parameter(description = "用户ID") @RequestParam Long userId) {
-        // 实现获取用户标签列表逻辑
-        return null;
+        List<ContactTagResponse> tags = contactTagService.getUserTags(userId);
+        return ApiResponse.success(tags);
     }
 
     /**
@@ -79,8 +79,8 @@ public class ContactTagController {
     public ApiResponse<ContactTagResponse> getTagDetail(
             @Parameter(description = "标签ID") @PathVariable Long tagId,
             @Parameter(description = "用户ID") @RequestParam Long userId) {
-        // 实现获取标签详情逻辑
-        return null;
+        ContactTagResponse tag = contactTagService.getTagDetail(tagId, userId);
+        return ApiResponse.success(tag);
     }
 
     /**
@@ -91,8 +91,8 @@ public class ContactTagController {
     public ApiResponse<List<ContactTagResponse>> searchTagsByName(
             @Parameter(description = "用户ID") @RequestParam Long userId,
             @Parameter(description = "标签名称") @RequestParam String name) {
-        // 实现搜索标签逻辑
-        return null;
+        List<ContactTagResponse> tags = contactTagService.searchTagsByName(userId, name);
+        return ApiResponse.success(tags);
     }
 
     /**
@@ -103,8 +103,8 @@ public class ContactTagController {
     public ApiResponse<List<ContactTagResponse>> getTagsByColor(
             @Parameter(description = "用户ID") @RequestParam Long userId,
             @Parameter(description = "标签颜色") @RequestParam String color) {
-        // 实现根据颜色查找标签逻辑
-        return null;
+        List<ContactTagResponse> tags = contactTagService.getTagsByColor(userId, color);
+        return ApiResponse.success(tags);
     }
 
     /**
@@ -114,8 +114,8 @@ public class ContactTagController {
     @GetMapping("/count")
     public ApiResponse<Long> getTagCount(
             @Parameter(description = "用户ID") @RequestParam Long userId) {
-        // 实现获取标签数量逻辑
-        return null;
+        Long count = contactTagService.getTagCount(userId);
+        return ApiResponse.success(count);
     }
 
     /**
@@ -126,8 +126,8 @@ public class ContactTagController {
     public ApiResponse<List<ContactTagResponse>> getRecentTags(
             @Parameter(description = "用户ID") @RequestParam Long userId,
             @Parameter(description = "限制数量") @RequestParam(defaultValue = "10") int limit) {
-        // 实现获取最近创建的标签逻辑
-        return null;
+        List<ContactTagResponse> tags = contactTagService.getRecentTags(userId, limit);
+        return ApiResponse.success(tags);
     }
 
     /**
@@ -138,8 +138,8 @@ public class ContactTagController {
     public ApiResponse<Integer> batchDeleteTags(
             @Parameter(description = "标签ID列表") @RequestBody List<Long> tagIds,
             @Parameter(description = "用户ID") @RequestParam Long userId) {
-        // 实现批量删除标签逻辑
-        return null;
+        Integer deletedCount = contactTagService.batchDeleteTags(tagIds, userId);
+        return ApiResponse.success(deletedCount);
     }
 
     /**
@@ -151,8 +151,8 @@ public class ContactTagController {
             @Parameter(description = "源标签ID") @PathVariable Long tagId,
             @Parameter(description = "用户ID") @RequestParam Long userId,
             @Parameter(description = "新标签名称") @RequestParam String newName) {
-        // 实现复制标签逻辑
-        return null;
+        ContactTagResponse response = contactTagService.duplicateTag(tagId, userId, newName);
+        return ApiResponse.success(response);
     }
 
     /**
@@ -161,7 +161,7 @@ public class ContactTagController {
     @Operation(summary = "获取默认颜色列表", description = "获取系统预设的标签颜色列表")
     @GetMapping("/default-colors")
     public ApiResponse<List<String>> getDefaultColors() {
-        // 实现获取默认颜色列表逻辑
-        return null;
+        List<String> colors = contactTagService.getDefaultColors();
+        return ApiResponse.success(colors);
     }
 }

@@ -1,5 +1,7 @@
 package com.im.imcommunicationsystem.relationship.enums;
 
+import com.fasterxml.jackson.annotation.JsonValue;
+
 /**
  * 好友请求状态枚举
  * 对应数据库中friend_requests表的status字段
@@ -29,7 +31,13 @@ public enum ContactRequestStatus {
         this.description = description;
     }
     
+    @JsonValue
     public String getCode() {
+        return code;
+    }
+    
+    @Override
+    public String toString() {
         return code;
     }
     
@@ -43,8 +51,15 @@ public enum ContactRequestStatus {
      * @return 对应的枚举值
      */
     public static ContactRequestStatus fromCode(String code) {
+        if (code == null) {
+            return null;
+        }
+        
+        // 处理小写输入
+        String normalizedCode = code.toLowerCase();
+        
         for (ContactRequestStatus status : values()) {
-            if (status.code.equals(code)) {
+            if (status.code.toLowerCase().equals(normalizedCode)) {
                 return status;
             }
         }

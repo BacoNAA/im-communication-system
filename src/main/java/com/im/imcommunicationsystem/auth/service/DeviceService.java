@@ -94,4 +94,19 @@ public interface DeviceService {
      * @return 会话是否有效
      */
     boolean isDeviceSessionValidByInfo(Long userId, String deviceInfo);
+
+    /**
+     * 更新设备的最后活跃时间
+     * 用于保持设备在线状态
+     * @param userId 用户ID
+     * @param deviceInfo 设备信息
+     */
+    void updateDeviceLastActiveTime(Long userId, String deviceInfo);
+
+    /**
+     * 根据设备类型更新最后活跃时间
+     * @param userId 用户ID
+     * @param deviceType 设备类型
+     */
+    void updateDeviceLastActiveTimeByType(Long userId, String deviceType);
 }

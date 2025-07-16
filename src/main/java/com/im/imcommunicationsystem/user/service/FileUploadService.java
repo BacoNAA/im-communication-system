@@ -79,4 +79,71 @@ public interface FileUploadService {
      * @return 统计信息
      */
     java.util.Map<String, Object> getUserFileStats(Long userId);
+
+    // ==================== 消息模块特有功能 ====================
+
+    /**
+     * 上传媒体文件（用于消息）
+     * 
+     * @param file 文件
+     * @param uploaderId 上传者ID
+     * @param conversationId 会话ID（可选）
+     * @param messageId 消息ID（可选）
+     * @return 文件上传记录
+     */
+    com.im.imcommunicationsystem.user.entity.FileUpload uploadMediaFile(MultipartFile file, Long uploaderId, Long conversationId, Long messageId);
+
+    /**
+     * 根据ID获取文件
+     * 
+     * @param fileId 文件ID
+     * @return 文件记录
+     */
+    com.im.imcommunicationsystem.user.entity.FileUpload getFileById(Long fileId);
+
+    /**
+     * 根据会话ID获取媒体文件列表
+     * 
+     * @param conversationId 会话ID
+     * @param page 页码
+     * @param size 每页大小
+     * @return 文件列表
+     */
+    java.util.List<com.im.imcommunicationsystem.user.entity.FileUpload> getFilesByConversationId(Long conversationId, int page, int size);
+
+    /**
+     * 根据消息ID获取媒体文件
+     * 
+     * @param messageId 消息ID
+     * @return 文件记录
+     */
+    com.im.imcommunicationsystem.user.entity.FileUpload getFileByMessageId(Long messageId);
+
+    /**
+     * 根据上传者ID获取媒体文件列表
+     * 
+     * @param uploaderId 上传者ID
+     * @param page 页码
+     * @param size 每页大小
+     * @return 文件列表
+     */
+    java.util.List<com.im.imcommunicationsystem.user.entity.FileUpload> getFilesByUploaderId(Long uploaderId, int page, int size);
+
+    /**
+     * 软删除文件
+     * 
+     * @param fileId 文件ID
+     * @return 是否删除成功
+     */
+    boolean softDeleteFile(Long fileId);
+
+    /**
+     * 更新文件的会话和消息关联
+     * 
+     * @param fileId 文件ID
+     * @param conversationId 会话ID
+     * @param messageId 消息ID
+     * @return 是否更新成功
+     */
+    boolean updateFileAssociation(Long fileId, Long conversationId, Long messageId);
 }

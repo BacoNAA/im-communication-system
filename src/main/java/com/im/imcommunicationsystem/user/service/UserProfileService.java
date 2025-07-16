@@ -14,11 +14,19 @@ public interface UserProfileService {
 
     /**
      * 获取用户完整资料
-     * 
+/**
+     * 获取用户资料
      * @param userId 用户ID
      * @return 用户资料响应
      */
     UserProfileResponse getUserProfile(Long userId);
+
+    /**
+     * 根据用户ID字符串获取用户资料
+     * @param userIdStr 用户ID字符串
+     * @return 用户资料响应
+     */
+    UserProfileResponse getUserProfileByUserIdStr(String userIdStr);
 
     /**
      * 更新用户资料

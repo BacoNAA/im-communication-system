@@ -165,51 +165,11 @@
             </div>
         </div>
         
-        <!-- 聊天窗口 -->
-        <div class="chat-window" id="chatWindow" style="display: none;">
-            <div class="chat-header">
-                <div class="chat-info">
-                    <img class="chat-avatar" src="images/default-avatar.svg" alt="头像">
-                    <div class="chat-details">
-                        <div class="chat-name">聊天对象</div>
-                        <div class="chat-status">在线</div>
-                    </div>
-                </div>
-                <div class="chat-actions">
-                    <button class="btn btn-icon" onclick="closeChatWindow()" title="关闭">
-                        <i class="icon-close"></i>
-                    </button>
-                </div>
-            </div>
-            
-            <div class="chat-messages" id="chatMessages">
-                <!-- 聊天消息将在这里显示 -->
-            </div>
-            
-            <div class="chat-input">
-                <div class="input-toolbar">
-                    <button class="btn btn-icon" onclick="sendEmoji()" title="表情">
-                        <i class="icon-emoji"></i>
-                    </button>
-                    <button class="btn btn-icon" onclick="sendFile()" title="文件">
-                        <i class="icon-file"></i>
-                    </button>
-                    <button class="btn btn-icon" onclick="sendImage()" title="图片">
-                        <i class="icon-image"></i>
-                    </button>
-                </div>
-                <div class="input-area">
-                    <textarea id="messageInput" placeholder="输入消息..." rows="3"></textarea>
-                    <button class="btn btn-primary" onclick="sendMessage()">
-                        发送
-                    </button>
-                </div>
-            </div>
-        </div>
+
     </div>
     
     <!-- 消息提示 -->
-    <div id="messageContainer" class="message-container"></div>
+    <div id="messageContainer" class="toast-container"></div>
     
     <script src="js/common.js"></script>
     <script src="js/dashboard.js"></script>

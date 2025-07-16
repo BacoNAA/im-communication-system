@@ -135,7 +135,7 @@ function generateQRCode() {
             sessionStorage.removeItem('refreshToken');
             sessionStorage.removeItem('userInfo');
             setTimeout(() => {
-                window.location.href = '/login.html';
+                window.location.href = '/login';
             }, 2000);
             return Promise.reject(new Error('登录已过期'));
         }
@@ -260,52 +260,5 @@ function manageDevices() {
 }
 
 
-
-/**
- * 关闭聊天窗口
- */
-function closeChatWindow() {
-    const chatWindow = document.getElementById('chatWindow');
-    if (chatWindow) {
-        chatWindow.style.display = 'none';
-    }
-}
-
-/**
- * 发送表情
- */
-function sendEmoji() {
-    showMessage('发送表情功能正在开发中...', 'info');
-}
-
-/**
- * 发送文件
- */
-function sendFile() {
-    showMessage('发送文件功能正在开发中...', 'info');
-}
-
-/**
- * 发送图片
- */
-function sendImage() {
-    showMessage('发送图片功能正在开发中...', 'info');
-}
-
-/**
- * 发送消息
- */
-function sendMessage() {
-    const messageInput = document.getElementById('messageInput');
-    const message = messageInput.value.trim();
-    
-    if (!message) {
-        showMessage('请输入消息内容', 'warning');
-        return;
-    }
-    
-    showMessage('发送消息功能正在开发中...', 'info');
-    messageInput.value = '';
-}
 
 // formatDate 函数已在 common.js 中定义

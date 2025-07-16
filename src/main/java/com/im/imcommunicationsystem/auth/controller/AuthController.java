@@ -103,7 +103,9 @@ public class AuthController {
     public ApiResponse<EmailCheckResponse> checkEmailExists(@RequestParam String email) {
         try {
             boolean exists = authService.checkEmailExists(email);
-            EmailCheckResponse response = new EmailCheckResponse(exists);
+            EmailCheckResponse response = EmailCheckResponse.builder()
+                    .exists(exists)
+                    .build();
             return ApiResponse.success("检查完成", response);
         } catch (Exception e) {
             return ApiResponse.serverError("检查邮箱失败: " + e.getMessage());

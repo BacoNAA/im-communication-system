@@ -2,6 +2,7 @@ package com.im.imcommunicationsystem.relationship.service;
 
 import com.im.imcommunicationsystem.relationship.dto.request.ContactRequestCreateRequest;
 import com.im.imcommunicationsystem.relationship.dto.response.ContactRequestResponse;
+import com.im.imcommunicationsystem.relationship.dto.response.ContactRequestStatsResponse;
 import com.im.imcommunicationsystem.relationship.enums.ContactRequestStatus;
 
 import java.util.List;
@@ -121,4 +122,11 @@ public interface ContactRequestService {
      * @return 是否有权限操作
      */
     boolean validateRequestPermission(Long requestId, Long userId);
+    
+    /**
+     * 获取好友请求统计信息
+     * @param userId 用户ID
+     * @return 统计信息
+     */
+    ContactRequestStatsResponse getRequestStats(Long userId);
 }

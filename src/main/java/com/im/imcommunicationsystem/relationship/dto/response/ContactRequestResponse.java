@@ -37,6 +37,11 @@ public class ContactRequestResponse {
     private String requesterAvatarUrl;
 
     /**
+     * 请求者用户ID字符串
+     */
+    private String requesterUserIdStr;
+
+    /**
      * 接收者ID
      */
     private Long recipientId;
@@ -55,6 +60,11 @@ public class ContactRequestResponse {
      * 接收者头像URL
      */
     private String recipientAvatarUrl;
+
+    /**
+     * 接收者用户ID字符串
+     */
+    private String recipientUserIdStr;
 
     /**
      * 验证信息

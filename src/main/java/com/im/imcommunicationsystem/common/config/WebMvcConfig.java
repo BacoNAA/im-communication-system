@@ -1,6 +1,9 @@
 package com.im.imcommunicationsystem.common.config;
 
+import com.im.imcommunicationsystem.auth.interceptor.DeviceActivityInterceptor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.PathMatchConfigurer;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -15,7 +18,10 @@ import org.springframework.web.util.pattern.PathPatternParser;
  * @since 2024-01-01
  */
 @Configuration
+@RequiredArgsConstructor
 public class WebMvcConfig implements WebMvcConfigurer {
+
+    private final DeviceActivityInterceptor deviceActivityInterceptor;
 
     /**
      * 配置静态资源处理
@@ -54,7 +60,29 @@ public class WebMvcConfig implements WebMvcConfigurer {
     public void configurePathMatch(PathMatchConfigurer configurer) {
         // 使用PathPatternParser来提高路径匹配性能和准确性
         configurer.setPatternParser(new PathPatternParser());
-        // 确保尾部斜杠匹配
-        configurer.setUseTrailingSlashMatch(true);
     }
+
+    /**
+     * 配置拦截器
+     * 注册设备活跃度拦截器，用于更新设备最后活跃时间
+     * 
+     * @param registry 拦截器注册表
+     */
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(deviceActivityInterceptor)
+                .addPathPatterns("/api/**") // 拦截所有API请求
+                .excludePathPatterns(
+                        "/api/auth/login",
+                        "/api/auth/register",
+                        "/api/auth/verify-code",
+                        "/api/auth/reset-password",
+                        "/api/public/**",
+                        "/static/**",
+                        "/css/**",
+                        "/js/**",
+                        "/images/**",
+                        "/uploads/**"
+                ); // 排除不需要认证的路径
+     }
 }

@@ -28,7 +28,7 @@ spring:
   # --- JPA配置 ---
   jpa:
     hibernate:
-      # 使用Flyway进行数据库迁移，禁用JPA自动建表
+      # 使用validate模式，不允许JPA修改表结构
       ddl-auto: validate
     properties:
       hibernate:
@@ -43,7 +43,7 @@ spring:
     # 迁移脚本位置
     locations: classpath:db/migration
     # 基线版本
-    baseline-version: 0
+    baseline-version: 1
     # 如果数据库不为空，是否自动执行基线
     baseline-on-migrate: true
     # 验证迁移脚本的校验和
@@ -51,7 +51,7 @@ spring:
     # 允许乱序迁移
     out-of-order: true
     # 清理数据库（生产环境请设为false）
-    clean-disabled: false
+    clean-disabled: true
     # 编码
     encoding: UTF-8
     # 表名前缀
@@ -179,9 +179,10 @@ app:
       - application/pdf
     image-compression:
       enabled: true
-      quality: 0.8
+      quality: 0.85  # 提高压缩质量，减少损失
       max-width: 1920
       max-height: 1080
+      max-file-size-for-compression: 2097152  # 2MB，小于此大小的文件不压缩
     avatar:
       size: 800
       default-avatar: /images/default-avatar.png

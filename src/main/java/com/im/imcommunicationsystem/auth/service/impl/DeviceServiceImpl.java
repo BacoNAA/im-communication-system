@@ -259,6 +259,9 @@ public class DeviceServiceImpl implements DeviceService {
             if (device.isPresent()) {
                 LoginDevice loginDevice = device.get();
                 loginDevice.setIsActive(isActive);
+                if (isActive) {
+                    loginDevice.setLastLoginAt(LocalDateTime.now());
+                }
                 loginDeviceRepository.save(loginDevice);
                 log.info("设备状态已更新: deviceId={}, isActive={}", loginDevice.getId(), isActive);
             } else {
@@ -268,6 +271,52 @@ public class DeviceServiceImpl implements DeviceService {
             log.error("更新设备状态失败: userId={}, deviceInfo={}, isActive={}, error={}", 
                     userId, deviceInfo, isActive, e.getMessage(), e);
             throw e;
+        }
+    }
+
+    @Override
+    @Transactional
+    public void updateDeviceLastActiveTime(Long userId, String deviceInfo) {
+        log.debug("更新设备最后活跃时间: userId={}, deviceInfo={}", userId, deviceInfo);
+        try {
+            Optional<LoginDevice> deviceOpt = loginDeviceRepository.findByUserIdAndDeviceInfo(userId, deviceInfo);
+            if (deviceOpt.isPresent()) {
+                LoginDevice device = deviceOpt.get();
+                if (device.getIsActive()) {
+                    device.setLastLoginAt(LocalDateTime.now());
+                    loginDeviceRepository.save(device);
+                    log.debug("设备最后活跃时间已更新: deviceId={}", device.getId());
+                }
+            } else {
+                log.debug("未找到要更新活跃时间的设备: userId={}, deviceInfo={}", userId, deviceInfo);
+            }
+        } catch (Exception e) {
+            log.error("更新设备最后活跃时间失败: userId={}, deviceInfo={}, error={}", 
+                    userId, deviceInfo, e.getMessage(), e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void updateDeviceLastActiveTimeByType(Long userId, String deviceType) {
+        log.debug("根据设备类型更新最后活跃时间: userId={}, deviceType={}", userId, deviceType);
+        try {
+            String normalizedDeviceType = normalizeDeviceType(deviceType);
+            List<LoginDevice> activeDevices = loginDeviceRepository.findByUserIdAndDeviceTypeAndIsActiveTrue(userId, normalizedDeviceType);
+            if (!activeDevices.isEmpty()) {
+                LocalDateTime now = LocalDateTime.now();
+                for (LoginDevice device : activeDevices) {
+                    device.setLastLoginAt(now);
+                }
+                loginDeviceRepository.saveAll(activeDevices);
+                log.debug("设备最后活跃时间已更新: userId={}, deviceType={}, updatedCount={}", 
+                        userId, deviceType, activeDevices.size());
+            } else {
+                log.debug("未找到要更新活跃时间的活跃设备: userId={}, deviceType={}", userId, deviceType);
+            }
+        } catch (Exception e) {
+            log.error("根据设备类型更新最后活跃时间失败: userId={}, deviceType={}, error={}", 
+                    userId, deviceType, e.getMessage(), e);
         }
     }
 

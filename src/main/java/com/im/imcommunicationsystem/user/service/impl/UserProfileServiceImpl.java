@@ -52,6 +52,17 @@ public class UserProfileServiceImpl implements UserProfileService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public UserProfileResponse getUserProfileByUserIdStr(String userIdStr) {
+        log.info("根据用户ID字符串获取用户资料: userIdStr={}", userIdStr);
+        
+        User user = userRepository.findByUserIdStr(userIdStr)
+                .orElseThrow(() -> new UserNotFoundException("用户不存在，用户ID: " + userIdStr));
+        
+        return convertToUserProfileResponse(user);
+    }
+
+    @Override
     @Transactional
     public void updateUserProfile(Long userId, UpdateProfileRequest request) {
         log.info("更新用户资料，用户ID: {}", userId);
@@ -210,8 +221,8 @@ public class UserProfileServiceImpl implements UserProfileService {
             }
         }
         
-        // 检查个人ID是否已被使用
-        if (userRepository.existsByUserIdString(userIdStr)) {
+        // 检查个人ID是否已被其他用户使用（排除当前用户）
+        if (userRepository.existsByUserIdStringAndIdNot(userIdStr, userId)) {
             throw new UserIdConflictException("个人ID已被使用: " + userIdStr);
         }
         

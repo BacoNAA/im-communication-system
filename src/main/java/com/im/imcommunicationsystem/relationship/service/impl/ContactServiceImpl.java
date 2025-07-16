@@ -1,16 +1,24 @@
 package com.im.imcommunicationsystem.relationship.service.impl;
 
+import com.im.imcommunicationsystem.auth.entity.User;
+import com.im.imcommunicationsystem.auth.repository.UserRepository;
 import com.im.imcommunicationsystem.relationship.dto.response.ContactResponse;
+import com.im.imcommunicationsystem.relationship.dto.response.ContactTagResponse;
 import com.im.imcommunicationsystem.relationship.entity.Contact;
+import com.im.imcommunicationsystem.relationship.entity.ContactId;
 import com.im.imcommunicationsystem.relationship.repository.ContactRepository;
 import com.im.imcommunicationsystem.relationship.service.ContactService;
+import com.im.imcommunicationsystem.relationship.service.ContactTagAssignmentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * 联系人服务实现类
@@ -21,24 +29,178 @@ import java.util.Optional;
 public class ContactServiceImpl implements ContactService {
 
     private final ContactRepository contactRepository;
+    private final UserRepository userRepository;
+    private final ContactTagAssignmentService contactTagAssignmentService;
 
     @Override
+    @Transactional(readOnly = true)
     public List<ContactResponse> getContactList(Long userId, boolean includeBlocked) {
-        // TODO: 实现获取联系人列表逻辑
-        return null;
+        log.info("获取用户联系人列表: userId={}, includeBlocked={}", userId, includeBlocked);
+        
+        try {
+            List<Contact> contacts;
+            if (includeBlocked) {
+                contacts = contactRepository.findByUserId(userId);
+            } else {
+                contacts = contactRepository.findByUserIdAndIsBlockedFalse(userId);
+            }
+            
+            if (contacts.isEmpty()) {
+                log.info("用户没有联系人: userId={}", userId);
+                return new ArrayList<>();
+            }
+            
+            // 批量获取所有联系人的标签信息
+            List<Long> friendIds = contacts.stream()
+                    .map(Contact::getFriendId)
+                    .collect(Collectors.toList());
+            
+            Map<Long, List<ContactTagResponse>> contactTagsMap = 
+                    contactTagAssignmentService.getBatchContactTags(userId, friendIds);
+            
+            List<ContactResponse> contactResponses = new ArrayList<>();
+            for (Contact contact : contacts) {
+                log.info("处理联系人关系: userId={}, friendId={}, alias={}", 
+                        contact.getUserId(), contact.getFriendId(), contact.getAlias());
+                
+                Optional<User> friendUser = userRepository.findById(contact.getFriendId());
+                if (friendUser.isPresent()) {
+                    User friend = friendUser.get();
+                    log.info("找到好友用户: friendId={}, email={}, nickname={}", 
+                            friend.getId(), friend.getEmail(), friend.getNickname());
+                    
+                    // 获取该联系人的标签信息
+                    List<ContactTagResponse> tags = contactTagsMap.getOrDefault(contact.getFriendId(), new ArrayList<>());
+                    
+                    ContactResponse response = ContactResponse.builder()
+                             .userId(userId)
+                             .friendId(friend.getId())
+                             .friendUsername(friend.getEmail())
+                             .nickname(friend.getNickname())
+                             .avatarUrl(friend.getAvatarUrl())
+                             .alias(contact.getAlias())
+                             .isBlocked(contact.getIsBlocked())
+                             .addedAt(contact.getCreatedAt())
+                             .lastContactTime(contact.getCreatedAt())
+                             .tags(tags)
+                             .tagCount(tags.size())
+                             .build();
+                    
+                    log.info("构建ContactResponse: userId={}, friendId={}, nickname={}, alias={}, tagCount={}", 
+                            response.getUserId(), response.getFriendId(), response.getNickname(), 
+                            response.getAlias(), response.getTagCount());
+                    
+                    contactResponses.add(response);
+                } else {
+                    log.warn("未找到好友用户: friendId={}", contact.getFriendId());
+                }
+            }
+            
+            log.info("成功获取联系人列表: userId={}, 联系人数量={}", userId, contactResponses.size());
+            return contactResponses;
+            
+        } catch (Exception e) {
+            log.error("获取联系人列表失败: userId={}, error={}", userId, e.getMessage(), e);
+            return new ArrayList<>();
+        }
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Optional<ContactResponse> getContactDetail(Long userId, Long friendId) {
-        // TODO: 实现获取联系人详情逻辑
-        return Optional.empty();
+        log.info("获取联系人详情: userId={}, friendId={}", userId, friendId);
+        
+        try {
+            // 查找联系人关系
+            Optional<Contact> contactOpt = contactRepository.findByUserIdAndFriendId(userId, friendId);
+            if (contactOpt.isEmpty()) {
+                log.warn("联系人关系不存在: userId={}, friendId={}", userId, friendId);
+                return Optional.empty();
+            }
+            
+            Contact contact = contactOpt.get();
+            
+            // 查找好友用户信息
+            Optional<User> friendUserOpt = userRepository.findById(friendId);
+            if (friendUserOpt.isEmpty()) {
+                log.warn("好友用户不存在: friendId={}", friendId);
+                return Optional.empty();
+            }
+            
+            User friend = friendUserOpt.get();
+            
+            // 获取联系人的标签信息
+            List<ContactTagResponse> tags = contactTagAssignmentService.getContactTags(userId, friendId);
+            
+            ContactResponse response = ContactResponse.builder()
+                    .userId(userId)
+                    .friendId(friend.getId())
+                    .friendUsername(friend.getEmail())
+                    .nickname(friend.getNickname())
+                    .avatarUrl(friend.getAvatarUrl())
+                    .alias(contact.getAlias())
+                    .isBlocked(contact.getIsBlocked())
+                    .addedAt(contact.getCreatedAt())
+                    .lastContactTime(contact.getCreatedAt())
+                    .tags(tags)
+                    .tagCount(tags.size())
+                    .build();
+            
+            log.info("成功获取联系人详情: userId={}, friendId={}, tagCount={}", 
+                    userId, friendId, tags.size());
+            
+            return Optional.of(response);
+            
+        } catch (Exception e) {
+            log.error("获取联系人详情失败: userId={}, friendId={}, error={}", 
+                    userId, friendId, e.getMessage(), e);
+            return Optional.empty();
+        }
     }
 
     @Override
     @Transactional
     public boolean setContactAlias(Long userId, Long friendId, String alias) {
-        // TODO: 实现设置好友备注逻辑
-        return false;
+        log.info("设置好友备注: userId={}, friendId={}, alias={}", userId, friendId, alias);
+        
+        try {
+            // 验证参数
+            if (userId == null || friendId == null) {
+                log.warn("设置好友备注失败: 用户ID或好友ID为空");
+                return false;
+            }
+            
+            if (userId.equals(friendId)) {
+                log.warn("设置好友备注失败: 不能为自己设置备注");
+                return false;
+            }
+            
+            // 验证备注长度（根据配置和数据库字段限制）
+            if (alias != null && alias.length() > 50) {
+                log.warn("设置好友备注失败: 备注长度超过限制, alias={}", alias);
+                return false;
+            }
+            
+            // 查找联系人关系
+            Optional<Contact> contactOpt = contactRepository.findByUserIdAndFriendId(userId, friendId);
+            if (contactOpt.isEmpty()) {
+                log.warn("设置好友备注失败: 联系人关系不存在, userId={}, friendId={}", userId, friendId);
+                return false;
+            }
+            
+            // 更新备注
+            Contact contact = contactOpt.get();
+            contact.setAlias(alias);
+            contactRepository.save(contact);
+            
+            log.info("成功设置好友备注: userId={}, friendId={}, alias={}", userId, friendId, alias);
+            return true;
+            
+        } catch (Exception e) {
+            log.error("设置好友备注异常: userId={}, friendId={}, alias={}, error={}", 
+                     userId, friendId, alias, e.getMessage(), e);
+            return false;
+        }
     }
 
     @Override
@@ -58,8 +220,23 @@ public class ContactServiceImpl implements ContactService {
     @Override
     @Transactional
     public boolean deleteContact(Long userId, Long friendId) {
-        // TODO: 实现删除好友关系逻辑
-        return false;
+        try {
+            // 先清除联系人标签
+            contactTagAssignmentService.clearContactTags(userId, friendId);
+            log.info("Cleared contact tags for user {} and friend {}", userId, friendId);
+            
+            // 删除双向好友关系
+            // 删除 userId -> friendId 的关系
+            contactRepository.deleteById(new ContactId(userId, friendId));
+            // 删除 friendId -> userId 的关系
+            contactRepository.deleteById(new ContactId(friendId, userId));
+            
+            log.info("Successfully deleted contact relationship between user {} and friend {}", userId, friendId);
+            return true;
+        } catch (Exception e) {
+            log.error("Failed to delete contact relationship between user {} and friend {}: {}", userId, friendId, e.getMessage());
+            return false;
+        }
     }
 
     @Override
