@@ -82,11 +82,154 @@ export interface AssignTagRequest {
 export const contactApi = {
   // 获取联系人列表
   async getContacts(userId: number, includeBlocked: boolean = false): Promise<ApiResponse<Contact[]>> {
-    return api.get<ApiResponse<Contact[]>>(`/contacts?userId=${userId}&includeBlocked=${includeBlocked}`, {
-      headers: {
-        'X-User-Id': userId.toString()
+    console.log('contactApi.getContacts: 开始请求, 用户ID:', userId, '包含已屏蔽:', includeBlocked);
+    
+    if (!userId || userId <= 0) {
+      console.error('contactApi.getContacts: 无效的用户ID:', userId);
+      return {
+        code: 400,
+        message: '无效的用户ID',
+        data: [],
+        success: false
+      };
+    }
+    
+    // 获取认证令牌
+    const token = localStorage.getItem('accessToken') || 
+                 localStorage.getItem('auth_token') || 
+                 sessionStorage.getItem('accessToken') || 
+                 sessionStorage.getItem('auth_token');
+                 
+    console.log('contactApi.getContacts: 认证令牌存在:', !!token);
+    
+    if (!token) {
+      console.error('contactApi.getContacts: 未找到认证令牌');
+      return {
+        code: 401,
+        message: '未授权，请先登录',
+        data: [],
+        success: false
+      };
+    }
+    
+    const headers: Record<string, string> = {
+      'X-User-Id': userId.toString(),
+      'Authorization': `Bearer ${token}`
+    };
+    
+    // 尝试不同的API路径
+    const apiPaths = [
+      `/contacts?userId=${userId}&includeBlocked=${includeBlocked}`,
+      `/contact/list?userId=${userId}&includeBlocked=${includeBlocked}`,
+      `/user/${userId}/contacts?includeBlocked=${includeBlocked}`
+    ];
+    
+    let lastError: any = null;
+    let lastResponse: any = null;
+    
+    // 依次尝试不同的API路径
+    for (const path of apiPaths) {
+      try {
+        console.log('contactApi.getContacts: 尝试请求URL:', path);
+        console.log('contactApi.getContacts: 请求头:', headers);
+        
+        const response = await api.get<ApiResponse<Contact[]>>(path, { headers });
+        
+        console.log('contactApi.getContacts: 响应结果:', response);
+        lastResponse = response;
+        
+        // 检查响应是否包含有效数据
+        if (response.success && Array.isArray(response.data)) {
+          // 检查数据结构，确保每个联系人都有friend字段
+          const validData = response.data.filter((contact: any) => {
+            if (!contact.friend) {
+              console.warn('contactApi.getContacts: 联系人缺少friend字段:', contact);
+              
+              // 尝试从其他字段构建friend字段
+              if (contact.friendId && (contact.friendEmail || contact.email || contact.friendName || contact.nickname)) {
+                contact.friend = {
+                  id: contact.friendId,
+                  email: contact.friendEmail || contact.email || '',
+                  nickname: contact.friendName || contact.nickname || '',
+                  avatarUrl: contact.friendAvatarUrl || contact.avatarUrl || '',
+                };
+                return true;
+              }
+              return false;
+            }
+            return true;
+          });
+          
+          console.log(`contactApi.getContacts: 路径 ${path} 成功返回 ${validData.length} 条有效联系人数据`);
+          
+          // 返回有效的数据
+          return {
+            ...response,
+            data: validData
+          };
+        } else {
+          console.warn(`contactApi.getContacts: 路径 ${path} 响应无效数据:`, response);
+          // 继续尝试下一个路径
+        }
+      } catch (error) {
+        console.error(`contactApi.getContacts: 路径 ${path} 请求失败:`, error);
+        lastError = error;
+        // 继续尝试下一个路径
       }
-    });
+    }
+    
+    // 如果有最后一个响应但不包含有效数据，返回该响应
+    if (lastResponse) {
+      console.warn('contactApi.getContacts: 所有路径都未返回有效数据，返回最后一个响应');
+      return lastResponse;
+    }
+    
+    // 所有路径都失败了，抛出最后一个错误
+    console.error('contactApi.getContacts: 所有API路径都请求失败');
+    throw lastError || new Error('所有API路径都请求失败');
+  },
+
+  // 测试联系人API
+  async testContactsAPI(userId: number): Promise<void> {
+    console.log('开始测试联系人API');
+    
+    // 获取认证令牌
+    const token = localStorage.getItem('accessToken') || 
+                 localStorage.getItem('auth_token') || 
+                 sessionStorage.getItem('accessToken') || 
+                 sessionStorage.getItem('auth_token');
+    
+    if (!token) {
+      console.error('测试失败: 未找到认证令牌');
+      return;
+    }
+    
+    const headers = {
+      'Authorization': `Bearer ${token}`,
+      'X-User-Id': userId.toString(),
+      'Content-Type': 'application/json'
+    };
+    
+    try {
+      // 直接使用fetch API进行测试
+      const response = await fetch(`/api/contacts?userId=${userId}`, {
+        method: 'GET',
+        headers
+      });
+      
+      console.log('测试响应状态:', response.status, response.statusText);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('测试失败:', errorText);
+        return;
+      }
+      
+      const data = await response.json();
+      console.log('测试成功，响应数据:', data);
+    } catch (error) {
+      console.error('测试过程中出错:', error);
+    }
   },
 
   // 搜索用户

@@ -21,6 +21,14 @@ export interface UserProfile {
   personalId?: string;  // 映射到userIdString
 }
 
+// 用户选项接口，用于搜索结果
+export interface UserOption {
+  id: number;
+  username: string;
+  nickname?: string;
+  avatar?: string;
+}
+
 // 用户状态接口
 export interface UserStatus {
   status: string;
@@ -30,6 +38,15 @@ export interface UserStatus {
 // 个人ID接口
 export interface PersonalId {
   personalId: string;
+}
+
+/**
+ * 根据关键字搜索用户
+ * @param {string} keyword - 搜索关键字
+ * @returns {Promise<ApiResponse<UserOption[]>>}
+ */
+export function searchUsers(keyword: string): Promise<ApiResponse<UserOption[]>> {
+  return api.get<ApiResponse<UserOption[]>>('/users/search', { body: { keyword } });
 }
 
 export const userApi = {
@@ -59,5 +76,8 @@ export const userApi = {
     formData.append('avatar', file);
 
     return api.post<ApiResponse<{ avatarUrl: string }>>('/user/avatar', formData);
-  }
+  },
+  
+  // 搜索用户
+  searchUsers
 };

@@ -47,27 +47,40 @@ export function useContacts() {
   });
 
   // 获取联系人列表
-  const loadContacts = async (includeBlocked: boolean = false): Promise<void> => {
-    if (!currentUser.value?.id) {
+  const loadContacts = async (includeBlocked: boolean = false, manualUserId?: number): Promise<void> => {
+    // 优先使用传入的用户ID，其次使用currentUser中的ID
+    const userId = manualUserId || currentUser.value?.id;
+    
+    if (!userId) {
+      console.error('loadContacts: 当前用户未登录或ID不存在');
       error.value = '请先登录';
       return;
     }
+
+    console.log('loadContacts: 开始加载联系人列表, 用户ID:', userId);
 
     try {
       isLoading.value = true;
       error.value = null;
       
-      const response = await contactApi.getContacts(currentUser.value.id, includeBlocked);
+      console.log('loadContacts: 发起API请求, 用户ID:', userId, '包含已屏蔽:', includeBlocked);
+      const response = await contactApi.getContacts(userId, includeBlocked);
+      console.log('loadContacts: API响应结果:', response);
       
       if (response.success && response.data) {
+        console.log('loadContacts: 请求成功, 联系人数量:', response.data.length);
         contacts.value = response.data;
+        console.log('loadContacts: 联系人列表已更新, 当前数量:', contacts.value.length);
       } else {
+        console.error('loadContacts: 请求成功但数据无效:', response);
         throw new Error(response.message || '获取联系人列表失败');
       }
     } catch (err: any) {
+      console.error('loadContacts: 请求失败:', err);
       error.value = err.message || '获取联系人列表失败';
       
       if (err.status === 401) {
+        console.error('loadContacts: 未授权错误, 清除登录信息');
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
         localStorage.removeItem('userInfo');

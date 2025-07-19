@@ -165,12 +165,44 @@ public class MinioServiceImpl implements MinioService {
     @Override
     public InputStream downloadFile(String bucketName, String objectKey) {
         try {
-            return minioClient.getObject(GetObjectArgs.builder()
+            log.info("开始从MinIO下载文件: bucketName={}, objectKey={}", bucketName, objectKey);
+            
+            // 检查参数
+            if (bucketName == null || bucketName.trim().isEmpty()) {
+                log.error("下载文件失败: bucketName为空");
+                return null;
+            }
+            
+            if (objectKey == null || objectKey.trim().isEmpty()) {
+                log.error("下载文件失败: objectKey为空");
+                return null;
+            }
+            
+            // 检查存储桶是否存在
+            boolean bucketExists = bucketExists(bucketName);
+            if (!bucketExists) {
+                log.error("下载文件失败: 存储桶不存在 - {}", bucketName);
+                return null;
+            }
+            
+            // 检查文件是否存在
+            boolean fileExists = fileExists(bucketName, objectKey);
+            if (!fileExists) {
+                log.error("下载文件失败: 文件不存在 - {}/{}", bucketName, objectKey);
+                return null;
+            }
+            
+            // 获取文件
+            InputStream stream = minioClient.getObject(GetObjectArgs.builder()
                     .bucket(bucketName)
                     .object(objectKey)
                     .build());
+            
+            log.info("文件下载成功: {}/{}", bucketName, objectKey);
+            return stream;
+            
         } catch (Exception e) {
-            log.error("文件下载失败: {}/{}", bucketName, objectKey, e);
+            log.error("文件下载失败: {}/{} - {}", bucketName, objectKey, e.getMessage(), e);
             return null;
         }
     }

@@ -216,6 +216,8 @@ public class UserSettingsServiceImpl implements UserSettingsService {
         // 解析主题设置
         Map<String, Object> themeSettings = parseJsonSettings(userSettings.getThemeSettings());
         response.setTheme(getStringValue(themeSettings, "theme", "light"));
+        response.setThemeColor(getStringValue(themeSettings, "color", "#1890ff"));
+        response.setChatBackground(getStringValue(themeSettings, "chatBackground", "default"));
         response.setFontSize(getIntegerValue(themeSettings, "fontSize", 14));
         response.setTwoFactorEnabled(getBooleanValue(themeSettings, "twoFactorEnabled", false));
         
@@ -336,6 +338,8 @@ public class UserSettingsServiceImpl implements UserSettingsService {
      */
     private void updateThemeSettings(Map<String, Object> settings, UpdateSettingsRequest request) {
         settings.put("theme", request.getTheme() != null ? request.getTheme() : "light");
+        settings.put("color", request.getThemeColor() != null ? request.getThemeColor() : "#1890ff");
+        settings.put("chatBackground", request.getChatBackground() != null ? request.getChatBackground() : "default");
         settings.put("fontSize", request.getFontSize() != null ? request.getFontSize() : 14);
         settings.put("twoFactorEnabled", request.getTwoFactorEnabled() != null ? request.getTwoFactorEnabled() : false);
     }
@@ -346,6 +350,12 @@ public class UserSettingsServiceImpl implements UserSettingsService {
     private void mergeThemeSettings(Map<String, Object> settings, UpdateSettingsRequest request) {
         if (request.getTheme() != null) {
             settings.put("theme", request.getTheme());
+        }
+        if (request.getThemeColor() != null) {
+            settings.put("color", request.getThemeColor());
+        }
+        if (request.getChatBackground() != null) {
+            settings.put("chatBackground", request.getChatBackground());
         }
         if (request.getFontSize() != null) {
             settings.put("fontSize", request.getFontSize());
@@ -384,6 +394,8 @@ public class UserSettingsServiceImpl implements UserSettingsService {
     private String createDefaultThemeSettings() {
         Map<String, Object> settings = new HashMap<>();
         settings.put("theme", "light");
+        settings.put("color", "#1890ff");
+        settings.put("chatBackground", "default");
         settings.put("fontSize", 14);
         settings.put("twoFactorEnabled", false);
         return toJsonString(settings);

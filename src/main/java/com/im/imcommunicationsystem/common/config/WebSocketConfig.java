@@ -1,22 +1,41 @@
 package com.im.imcommunicationsystem.common.config;
 
+import com.im.imcommunicationsystem.common.service.impl.WebSocketServiceImpl;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
+import org.springframework.web.socket.config.annotation.EnableWebSocket;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
+import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
+import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+import org.springframework.web.socket.config.annotation.WebSocketTransportRegistration;
 
 /**
  * WebSocket配置类
- * 配置STOMP协议的WebSocket消息代理
- * 
- * @author IM Team
- * @version 1.0
- * @since 2024-01-01
+ * 配置WebSocket连接和处理器
  */
 @Configuration
+@EnableWebSocket
 @EnableWebSocketMessageBroker
-public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
+public class WebSocketConfig implements WebSocketMessageBrokerConfigurer, WebSocketConfigurer {
+
+    @Autowired
+    private WebSocketServiceImpl webSocketService;
+    
+    @Autowired
+    private WebSocketHandshakeInterceptor webSocketHandshakeInterceptor;
+    
+    @Value("${app.websocket.message.max-text-message-size:64000}")
+    private int maxTextMessageSize;
+    
+    @Value("${app.websocket.message.max-binary-message-size:1048576}")
+    private int maxBinaryMessageSize;
+    
+    @Value("${app.websocket.message.buffer-size:8192}")
+    private int bufferSize;
 
     /**
      * 配置消息代理
@@ -49,51 +68,31 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         registry.addEndpoint("/ws")
                 .setAllowedOriginPatterns("*") // 允许跨域
                 .withSockJS(); // 支持SockJS
-        
-        // 注册WebSocket原生端点（不使用SockJS）
-        registry.addEndpoint("/ws-native")
-                .setAllowedOriginPatterns("*");
     }
-
+    
     /**
-     * WebSocket消息路由说明：
+     * 配置WebSocket传输选项
      * 
-     * 1. 客户端连接端点：
-     *    - SockJS: /ws
-     *    - 原生WebSocket: /ws-native
-     * 
-     * 2. 消息发送路径（客户端 -> 服务器）：
-     *    - 发送私聊消息: /app/chat/private
-     *    - 发送群聊消息: /app/chat/group
-     *    - 发送系统消息: /app/system/message
-     *    - 用户上线通知: /app/user/online
-     *    - 用户下线通知: /app/user/offline
-     * 
-     * 3. 消息订阅路径（服务器 -> 客户端）：
-     *    - 私聊消息: /user/{userId}/queue/messages
-     *    - 群聊消息: /topic/group/{groupId}
-     *    - 系统通知: /topic/system/notifications
-     *    - 用户状态: /topic/user/status
-     *    - 在线用户列表: /topic/users/online
-     * 
-     * 4. 消息类型定义：
-     *    - TEXT: 文本消息
-     *    - IMAGE: 图片消息
-     *    - VIDEO: 视频消息
-     *    - FILE: 文件消息
-     *    - AUDIO: 语音消息
-     *    - SYSTEM: 系统消息
-     *    - NOTIFICATION: 通知消息
-     * 
-     * 5. 连接认证：
-     *    - 连接时需要在请求头中携带JWT token
-     *    - 服务器验证token有效性后建立连接
-     *    - 无效token将拒绝连接
-     * 
-     * 6. 心跳机制：
-     *    - 客户端每30秒发送心跳包
-     *    - 服务器超时60秒未收到心跳则断开连接
-     *    - 支持断线重连机制
+     * @param registration WebSocket传输注册器
      */
-
+    @Override
+    public void configureWebSocketTransport(WebSocketTransportRegistration registration) {
+        registration.setMessageSizeLimit(maxTextMessageSize) // 设置消息大小限制（字节）
+                    .setSendBufferSizeLimit(bufferSize) // 设置发送缓冲区大小限制（字节）
+                    .setSendTimeLimit(20000); // 设置发送超时（毫秒）
+    }
+    
+    /**
+     * 注册WebSocket处理器
+     * 配置原生WebSocket端点和处理器
+     * 
+     * @param registry WebSocket处理器注册器
+     */
+    @Override
+    public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
+        // 添加原生WebSocket处理器，支持直接的WebSocket连接
+        registry.addHandler(webSocketService, "/ws-native")
+                .setAllowedOrigins("*")  // 允许所有来源
+                .addInterceptors(webSocketHandshakeInterceptor);
+    }
 }

@@ -91,30 +91,7 @@ public class ConversationController {
             
             // 检查返回的数据结构
             if (conversations.hasContent()) {
-                ConversationResponse firstResponse = conversations.getContent().get(0);
-                if (firstResponse != null) {
-                    if (firstResponse.getConversations() != null) {
-                    log.info("返回的会话数量: {}", firstResponse.getConversations().size());
-                        
-                        // 详细记录每个会话的基本信息
-                        for (int i = 0; i < Math.min(5, firstResponse.getConversations().size()); i++) {
-                            ConversationDTO conv = firstResponse.getConversations().get(i);
-                            log.info("会话[{}]: id={}, name={}, type={}, participants={}",
-                                    i, conv.getId(), conv.getName(), conv.getType(),
-                                    conv.getParticipants() != null ? conv.getParticipants().size() : 0);
-                        }
-                    } else if (firstResponse.getConversation() != null) {
-                        log.info("返回了单个会话: id={}, name={}",
-                                firstResponse.getConversation().getId(),
-                                firstResponse.getConversation().getName());
-                    } else {
-                        log.warn("返回的ConversationResponse既没有conversations也没有conversation字段");
-                    }
-                } else {
-                    log.warn("返回的会话响应为null");
-                }
-            } else {
-                log.info("返回的会话列表为空");
+                log.debug("会话列表第一页内容: {}", conversations.getContent());
             }
             
             return ResponseEntity.ok(ApiResponse.success(conversations));
@@ -131,6 +108,55 @@ public class ConversationController {
             } else {
                 return ResponseEntity.status(500)
                         .body(ApiResponse.serverError("获取会话列表失败: " + e.getMessage()));
+            }
+        }
+    }
+
+    /**
+     * 获取已归档的会话列表
+     * 
+     * @param pageable 分页参数
+     * @param request HTTP请求
+     * @return 已归档的会话列表
+     */
+    @GetMapping("/archived")
+    public ResponseEntity<ApiResponse<Page<ConversationResponse>>> getArchivedConversations(
+            Pageable pageable,
+            HttpServletRequest request) {
+        Long userId = null;
+        try {
+            log.info("开始处理获取已归档会话列表请求: page={}, size={}", 
+                    pageable.getPageNumber(), pageable.getPageSize());
+            
+            // 从请求中获取用户ID
+            userId = getCurrentUserId(request);
+            log.info("从请求中获取到用户ID: userId={}", userId);
+            
+            if (userId == null) {
+                log.warn("用户未登录，无法获取已归档会话列表");
+                return ResponseEntity.status(401)
+                        .body(ApiResponse.unauthorized("用户未登录"));
+            }
+            
+            // 调用服务层获取已归档会话列表
+            Page<ConversationResponse> conversations = conversationService.getArchivedConversations(pageable, userId);
+            
+            log.info("成功获取已归档会话列表: userId={}, totalElements={}", 
+                    userId, conversations.getTotalElements());
+            
+            return ResponseEntity.ok(ApiResponse.success(conversations));
+        } catch (Exception e) {
+            log.error("获取已归档会话列表失败: userId={}, error={}", userId, e.getMessage(), e);
+            
+            if (e instanceof IllegalArgumentException) {
+                return ResponseEntity.badRequest()
+                        .body(ApiResponse.badRequest("请求参数错误: " + e.getMessage()));
+            } else if (e instanceof SecurityException) {
+                return ResponseEntity.status(403)
+                        .body(ApiResponse.forbidden("无权限访问已归档会话列表"));
+            } else {
+                return ResponseEntity.status(500)
+                        .body(ApiResponse.serverError("获取已归档会话列表失败: " + e.getMessage()));
             }
         }
     }
@@ -168,37 +194,84 @@ public class ConversationController {
     }
 
     /**
-     * 置顶会话
+     * 置顶/取消置顶会话
      * 
      * @param conversationId 会话ID
-     * @param request 置顶会话请求
-     * @param authentication 认证信息
-     * @return 操作结果
+     * @param request 置顶请求
+     * @param httpRequest HTTP请求
+     * @return API响应
      */
     @PutMapping("/{conversationId}/pin")
     public ResponseEntity<ApiResponse<Void>> pinConversation(
             @PathVariable Long conversationId,
             @Valid @RequestBody PinConversationRequest request,
-            Authentication authentication) {
-        // TODO: 实现置顶会话逻辑
+            HttpServletRequest httpRequest) {
+        try {
+            Long userId = getCurrentUserId(httpRequest);
+            if (userId == null) {
+                return ResponseEntity.status(401).body(ApiResponse.unauthorized("用户未登录"));
+            }
+            
+            conversationService.pinConversation(conversationId, request, userId);
         return ResponseEntity.ok(ApiResponse.success(null));
+        } catch (Exception e) {
+            log.error("置顶会话失败: conversationId={}, error={}", conversationId, e.getMessage(), e);
+            return ResponseEntity.status(500).body(ApiResponse.serverError("置顶会话失败: " + e.getMessage()));
+        }
     }
 
     /**
-     * 归档会话
+     * 归档/取消归档会话
      * 
      * @param conversationId 会话ID
-     * @param request 归档会话请求
-     * @param authentication 认证信息
-     * @return 操作结果
+     * @param request 归档请求
+     * @param httpRequest HTTP请求
+     * @return API响应
      */
     @PutMapping("/{conversationId}/archive")
     public ResponseEntity<ApiResponse<Void>> archiveConversation(
             @PathVariable Long conversationId,
             @Valid @RequestBody ArchiveConversationRequest request,
-            Authentication authentication) {
-        // TODO: 实现归档会话逻辑
+            HttpServletRequest httpRequest) {
+        try {
+            Long userId = getCurrentUserId(httpRequest);
+            if (userId == null) {
+                return ResponseEntity.status(401).body(ApiResponse.unauthorized("用户未登录"));
+            }
+            
+            conversationService.archiveConversation(conversationId, request, userId);
         return ResponseEntity.ok(ApiResponse.success(null));
+        } catch (Exception e) {
+            log.error("归档会话失败: conversationId={}, error={}", conversationId, e.getMessage(), e);
+            return ResponseEntity.status(500).body(ApiResponse.serverError("归档会话失败: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * 设置会话免打扰状态
+     * 
+     * @param conversationId 会话ID
+     * @param request 免打扰请求
+     * @param httpRequest HTTP请求
+     * @return API响应
+     */
+    @PutMapping("/{conversationId}/mute")
+    public ResponseEntity<ApiResponse<Void>> muteConversation(
+            @PathVariable Long conversationId,
+            @Valid @RequestBody MuteConversationRequest request,
+            HttpServletRequest httpRequest) {
+        try {
+            Long userId = getCurrentUserId(httpRequest);
+            if (userId == null) {
+                return ResponseEntity.status(401).body(ApiResponse.unauthorized("用户未登录"));
+            }
+            
+            conversationService.muteConversation(conversationId, request, userId);
+            return ResponseEntity.ok(ApiResponse.success(null));
+        } catch (Exception e) {
+            log.error("设置会话免打扰状态失败: conversationId={}, error={}", conversationId, e.getMessage(), e);
+            return ResponseEntity.status(500).body(ApiResponse.serverError("设置会话免打扰状态失败: " + e.getMessage()));
+        }
     }
 
     /**

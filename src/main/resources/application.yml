@@ -8,7 +8,14 @@ server:
 spring:
   application:
     name: im-communication-system
-
+  
+  # 添加文件上传配置
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 100MB
+      max-request-size: 100MB
+      
   mvc:
     pathmatch:
       matching-strategy: ant-path-matcher
@@ -16,12 +23,10 @@ spring:
     resources:
       static-locations: classpath:/static/
 
-  # --- ??????? (?????????) ---
+  # --- 数据库配置 ---
   datasource:
-    # ????????????? 3306 ??? 3307?????? docker-compose.yml ??
     url: jdbc:mysql://localhost:3307/im_db?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
     username: root
-    # ??????????????? 123456
     password: 123456
     driver-class-name: com.mysql.cj.jdbc.Driver
 
@@ -57,7 +62,7 @@ spring:
     # 表名前缀
     table: flyway_schema_history
 
-  # --- Redis ???? (????) ---
+  # --- Redis配置 ---
   data:
     redis:
       host: localhost
@@ -119,6 +124,25 @@ app:
     token-prefix: "Bearer "
     header-name: Authorization
     issuer: im-communication-system
+  
+  # WebSocket配置
+  websocket:
+    # WebSocket认证配置
+    auth:
+      required: true  # 是否要求WebSocket连接必须认证
+      allow-anonymous-in-dev: true  # 在开发环境中是否允许匿名连接
+    
+    # 连接设置
+    connection:
+      ping-interval: 30000  # 心跳包间隔（毫秒）
+      max-idle-time: 600000  # 最大空闲时间（毫秒）
+      max-connections-per-user: 3  # 每个用户允许的最大连接数
+    
+    # 消息配置
+    message:
+      max-text-message-size: 64000  # 最大文本消息大小（字节）
+      max-binary-message-size: 1048576  # 最大二进制消息大小（字节）
+      buffer-size: 8192  # 缓冲区大小（字节）
   
   # 验证码配置
   verification-code:
@@ -222,5 +246,14 @@ app:
     connect-timeout: 10000
     write-timeout: 60000
     read-timeout: 10000
+
+# --- Elasticsearch配置 ---
+elasticsearch:
+  enabled: true  # 默认禁用Elasticsearch
+  host: localhost
+  port: 9200
+  scheme: http
+  connection-timeout: 5000
+  socket-timeout: 30000
 
 

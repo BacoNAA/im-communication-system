@@ -79,6 +79,12 @@ public class ConversationMember {
     private Long lastReadMessageId;
 
     /**
+     * 最后可接受消息的ID
+     */
+    @Column(name = "last_acceptable_message_id")
+    private Long lastAcceptableMessageId;
+
+    /**
      * 检查是否置顶此会话
      * 
      * @return 是否置顶

@@ -5,14 +5,12 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import jakarta.validation.constraints.NotNull;
-
 /**
- * 归档会话请求类
+ * 归档会话请求DTO
  * 
  * @author IM System
  * @version 1.0
- * @since 2024-01-01
+ * @since 2024-07-20
  */
 @Data
 @Builder
@@ -21,19 +19,8 @@ import jakarta.validation.constraints.NotNull;
 public class ArchiveConversationRequest {
 
     /**
-     * 会话ID
-     */
-    @NotNull(message = "会话ID不能为空")
-    private Long conversationId;
-
-    /**
      * 是否归档
+     * true表示归档，false表示取消归档
      */
-    @NotNull(message = "归档状态不能为空")
-    private Boolean archived;
-
-    /**
-     * 归档原因
-     */
-    private String reason;
+    private Boolean isArchived;
 }

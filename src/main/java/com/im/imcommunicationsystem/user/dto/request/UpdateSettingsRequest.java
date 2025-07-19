@@ -21,6 +21,8 @@ public class UpdateSettingsRequest {
     
     // 聊天设置
     private String theme; // light, dark, auto
+    private String themeColor; // 主题颜色，如 "#1890ff"
+    private String chatBackground; // 聊天背景，可以是颜色值或图片URL
     private String language; // zh-CN, en-US, etc.
     private Integer fontSize;
     
@@ -100,6 +102,22 @@ public class UpdateSettingsRequest {
         this.theme = theme;
     }
 
+    public String getThemeColor() {
+        return themeColor;
+    }
+
+    public void setThemeColor(String themeColor) {
+        this.themeColor = themeColor;
+    }
+
+    public String getChatBackground() {
+        return chatBackground;
+    }
+
+    public void setChatBackground(String chatBackground) {
+        this.chatBackground = chatBackground;
+    }
+
     public String getLanguage() {
         return language;
     }
@@ -143,6 +161,8 @@ public class UpdateSettingsRequest {
                 ", enableSoundNotifications=" + enableSoundNotifications +
                 ", enableVibration=" + enableVibration +
                 ", theme='" + theme + '\'' +
+                ", themeColor='" + themeColor + '\'' +
+                ", chatBackground='" + chatBackground + '\'' +
                 ", language='" + language + '\'' +
                 ", fontSize=" + fontSize +
                 ", twoFactorEnabled=" + twoFactorEnabled +

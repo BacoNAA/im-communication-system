@@ -156,4 +156,149 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
      * @return 消息列表
      */
     List<Message> findByOriginalMessageId(Long originalMessageId);
+
+    /**
+     * 查询会话中非指定用户发送且非指定状态的消息
+     * 
+     * @param conversationId 会话ID
+     * @param senderId 不是由该用户发送的
+     * @param status 不是该状态的
+     * @return 消息列表
+     */
+    List<Message> findByConversationIdAndSenderIdNotAndStatusNot(
+            Long conversationId, Long senderId, MessageStatus status);
+    
+    /**
+     * 查询会话中在指定时间之前且非指定用户发送且非指定状态的消息
+     * 
+     * @param conversationId 会话ID
+     * @param senderId 不是由该用户发送的
+     * @param createdAtBefore 创建时间不晚于该时间
+     * @param status 不是该状态的
+     * @return 消息列表
+     */
+    List<Message> findByConversationIdAndSenderIdNotAndCreatedAtLessThanEqualAndStatusNot(
+            Long conversationId, Long senderId, LocalDateTime createdAtBefore, MessageStatus status);
+    
+    /**
+     * 根据ID列表和会话ID查询消息
+     * 
+     * @param ids 消息ID列表
+     * @param conversationId 会话ID
+     * @return 消息列表
+     */
+    List<Message> findByIdInAndConversationId(List<Long> ids, Long conversationId);
+
+    /**
+     * 查询会话中未读消息
+     * 
+     * @param conversationId 会话ID
+     * @param senderId 不是由该用户发送的
+     * @return 消息列表
+     */
+    List<Message> findByConversationIdAndSenderIdNotAndIsReadFalse(
+            Long conversationId, Long senderId);
+    
+    /**
+     * 查询会话中在指定时间之前且未读的消息
+     * 
+     * @param conversationId 会话ID
+     * @param senderId 不是由该用户发送的
+     * @param createdAtBefore 创建时间不晚于该时间
+     * @return 消息列表
+     */
+    List<Message> findByConversationIdAndSenderIdNotAndCreatedAtLessThanEqualAndIsReadFalse(
+            Long conversationId, Long senderId, LocalDateTime createdAtBefore);
+    
+    /**
+     * 统计会话中未读消息数量
+     * 
+     * @param conversationId 会话ID
+     * @param userId 用户ID
+     * @return 未读消息数量
+     */
+    @Query("SELECT COUNT(m) FROM Message m WHERE m.conversationId = :conversationId " +
+           "AND m.senderId != :userId AND m.isRead = false")
+    Long countUnreadMessagesByIsRead(@Param("conversationId") Long conversationId,
+                            @Param("userId") Long userId);
+    
+    /**
+     * 批量更新消息为已读状态
+     * 
+     * @param messageIds 消息ID列表
+     * @param updatedAt 更新时间
+     * @return 更新的记录数
+     */
+    @Modifying
+    @Query("UPDATE Message m SET m.isRead = true, m.updatedAt = :updatedAt WHERE m.id IN :messageIds")
+    int updateMessagesAsRead(@Param("messageIds") List<Long> messageIds,
+                           @Param("updatedAt") LocalDateTime updatedAt);
+
+    /**
+     * 统计会话中不是由指定用户发送的消息数量
+     * 
+     * @param conversationId 会话ID
+     * @param userId 用户ID
+     * @return 消息数量
+     */
+    Long countByConversationIdAndSenderIdNot(Long conversationId, Long userId);
+    
+    /**
+     * 统计会话中ID大于指定ID且不是由指定用户发送的消息数量
+     * 
+     * @param conversationId 会话ID
+     * @param messageId 消息ID
+     * @param userId 用户ID
+     * @return 消息数量
+     */
+    Long countByConversationIdAndIdGreaterThanAndSenderIdNot(Long conversationId, Long messageId, Long userId);
+    
+    /**
+     * 查询会话中ID最大的消息
+     * 
+     * @param conversationId 会话ID
+     * @return 消息
+     */
+    Optional<Message> findFirstByConversationIdOrderByIdDesc(Long conversationId);
+    
+    /**
+     * 查询会话中ID最大的消息
+     * 
+     * @param conversationId 会话ID
+     * @return 消息
+     */
+    Optional<Message> findTopByConversationIdOrderByIdDesc(Long conversationId);
+
+    /**
+     * 查询会话中ID小于等于指定ID且非指定状态的消息
+     * 
+     * @param conversationId 会话ID
+     * @param messageId 消息ID上限
+     * @param status 排除的状态
+     * @param pageable 分页参数
+     * @return 消息分页结果
+     */
+    Page<Message> findByConversationIdAndIdLessThanEqualAndStatusNotOrderByCreatedAtDesc(
+            Long conversationId, Long messageId, MessageStatus status, Pageable pageable);
+    
+    /**
+     * 统计会话中ID小于等于指定ID且不是由指定用户发送的消息数量
+     * 
+     * @param conversationId 会话ID
+     * @param messageId 消息ID上限
+     * @param userId 用户ID
+     * @return 消息数量
+     */
+    Long countByConversationIdAndIdLessThanEqualAndSenderIdNot(Long conversationId, Long messageId, Long userId);
+    
+    /**
+     * 统计会话中ID在指定范围内且不是由指定用户发送的消息数量
+     * 
+     * @param conversationId 会话ID
+     * @param startMessageId 起始消息ID（不含）
+     * @param endMessageId 结束消息ID（含）
+     * @param userId 用户ID
+     * @return 消息数量
+     */
+    Long countByConversationIdAndIdBetweenAndSenderIdNot(Long conversationId, Long startMessageId, Long endMessageId, Long userId);
 }

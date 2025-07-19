@@ -21,7 +21,7 @@ import java.time.LocalDateTime;
 public class MediaResponse {
 
     /**
-     * 文件ID
+     * 媒体文件ID
      */
     private Long id;
 
@@ -49,26 +49,16 @@ public class MediaResponse {
      * 文件URL
      */
     private String fileUrl;
+    
+    /**
+     * 文件URL（别名，与前端兼容）
+     */
+    private String url;
 
     /**
-     * 缩略图URL（如果适用）
+     * 缩略图URL
      */
     private String thumbnailUrl;
-
-    /**
-     * 文件描述
-     */
-    private String description;
-
-    /**
-     * MIME类型
-     */
-    private String mimeType;
-
-    /**
-     * 文件哈希值
-     */
-    private String fileHash;
 
     /**
      * 上传时间
@@ -81,60 +71,12 @@ public class MediaResponse {
     private Long uploaderId;
 
     /**
-     * 是否已压缩
+     * 压缩标志
      */
     private Boolean compressed;
 
     /**
-     * 文件状态（uploading, completed, failed等）
+     * 状态
      */
     private String status;
-
-    /**
-     * 获取格式化的文件大小
-     * 
-     * @return 格式化的文件大小
-     */
-    public String getFormattedFileSize() {
-        if (fileSize == null) {
-            return "未知";
-        }
-        
-        if (fileSize < 1024) {
-            return fileSize + " B";
-        } else if (fileSize < 1024 * 1024) {
-            return String.format("%.1f KB", fileSize / 1024.0);
-        } else if (fileSize < 1024 * 1024 * 1024) {
-            return String.format("%.1f MB", fileSize / (1024.0 * 1024.0));
-        } else {
-            return String.format("%.1f GB", fileSize / (1024.0 * 1024.0 * 1024.0));
-        }
-    }
-
-    /**
-     * 检查是否为图片文件
-     * 
-     * @return 是否为图片
-     */
-    public boolean isImage() {
-        return mimeType != null && mimeType.startsWith("image/");
-    }
-
-    /**
-     * 检查是否为视频文件
-     * 
-     * @return 是否为视频
-     */
-    public boolean isVideo() {
-        return mimeType != null && mimeType.startsWith("video/");
-    }
-
-    /**
-     * 检查是否为音频文件
-     * 
-     * @return 是否为音频
-     */
-    public boolean isAudio() {
-        return mimeType != null && mimeType.startsWith("audio/");
-    }
 }

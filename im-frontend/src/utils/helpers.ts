@@ -368,37 +368,93 @@ export function setUrlParameter(name: string, value: string): void {
  */
 export function getCurrentUserId(): number {
   try {
+    // 添加日志以便调试
+    console.log('getCurrentUserId被调用');
+    
     // 尝试从localStorage获取
     const userStr = localStorage.getItem('current_user');
     if (userStr) {
-      const user = JSON.parse(userStr);
-      if (user && user.id) {
-        const userId = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
-        return userId || 0;
+      try {
+        const user = JSON.parse(userStr);
+        if (user && user.id) {
+          const userId = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
+          console.log('从localStorage的current_user获取到用户ID:', userId);
+          return userId || 0;
+        }
+      } catch (e) {
+        console.error('解析localStorage中的current_user失败:', e);
       }
     }
     
     // 尝试从sessionStorage获取
     const sessionUserStr = sessionStorage.getItem('current_user');
     if (sessionUserStr) {
-      const user = JSON.parse(sessionUserStr);
-      if (user && user.id) {
-        const userId = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
-        return userId || 0;
+      try {
+        const user = JSON.parse(sessionUserStr);
+        if (user && user.id) {
+          const userId = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
+          console.log('从sessionStorage的current_user获取到用户ID:', userId);
+          return userId || 0;
+        }
+      } catch (e) {
+        console.error('解析sessionStorage中的current_user失败:', e);
       }
     }
     
     // 尝试从userInfo获取
-    const userInfoStr = localStorage.getItem('userInfo') || sessionStorage.getItem('userInfo');
+    const userInfoStr = localStorage.getItem('userInfo');
     if (userInfoStr) {
-      const user = JSON.parse(userInfoStr);
-      if (user && user.id) {
-        const userId = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
-        return userId || 0;
+      try {
+        const user = JSON.parse(userInfoStr);
+        if (user && user.id) {
+          const userId = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
+          console.log('从localStorage的userInfo获取到用户ID:', userId);
+          return userId || 0;
+        }
+      } catch (e) {
+        console.error('解析localStorage中的userInfo失败:', e);
       }
     }
+    
+    // 尝试从sessionStorage的userInfo获取
+    const sessionUserInfoStr = sessionStorage.getItem('userInfo');
+    if (sessionUserInfoStr) {
+      try {
+        const user = JSON.parse(sessionUserInfoStr);
+        if (user && user.id) {
+          const userId = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
+          console.log('从sessionStorage的userInfo获取到用户ID:', userId);
+          return userId || 0;
+        }
+      } catch (e) {
+        console.error('解析sessionStorage中的userInfo失败:', e);
+      }
+    }
+    
+    // 尝试从localStorage的userId直接获取
+    const directUserId = localStorage.getItem('userId');
+    if (directUserId) {
+      const userId = parseInt(directUserId, 10);
+      if (!isNaN(userId)) {
+        console.log('从localStorage的userId直接获取到用户ID:', userId);
+        return userId;
+      }
+    }
+    
+    // 尝试从sessionStorage的userId直接获取
+    const sessionDirectUserId = sessionStorage.getItem('userId');
+    if (sessionDirectUserId) {
+      const userId = parseInt(sessionDirectUserId, 10);
+      if (!isNaN(userId)) {
+        console.log('从sessionStorage的userId直接获取到用户ID:', userId);
+        return userId;
+      }
+    }
+    
+    console.warn('无法从任何存储中获取用户ID，返回0');
+    return 0;
   } catch (e) {
-    console.error('解析用户信息失败:', e);
+    console.error('获取用户ID过程中出错:', e);
+    return 0;
   }
-  return 0;
 }

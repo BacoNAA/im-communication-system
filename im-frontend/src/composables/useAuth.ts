@@ -27,6 +27,8 @@ const initAuth = (): void => {
   let savedToken = storage.get<string>('auth_token');
   let savedUser = storage.get<User>('current_user');
   
+  console.log('初始化认证状态，从localStorage获取的用户:', savedUser);
+  
   // 如果localStorage中没有，检查sessionStorage
   if (!savedToken) {
     const sessionToken = sessionStorage.getItem('auth_token');
@@ -36,6 +38,7 @@ const initAuth = (): void => {
       try {
         savedToken = sessionToken;
         savedUser = JSON.parse(sessionUser);
+        console.log('从sessionStorage获取的用户:', savedUser);
       } catch (error) {
         console.error('解析sessionStorage用户数据失败:', error);
       }
@@ -50,6 +53,8 @@ const initAuth = (): void => {
     
     token.value = savedToken;
     currentUser.value = savedUser;
+    
+    console.log('设置当前用户为:', currentUser.value);
     
     // 确保userId也被单独存储
     if (savedUser.id) {
@@ -85,11 +90,47 @@ const initAuth = (): void => {
     }
     
     console.log('已从存储中恢复用户信息:', currentUser.value);
+  } else {
+    console.log('未找到保存的用户信息或令牌');
   }
 };
 
 // 确保在模块加载时初始化认证状态
 initAuth();
+
+/**
+ * 获取当前认证Token
+ * @returns 认证Token或null
+ */
+const getToken = (): string | null => {
+  // 尝试所有可能存储token的键名
+  // 1. 首先尝试从localStorage获取
+  let token = localStorage.getItem('accessToken') || 
+              localStorage.getItem('auth_token') ||
+              localStorage.getItem('token');
+  
+  // 2. 如果localStorage中没有，尝试从sessionStorage获取
+  if (!token) {
+    token = sessionStorage.getItem('accessToken') || 
+            sessionStorage.getItem('auth_token') ||
+            sessionStorage.getItem('token');
+  }
+
+  // 3. 如果还没有，尝试从全局变量获取
+  if (!token && window.localStorage) {
+    try {
+      // 检查本地状态中是否有token
+      token = window.localStorage.getItem('accessToken') ||
+              window.localStorage.getItem('auth_token');
+    } catch (e) {
+      console.error('从localStorage获取token失败:', e);
+    }
+  }
+  
+  console.log('getToken返回的token:', token ? `${token.substring(0, 15)}...` : 'null或undefined');
+  
+  return token;
+};
 
 export const useAuth = () => {
   const login = async (loginData: {
@@ -171,17 +212,20 @@ export const useAuth = () => {
       if (loginData.rememberMe) {
         // 记住登录状态：保存到localStorage（持久化）
         storage.set('auth_token', accessToken);
+        localStorage.setItem('accessToken', accessToken); // 添加accessToken键
         storage.set('current_user', currentUserData);
         storage.set('refresh_token', refreshToken);
         localStorage.setItem('userId', String(currentUserData.id)); // 添加userId单独存储
       } else {
         // 不记住登录状态：保存到sessionStorage（会话级别）
         sessionStorage.setItem('auth_token', accessToken);
+        sessionStorage.setItem('accessToken', accessToken); // 添加accessToken键
         sessionStorage.setItem('current_user', JSON.stringify(currentUserData));
         sessionStorage.setItem('refresh_token', refreshToken);
         sessionStorage.setItem('userId', String(currentUserData.id)); // 添加userId单独存储
         // 清除localStorage中的登录信息
         storage.remove('auth_token');
+        storage.remove('accessToken'); // 也清除accessToken
         storage.remove('current_user');
         storage.remove('refresh_token');
         localStorage.removeItem('userId'); // 清除localStorage中的userId
@@ -336,10 +380,39 @@ export const useAuth = () => {
   const getCurrentUserId = (): number => {
     console.log('getCurrentUserId被调用，当前用户信息:', currentUser.value);
     
-    if (!currentUser.value) {
-      console.error('getCurrentUserId: 当前用户为空');
+    // 1. 首先从currentUser获取
+    if (currentUser.value && currentUser.value.id) {
+      const userId = typeof currentUser.value.id === 'string' 
+        ? parseInt(currentUser.value.id, 10) 
+        : currentUser.value.id;
       
-      // 尝试从存储中直接获取用户ID
+      console.log('从currentUser获取用户ID:', userId);
+      return userId;
+    }
+    
+    console.warn('getCurrentUserId: 当前用户为空或ID不存在，尝试从其他来源获取');
+      
+    // 2. 尝试从localStorage直接获取userId
+    const localStorageUserId = localStorage.getItem('userId');
+    if (localStorageUserId) {
+      const userId = parseInt(localStorageUserId, 10);
+      if (!isNaN(userId) && userId > 0) {
+        console.log('从localStorage.userId获取用户ID:', userId);
+        return userId;
+      }
+    }
+    
+    // 3. 尝试从sessionStorage直接获取userId
+    const sessionStorageUserId = sessionStorage.getItem('userId');
+    if (sessionStorageUserId) {
+      const userId = parseInt(sessionStorageUserId, 10);
+      if (!isNaN(userId) && userId > 0) {
+        console.log('从sessionStorage.userId获取用户ID:', userId);
+        return userId;
+      }
+    }
+    
+    // 4. 尝试从localStorage的current_user获取
       try {
         const storedUser = storage.get<User>('current_user');
         if (storedUser && storedUser.id) {
@@ -347,40 +420,70 @@ export const useAuth = () => {
             ? parseInt(storedUser.id, 10) 
             : storedUser.id;
           
-          console.log('从存储中恢复用户ID:', userId);
+        console.log('从localStorage.current_user获取用户ID:', userId);
           return userId;
+      }
+    } catch (e) {
+      console.error('从localStorage.current_user获取用户ID失败:', e);
         }
         
-        // 尝试从sessionStorage获取
+    // 5. 尝试从sessionStorage的current_user获取
+    try {
         const sessionUser = sessionStorage.getItem('current_user');
         if (sessionUser) {
-          try {
             const parsedUser = JSON.parse(sessionUser);
             if (parsedUser && parsedUser.id) {
               const userId = typeof parsedUser.id === 'string'
                 ? parseInt(parsedUser.id, 10)
                 : parsedUser.id;
               
-              console.log('从sessionStorage恢复用户ID:', userId);
+          console.log('从sessionStorage.current_user获取用户ID:', userId);
               return userId;
+        }
             }
           } catch (e) {
-            console.error('解析sessionStorage用户数据失败:', e);
+      console.error('解析sessionStorage.current_user失败:', e);
           }
+    
+    // 6. 尝试从localStorage的userInfo获取
+    try {
+      const userInfoStr = localStorage.getItem('userInfo');
+      if (userInfoStr) {
+        const userInfo = JSON.parse(userInfoStr);
+        if (userInfo && userInfo.id) {
+          const userId = typeof userInfo.id === 'string'
+            ? parseInt(userInfo.id, 10)
+            : userInfo.id;
+          
+          console.log('从localStorage.userInfo获取用户ID:', userId);
+          return userId;
         }
-      } catch (e) {
-        console.error('从存储获取用户ID失败:', e);
       }
-      
-      return 0;
+    } catch (e) {
+      console.error('解析localStorage.userInfo失败:', e);
     }
     
-    const userId = typeof currentUser.value.id === 'string' 
-      ? parseInt(currentUser.value.id, 10) 
-      : (currentUser.value.id || 0);
+    // 7. 尝试从sessionStorage的userInfo获取
+    try {
+      const userInfoStr = sessionStorage.getItem('userInfo');
+      if (userInfoStr) {
+        const userInfo = JSON.parse(userInfoStr);
+        if (userInfo && userInfo.id) {
+          const userId = typeof userInfo.id === 'string'
+            ? parseInt(userInfo.id, 10)
+            : userInfo.id;
     
-    console.log('返回用户ID:', userId);
+          console.log('从sessionStorage.userInfo获取用户ID:', userId);
     return userId;
+        }
+      }
+    } catch (e) {
+      console.error('解析sessionStorage.userInfo失败:', e);
+    }
+    
+    // 8. 如果都没有找到，返回0表示未找到有效用户ID
+    console.error('未从任何来源找到有效的用户ID');
+    return 0;
   };
 
   return {
@@ -394,6 +497,7 @@ export const useAuth = () => {
     updateUserStatus,
     sendLoginCode,
     sendRegisterCode,
-    getCurrentUserId // 导出新函数
+    getCurrentUserId, // 导出新函数
+    getToken // 导出新函数
   };
 };

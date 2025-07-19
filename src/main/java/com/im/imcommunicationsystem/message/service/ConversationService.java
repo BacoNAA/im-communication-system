@@ -29,6 +29,15 @@ public interface ConversationService {
     Page<ConversationResponse> getConversations(Pageable pageable, Long userId);
 
     /**
+     * 获取已归档会话列表
+     * 
+     * @param pageable 分页参数
+     * @param userId 用户ID
+     * @return 已归档的会话列表
+     */
+    Page<ConversationResponse> getArchivedConversations(Pageable pageable, Long userId);
+
+    /**
      * 创建会话
      * 
      * @param request 创建会话请求
@@ -129,4 +138,21 @@ public interface ConversationService {
      * @param conversationId 会话ID
      */
     void updateLastActiveTime(Long conversationId);
+
+    /**
+     * 获取会话的所有成员ID
+     * 
+     * @param conversationId 会话ID
+     * @return 成员ID列表
+     */
+    List<Long> getConversationMemberIds(Long conversationId);
+
+    /**
+     * 设置会话免打扰状态
+     * 
+     * @param conversationId 会话ID
+     * @param request 免打扰请求
+     * @param userId 用户ID
+     */
+    void muteConversation(Long conversationId, MuteConversationRequest request, Long userId);
 }

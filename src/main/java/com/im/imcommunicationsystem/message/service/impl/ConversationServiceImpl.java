@@ -1,6 +1,7 @@
 package com.im.imcommunicationsystem.message.service.impl;
 
 import com.im.imcommunicationsystem.common.dto.ApiResponse;
+import com.im.imcommunicationsystem.message.event.ConversationUpdateEvent;
 import com.im.imcommunicationsystem.message.dto.request.*;
 import com.im.imcommunicationsystem.message.dto.response.ConversationDTO;
 import com.im.imcommunicationsystem.message.dto.response.ConversationMemberDTO;
@@ -11,13 +12,17 @@ import com.im.imcommunicationsystem.message.entity.ConversationMemberId;
 import com.im.imcommunicationsystem.message.enums.ConversationType;
 import com.im.imcommunicationsystem.message.repository.ConversationMemberRepository;
 import com.im.imcommunicationsystem.message.repository.ConversationRepository;
+import com.im.imcommunicationsystem.message.service.ConversationMemberService;
 import com.im.imcommunicationsystem.message.service.ConversationService;
+import com.im.imcommunicationsystem.relationship.dto.response.ContactResponse;
+import com.im.imcommunicationsystem.relationship.service.ContactService;
 import com.im.imcommunicationsystem.user.dto.response.UserProfileResponse;
 import com.im.imcommunicationsystem.user.service.UserProfileService;
-import com.im.imcommunicationsystem.relationship.service.ContactService;
-import com.im.imcommunicationsystem.relationship.dto.response.ContactResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -27,6 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import com.im.imcommunicationsystem.message.service.ReadStatusService;
 
 /**
  * 会话服务实现类
@@ -46,6 +52,9 @@ public class ConversationServiceImpl implements ConversationService {
     private final ConversationMemberRepository conversationMemberRepository;
     private final UserProfileService userProfileService;
     private final ContactService contactService;
+    private final ApplicationEventPublisher eventPublisher;
+    // 添加ReadStatusService依赖
+    private final ReadStatusService readStatusService;
 
     @Override
     @Transactional(readOnly = true)
@@ -71,13 +80,31 @@ public class ConversationServiceImpl implements ConversationService {
         List<ConversationDTO> conversationDTOs = conversations.stream()
                 .map(conversation -> buildConversationDTO(conversation, userId))
                 .filter(Objects::nonNull)
+                .filter(dto -> {
+                    // 过滤掉已归档的会话
+                    if (dto.getCurrentUserParticipant() != null) {
+                        return !Boolean.TRUE.equals(dto.getCurrentUserParticipant().getIsArchived());
+                    }
+                    return true;
+                })
                 .sorted((a, b) -> {
                     // 置顶的会话排在前面
                     if (a.getIsPinned() != b.getIsPinned()) {
                         return a.getIsPinned() ? -1 : 1;
                     }
-                    // 按最后活跃时间倒序排列
-                    return b.getLastActiveAt().compareTo(a.getLastActiveAt());
+                    // 按最后活跃时间倒序排列，处理null值情况
+                    LocalDateTime timeA = a.getLastActiveAt();
+                    LocalDateTime timeB = b.getLastActiveAt();
+                    
+                    if (timeA == null && timeB == null) {
+                        return 0; // 两者都为null，视为相等
+                    } else if (timeA == null) {
+                        return 1; // a为null，b不为null，b排前面
+                    } else if (timeB == null) {
+                        return -1; // a不为null，b为null，a排前面
+                    } else {
+                        return timeB.compareTo(timeA); // 两者都不为null，正常比较
+                    }
                 })
                 .collect(Collectors.toList());
         
@@ -95,6 +122,73 @@ public class ConversationServiceImpl implements ConversationService {
         return new PageImpl<>(Collections.singletonList(response), pageable, 1);
         } catch (Exception e) {
             log.error("Error getting conversations for user {}: {}", userId, e.getMessage(), e);
+            // 返回空结果而不是抛出异常，避免前端崩溃
+            return new PageImpl<>(Collections.emptyList(), pageable, 0);
+        }
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ConversationResponse> getArchivedConversations(Pageable pageable, Long userId) {
+        log.info("Getting archived conversations for user {}", userId);
+        
+        try {
+            // 获取用户参与的所有会话
+            List<Conversation> conversations = conversationRepository.findByParticipantUserId(userId);
+            log.info("Found {} conversations for user {}", conversations.size(), userId);
+        
+            if (conversations.isEmpty()) {
+                return new PageImpl<>(Collections.emptyList(), pageable, 0);
+            }
+        
+            // 过滤未删除的会话
+            conversations = conversations.stream()
+                    .filter(conv -> !conv.isDeleted())
+                    .collect(Collectors.toList());
+            log.info("After filtering deleted conversations: {} remain", conversations.size());
+        
+            // 构建会话DTO列表
+            List<ConversationDTO> conversationDTOs = conversations.stream()
+                    .map(conversation -> buildConversationDTO(conversation, userId))
+                    .filter(Objects::nonNull)
+                    .filter(dto -> {
+                        // 只保留已归档的会话
+                        if (dto.getCurrentUserParticipant() != null) {
+                            return Boolean.TRUE.equals(dto.getCurrentUserParticipant().getIsArchived());
+                        }
+                        return false;
+                    })
+                    .sorted((a, b) -> {
+                        // 按最后活跃时间倒序排列，处理null值情况
+                        LocalDateTime timeA = a.getLastActiveAt();
+                        LocalDateTime timeB = b.getLastActiveAt();
+                        
+                        if (timeA == null && timeB == null) {
+                            return 0; // 两者都为null，视为相等
+                        } else if (timeA == null) {
+                            return 1; // a为null，b不为null，b排前面
+                        } else if (timeB == null) {
+                            return -1; // a不为null，b为null，a排前面
+                        } else {
+                            return timeB.compareTo(timeA); // 两者都不为null，正常比较
+                        }
+                    })
+                    .collect(Collectors.toList());
+        
+            // 分页处理
+            int start = (int) pageable.getOffset();
+            int end = Math.min(start + pageable.getPageSize(), conversationDTOs.size());
+        
+            List<ConversationDTO> pageContent = start < conversationDTOs.size() ? 
+                    conversationDTOs.subList(start, end) : Collections.emptyList();
+        
+            // 创建响应对象
+            ConversationResponse response = ConversationResponse.success(pageContent);
+        
+            // 返回分页结果
+            return new PageImpl<>(Collections.singletonList(response), pageable, 1);
+        } catch (Exception e) {
+            log.error("Error getting archived conversations for user {}: {}", userId, e.getMessage(), e);
             // 返回空结果而不是抛出异常，避免前端崩溃
             return new PageImpl<>(Collections.emptyList(), pageable, 0);
         }
@@ -234,15 +328,24 @@ ConversationMemberDTO participantDTO = ConversationMemberDTO.builder()
             // TODO: 实现获取最后一条消息逻辑
             // dto.setLastMessage(...);
 
-            // 获取未读消息数量
-            // TODO: 实现获取未读消息数量逻辑
-            dto.setUnreadCount(0);
+            // 获取未读消息数量 - 使用ReadStatusService计算未读消息数量
+            try {
+                // 使用ReadStatusService获取未读消息数量，确保不计算自己发送的消息
+                Long unreadCount = readStatusService.countUnreadMessages(userId, conversation.getId());
+                dto.setUnreadCount(unreadCount.intValue());
+                log.debug("获取会话未读消息数量: conversationId={}, userId={}, unreadCount={}", 
+                        conversation.getId(), userId, unreadCount);
+            } catch (Exception e) {
+                log.error("获取未读消息数量失败: conversationId={}, userId={}, error={}", 
+                        conversation.getId(), userId, e.getMessage(), e);
+                dto.setUnreadCount(0); // 获取失败时默认为0
+            }
 
             // 获取参与者数量
             dto.setParticipantCount(participants.size());
             
-            log.info("成功构建会话DTO: conversationId={}, participantCount={}", 
-                    conversation.getId(), participants.size());
+            log.info("成功构建会话DTO: conversationId={}, participantCount={}, unreadCount={}", 
+                    conversation.getId(), participants.size(), dto.getUnreadCount());
             return dto;
         } catch (Exception e) {
             log.error("构建会话DTO失败: conversationId={}, userId={}, error={}", 
@@ -274,18 +377,145 @@ ConversationMemberDTO participantDTO = ConversationMemberDTO.builder()
 
     @Override
     public void pinConversation(Long conversationId, PinConversationRequest request, Long userId) {
-        // TODO: 实现置顶会话逻辑
-        // 1. 验证会话权限
-        // 2. 更新置顶状态
-        log.info("Pinning conversation {} by user {}", conversationId, userId);
+        log.info("Pinning conversation {} for user {}, isPinned={}", conversationId, userId, request.getPinned());
+        
+        try {
+            // 1. 验证会话权限
+            if (!isUserInConversation(conversationId, userId)) {
+                log.warn("User {} is not in conversation {}", userId, conversationId);
+                throw new IllegalArgumentException("您不是该会话的成员，无法操作");
+            }
+            
+            // 2. 获取会话成员关系
+            ConversationMemberId memberId = new ConversationMemberId(conversationId, userId);
+            ConversationMember member = conversationMemberRepository.findById(memberId)
+                    .orElseThrow(() -> new IllegalArgumentException("会话成员关系不存在"));
+            
+            // 3. 更新置顶状态
+            member.setIsPinned(request.getPinned());
+            
+            // 4. 保存更新
+            conversationMemberRepository.save(member);
+            
+            log.info("Successfully pinned conversation {} for user {}", conversationId, userId);
+            
+            // 5. 发送WebSocket通知
+            try {
+                // 获取会话信息
+                Conversation conversation = getConversationById(conversationId);
+                
+                // 构建会话DTO
+                ConversationDTO conversationDTO = buildConversationDTO(conversation, userId);
+                
+                if (conversationDTO != null) {
+                    // 设置置顶状态
+                    conversationDTO.setIsPinned(request.getPinned());
+                    
+                    // 获取会话的所有成员ID
+                    List<Long> memberIds = getConversationMemberIds(conversationId);
+                    log.info("获取到会话 {} 的所有成员: {}", conversationId, memberIds);
+                    
+                    // 向所有会话成员广播更新
+                    for (Long memberUserId : memberIds) {
+                        // 为每个用户创建特定的更新数据
+                        Map<String, Object> updateData = new HashMap<>();
+                        updateData.put("conversationId", conversationId);
+                        updateData.put("isPinned", request.getPinned());
+                        updateData.put("userId", memberUserId); // 设置为接收通知的用户ID
+                        
+                        eventPublisher.publishEvent(new ConversationUpdateEvent(
+                            this,
+                            conversationId,
+                            updateData,
+                            "CONVERSATION_PIN",
+                            null // 由WebSocketService决定只发给特定用户
+                        ));
+                        
+                        log.info("已发布会话置顶状态事件给用户 {}: conversationId={}, isPinned={}", 
+                                memberUserId, conversationId, request.getPinned());
+                    }
+            }
+            } catch (Exception e) {
+                log.error("发布会话置顶状态事件失败: {}", e.getMessage(), e);
+                // 不影响主流程继续执行
+            }
+        } catch (Exception e) {
+            log.error("Failed to pin conversation {} for user {}: {}", conversationId, userId, e.getMessage(), e);
+            throw new RuntimeException("置顶会话失败: " + e.getMessage(), e);
+        }
     }
 
     @Override
     public void archiveConversation(Long conversationId, ArchiveConversationRequest request, Long userId) {
-        // TODO: 实现归档会话逻辑
+        log.info("Archiving conversation {} by user {}, isArchived={}", conversationId, userId, request.getIsArchived());
+        
+        try {
         // 1. 验证会话权限
-        // 2. 更新归档状态
-        log.info("Archiving conversation {} by user {}", conversationId, userId);
+            if (!isUserInConversation(conversationId, userId)) {
+                log.warn("User {} is not in conversation {}, cannot archive", userId, conversationId);
+                throw new IllegalArgumentException("您不是此会话的成员，无法归档");
+            }
+            
+            // 2. 获取会话成员记录
+            ConversationMemberId id = new ConversationMemberId(conversationId, userId);
+            ConversationMember member = conversationMemberRepository.findById(id)
+                    .orElseThrow(() -> new IllegalArgumentException("会话成员记录不存在"));
+            
+            // 3. 更新归档状态
+            member.setIsArchived(request.getIsArchived());
+            
+            // 4. 保存更新
+            conversationMemberRepository.save(member);
+            
+            log.info("Successfully {} conversation {} for user {}", 
+                    request.getIsArchived() ? "archived" : "unarchived", 
+                    conversationId, userId);
+                    
+            // 5. 发送WebSocket通知
+            try {
+                // 获取会话信息
+                Conversation conversation = getConversationById(conversationId);
+                
+                // 构建会话DTO
+                ConversationDTO conversationDTO = buildConversationDTO(conversation, userId);
+                
+                if (conversationDTO != null) {
+                    // 设置归档状态
+                    conversationDTO.setIsArchived(request.getIsArchived());
+                    
+                    // 获取会话的所有成员ID
+                    List<Long> memberIds = getConversationMemberIds(conversationId);
+                    log.info("获取到会话 {} 的所有成员: {}", conversationId, memberIds);
+                    
+                    // 向所有会话成员广播更新
+                    for (Long memberUserId : memberIds) {
+                        // 为每个用户创建特定的更新数据
+                        Map<String, Object> updateData = new HashMap<>();
+                        updateData.put("conversationId", conversationId);
+                        updateData.put("isArchived", request.getIsArchived());
+                        updateData.put("userId", memberUserId); // 设置为接收通知的用户ID
+                        
+                        eventPublisher.publishEvent(new ConversationUpdateEvent(
+                            this,
+                            conversationId,
+                            updateData,
+                            "CONVERSATION_ARCHIVE",
+                            null // 由WebSocketService决定只发给特定用户
+                        ));
+                        
+                        log.info("已发布会话归档状态事件给用户 {}: conversationId={}, isArchived={}", 
+                                memberUserId, conversationId, request.getIsArchived());
+                    }
+                }
+            } catch (Exception e) {
+                log.error("发布会话归档状态事件失败: {}", e.getMessage(), e);
+                // 不影响主流程继续执行
+            }
+        } catch (Exception e) {
+            log.error("Failed to archive conversation: conversationId={}, userId={}, error={}", 
+                    conversationId, userId, e.getMessage(), e);
+            throw e;
+        }
     }
 
     @Override
@@ -419,13 +649,124 @@ ConversationMemberDTO participantDTO = ConversationMemberDTO.builder()
             Conversation conversation = conversationRepository.findById(conversationId).orElse(null);
             if (conversation != null && !conversation.isDeleted()) {
                 conversation.setLastActiveAt(LocalDateTime.now());
-                conversationRepository.save(conversation);
+                conversation = conversationRepository.save(conversation);
                 log.debug("Updated last active time for conversation {}", conversationId);
+                
+                // 构建会话DTO并发送WebSocket通知
+                try {
+                    // 构建会话DTO
+                    ConversationDTO conversationDTO = buildConversationDTO(conversation, null);
+                    
+                    if (conversationDTO != null) {
+                        // 发布事件
+                        eventPublisher.publishEvent(new ConversationUpdateEvent(
+                            this, // 事件源
+                            conversationId,
+                            conversationDTO,
+                            "UPDATE",
+                            null // 不排除任何用户
+                        ));
+                        log.info("已发布会话更新事件: conversationId={}", conversationId);
+                    }
+                } catch (Exception e) {
+                    log.error("发送会话更新WebSocket通知失败: {}", e.getMessage(), e);
+                    // 不影响主流程继续执行
+                }
             } else {
                 log.warn("Conversation {} not found or deleted, cannot update last active time", conversationId);
             }
         } catch (Exception e) {
             log.error("Failed to update last active time for conversation {}: {}", conversationId, e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public List<Long> getConversationMemberIds(Long conversationId) {
+        log.debug("获取会话{}的所有成员ID", conversationId);
+        
+        try {
+            // 查询会话成员
+            List<ConversationMember> members = conversationMemberRepository.findByConversationId(conversationId);
+            
+            // 提取成员ID
+            return members.stream()
+                    .map(ConversationMember::getUserId)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("获取会话{}的成员ID失败", conversationId, e);
+            return Collections.emptyList();
+        }
+    }
+
+    @Override
+    public void muteConversation(Long conversationId, MuteConversationRequest request, Long userId) {
+        log.info("Setting DND for conversation {} by user {}, isDnd={}", conversationId, userId, request.getIsMuted());
+        
+        try {
+            // 1. 验证会话权限
+            if (!isUserInConversation(conversationId, userId)) {
+                log.warn("User {} is not in conversation {}, cannot set DND", userId, conversationId);
+                throw new IllegalArgumentException("您不是此会话的成员，无法设置免打扰");
+            }
+            
+            // 2. 获取会话成员记录
+            ConversationMemberId id = new ConversationMemberId(conversationId, userId);
+            ConversationMember member = conversationMemberRepository.findById(id)
+                    .orElseThrow(() -> new IllegalArgumentException("会话成员记录不存在"));
+            
+            // 3. 更新免打扰状态
+            member.setIsDnd(request.getIsMuted());
+            
+            // 4. 保存更新
+            conversationMemberRepository.save(member);
+            
+            log.info("Successfully set DND for conversation {} by user {} to {}", 
+                    conversationId, userId, request.getIsMuted());
+                    
+            // 5. 发送WebSocket通知
+            try {
+                // 获取会话信息
+                Conversation conversation = getConversationById(conversationId);
+                
+                // 构建会话DTO
+                ConversationDTO conversationDTO = buildConversationDTO(conversation, userId);
+                
+                if (conversationDTO != null) {
+                    // 设置免打扰状态
+                    conversationDTO.setIsDnd(request.getIsMuted());
+                    
+                    // 获取会话的所有成员ID
+                    List<Long> memberIds = getConversationMemberIds(conversationId);
+                    log.info("获取到会话 {} 的所有成员: {}", conversationId, memberIds);
+                    
+                    // 向所有会话成员广播更新
+                    for (Long memberUserId : memberIds) {
+                        // 为每个用户创建特定的更新数据
+                        Map<String, Object> updateData = new HashMap<>();
+                        updateData.put("conversationId", conversationId);
+                        updateData.put("isDnd", request.getIsMuted());
+                        updateData.put("userId", memberUserId); // 设置为接收通知的用户ID
+                        
+                        eventPublisher.publishEvent(new ConversationUpdateEvent(
+                            this,
+                            conversationId,
+                            updateData,
+                            "CONVERSATION_DND",
+                            null // 由WebSocketService决定只发给特定用户
+                        ));
+                        
+                        log.info("已发布会话免打扰状态事件给用户 {}: conversationId={}, isDnd={}", 
+                                memberUserId, conversationId, request.getIsMuted());
+                    }
+                }
+            } catch (Exception e) {
+                log.error("发布会话免打扰状态事件失败: {}", e.getMessage(), e);
+                // 不影响主流程继续执行
+            }
+        } catch (Exception e) {
+            log.error("Failed to set DND for conversation: conversationId={}, userId={}, error={}", 
+                    conversationId, userId, e.getMessage(), e);
+            throw e;
         }
     }
 }

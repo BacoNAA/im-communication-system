@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
@@ -16,6 +17,8 @@ import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Redis配置类
@@ -28,6 +31,36 @@ import java.time.Duration;
 @Configuration
 @EnableCaching
 public class RedisConfig {
+
+    /**
+     * 默认缓存时间（秒）
+     */
+    @Value("${im.cache.default-ttl:1800}")
+    private int defaultTtl;
+
+    /**
+     * 群组信息缓存时间（秒）
+     */
+    @Value("${im.cache.group-info-ttl:3600}")
+    private int groupInfoTtl;
+
+    /**
+     * 群成员列表缓存时间（秒）
+     */
+    @Value("${im.cache.group-members-ttl:300}")
+    private int groupMembersTtl;
+
+    /**
+     * 群公告缓存时间（秒）
+     */
+    @Value("${im.cache.group-announcements-ttl:300}")
+    private int groupAnnouncementsTtl;
+
+    /**
+     * 群权限缓存时间（秒）
+     */
+    @Value("${im.cache.group-permissions-ttl:600}")
+    private int groupPermissionsTtl;
 
     /**
      * 配置RedisTemplate
@@ -64,8 +97,9 @@ public class RedisConfig {
     }
 
     /**
-     * 配置缓存管理器
+     * 配置统一的缓存管理器
      * 设置缓存的默认过期时间和序列化方式
+     * 整合了通用缓存和群组相关缓存
      * 
      * @param connectionFactory Redis连接工厂
      * @return CacheManager实例
@@ -78,15 +112,40 @@ public class RedisConfig {
         objectMapper.activateDefaultTyping(LaissezFaireSubTypeValidator.instance, ObjectMapper.DefaultTyping.NON_FINAL);
         Jackson2JsonRedisSerializer<Object> jackson2JsonRedisSerializer = new Jackson2JsonRedisSerializer<>(objectMapper, Object.class);
 
-        // 配置缓存
-        RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(Duration.ofMinutes(30)) // 设置缓存过期时间为30分钟
+        // 默认缓存配置
+        RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
+                .entryTtl(Duration.ofSeconds(defaultTtl)) // 设置默认缓存过期时间
                 .serializeKeysWith(org.springframework.data.redis.serializer.RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
                 .serializeValuesWith(org.springframework.data.redis.serializer.RedisSerializationContext.SerializationPair.fromSerializer(jackson2JsonRedisSerializer))
                 .disableCachingNullValues(); // 不缓存空值
 
+        // 针对不同缓存名称的特定配置
+        Map<String, RedisCacheConfiguration> configMap = new HashMap<>();
+        
+        // 群组相关缓存配置
+        configMap.put("groupInfo", defaultConfig.entryTtl(Duration.ofSeconds(groupInfoTtl)));
+        configMap.put("groupMembers", defaultConfig.entryTtl(Duration.ofSeconds(groupMembersTtl)));
+        configMap.put("groupAnnouncements", defaultConfig.entryTtl(Duration.ofSeconds(groupAnnouncementsTtl)));
+        configMap.put("groupPermissions", defaultConfig.entryTtl(Duration.ofSeconds(groupPermissionsTtl)));
+        
+        // 用户会话缓存
+        configMap.put("userSession", defaultConfig.entryTtl(Duration.ofHours(24)));
+        
+        // 验证码缓存
+        configMap.put("verificationCode", defaultConfig.entryTtl(Duration.ofMinutes(5)));
+        
+        // 用户在线状态缓存
+        configMap.put("userOnline", defaultConfig.entryTtl(Duration.ofMinutes(30)));
+        
+        // 消息缓存
+        configMap.put("recentMessages", defaultConfig.entryTtl(Duration.ofMinutes(10)));
+        
+        // 文件上传缓存
+        configMap.put("fileUpload", defaultConfig.entryTtl(Duration.ofHours(1)));
+
         return RedisCacheManager.builder(connectionFactory)
-                .cacheDefaults(config)
+                .cacheDefaults(defaultConfig)
+                .withInitialCacheConfigurations(configMap)
                 .build();
     }
 
@@ -123,5 +182,4 @@ public class RedisConfig {
      *    - Value: 上传进度和状态
      *    - TTL: 1小时
      */
-
 }

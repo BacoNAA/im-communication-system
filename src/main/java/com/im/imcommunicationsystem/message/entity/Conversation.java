@@ -66,6 +66,12 @@ public class Conversation {
     private String avatarUrl;
 
     /**
+     * 关联的群组ID（如果是群聊）
+     */
+    @Column(name = "related_group_id")
+    private Long relatedGroupId;
+
+    /**
      * 创建者ID
      */
     @Column(name = "created_by", nullable = false)
@@ -121,6 +127,22 @@ public class Conversation {
      */
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
+    
+    /**
+     * 实体创建前的处理
+     */
+    @PrePersist
+    protected void onCreate() {
+        // 初始化最后活跃时间为当前时间
+        if (lastActiveAt == null) {
+            lastActiveAt = LocalDateTime.now();
+        }
+        
+        // 初始化其他默认值
+        if (deleted == null) {
+            deleted = false;
+        }
+    }
 
     /**
      * 会话参与者列表

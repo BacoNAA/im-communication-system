@@ -39,6 +39,17 @@ public interface PublicFileUploadService {
      * @return 头像URL
      */
     String uploadAvatar(MultipartFile file, Long userId);
+    
+    /**
+     * 上传群组头像
+     * 与用户头像不同，旧的群组头像会被保留为私有且临时状态
+     * 
+     * @param file 群组头像文件
+     * @param groupId 群组ID
+     * @param userId 操作用户ID
+     * @return 头像URL
+     */
+    String uploadGroupAvatar(MultipartFile file, Long groupId, Long userId);
 
     /**
      * 删除公开文件（软删除）

@@ -25,6 +25,7 @@ export default defineConfig({
       '@api': fileURLToPath(new URL('./src/api', import.meta.url)),
       '@types': fileURLToPath(new URL('./src/types', import.meta.url)),
       '@composables': fileURLToPath(new URL('./src/composables', import.meta.url)),
+      'group': fileURLToPath(new URL('./src/components/group', import.meta.url)),
     },
   },
   server: {
@@ -39,7 +40,13 @@ export default defineConfig({
         secure: false,
         rewrite: (path) => path,
       },
-      // WebSocket 连接代理
+      // 原生WebSocket连接代理
+      '/ws-native': {
+        target: 'ws://localhost:8080',
+        ws: true,
+        changeOrigin: true,
+      },
+      // SockJS WebSocket 连接代理
       '/ws': {
         target: 'ws://localhost:8080',
         ws: true,
@@ -47,6 +54,22 @@ export default defineConfig({
       },
       // STOMP WebSocket 端点代理
       '/app': {
+        target: 'ws://localhost:8080',
+        ws: true,
+        changeOrigin: true,
+      },
+      // 消息订阅端点代理
+      '/topic': {
+        target: 'ws://localhost:8080',
+        ws: true,
+        changeOrigin: true,
+      },
+      '/queue': {
+        target: 'ws://localhost:8080',
+        ws: true,
+        changeOrigin: true,
+      },
+      '/user': {
         target: 'ws://localhost:8080',
         ws: true,
         changeOrigin: true,

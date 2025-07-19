@@ -26,7 +26,8 @@ import java.time.LocalDateTime;
         @Index(name = "idx_sender_created", columnList = "sender_id, created_at"),
         @Index(name = "idx_status", columnList = "status"),
         @Index(name = "idx_message_type", columnList = "message_type"),
-        @Index(name = "idx_reply_to", columnList = "reply_to_message_id")
+        @Index(name = "idx_reply_to", columnList = "reply_to_message_id"),
+        @Index(name = "idx_is_read", columnList = "is_read")
 })
 @Data
 @Builder
@@ -91,6 +92,31 @@ public class Message {
     @Column(name = "status", nullable = false)
     @Builder.Default
     private MessageStatus status = MessageStatus.SENT;
+
+    /**
+     * 是否已读
+     */
+    @Column(name = "is_read", nullable = false)
+    @Builder.Default
+    private Boolean isRead = false;
+
+    /**
+     * 获取消息是否已读
+     * 
+     * @return 是否已读
+     */
+    public Boolean getIsRead() {
+        return isRead != null ? isRead : false;
+    }
+    
+    /**
+     * 设置消息是否已读
+     * 
+     * @param isRead 是否已读
+     */
+    public void setIsRead(Boolean isRead) {
+        this.isRead = isRead != null ? isRead : false;
+    }
 
     /**
      * 是否已编辑

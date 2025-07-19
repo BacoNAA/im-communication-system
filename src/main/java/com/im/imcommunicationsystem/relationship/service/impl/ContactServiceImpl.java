@@ -254,14 +254,46 @@ public class ContactServiceImpl implements ContactService {
 
     @Override
     public boolean isFriend(Long userId1, Long userId2) {
-        // TODO: 实现检查是否为好友关系逻辑
+        log.info("检查用户是否为好友关系: userId1={}, userId2={}", userId1, userId2);
+        
+        if (userId1 == null || userId2 == null || userId1.equals(userId2)) {
+            log.warn("检查好友关系失败: 无效的用户ID, userId1={}, userId2={}", userId1, userId2);
         return false;
+        }
+        
+        try {
+            // 使用仓库中的方法直接检查双向好友关系
+            boolean areFriends = contactRepository.existsMutualFriendship(userId1, userId2);
+            log.info("用户好友关系检查结果: userId1={}, userId2={}, areFriends={}", userId1, userId2, areFriends);
+            
+            return areFriends;
+        } catch (Exception e) {
+            log.error("检查好友关系时发生异常: userId1={}, userId2={}, error={}", userId1, userId2, e.getMessage(), e);
+            return false;
+        }
     }
 
     @Override
     public boolean isBlocked(Long userId, Long friendId) {
-        // TODO: 实现检查是否被屏蔽逻辑
+        log.info("检查用户是否被屏蔽: userId={}, friendId={}", userId, friendId);
+        
+        if (userId == null || friendId == null || userId.equals(friendId)) {
+            log.warn("检查屏蔽状态失败: 无效的用户ID, userId={}, friendId={}", userId, friendId);
         return false;
+        }
+        
+        try {
+            // 检查是否存在屏蔽关系
+            Optional<Contact> contact = contactRepository.findByUserIdAndFriendId(userId, friendId);
+            
+            boolean isBlocked = contact.isPresent() && Boolean.TRUE.equals(contact.get().getIsBlocked());
+            log.info("用户屏蔽状态检查结果: userId={}, friendId={}, isBlocked={}", userId, friendId, isBlocked);
+            
+            return isBlocked;
+        } catch (Exception e) {
+            log.error("检查屏蔽状态时发生异常: userId={}, friendId={}, error={}", userId, friendId, e.getMessage(), e);
+            return false;
+        }
     }
 
     @Override

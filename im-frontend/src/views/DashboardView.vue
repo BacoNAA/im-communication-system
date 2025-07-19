@@ -24,6 +24,12 @@
       </button>
     </div>
     
+    <!-- 设置对话框 -->
+    <settings-dialog 
+      :visible="settingsDialogVisible" 
+      @close="closeSettingsDialog"
+    />
+    
     <!-- 主内容区域 -->
     <div class="main-content">
       <!-- 标签页内容 -->
@@ -36,7 +42,7 @@
             :active-chat-id="activeChatId || ''"
             @select-chat="handleSelectChat"
             @pin-chat="handlePinChat"
-            @mute-chat="handleMuteChat"
+            @mute-chat="handleMute"
             @archive-chat="handleArchiveChat"
             @delete-chat="handleDeleteChat"
             @error="handlePanelError"
@@ -584,6 +590,11 @@
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- 群聊页面 -->
+      <div :class="['tab-content', { active: activeTab === 'groups' }]">
+        <group-view />
       </div>
     </div>
     
@@ -1772,10 +1783,19 @@
       </div>
     </div>
   </div>
+
+  <div class="app-header">
+  <h1>IM系统</h1>
+  <GlobalSearchButton @navigate-to-message="handleSelectChat" />
+  <div class="user-actions">
+    <button @click="showSettings" class="settings-btn"><i class="fas fa-cog"></i></button>
+    <button @click="logout" class="logout-btn">退出</button>
+  </div>
+</div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import type { FileItem, FileStats, FileUploadResult } from '@/types'
 import { api } from '@/api/request'
@@ -1787,7 +1807,13 @@ import ContactsList from '@/components/chat/ContactsList.vue'
 import ChatPanel from '@/components/chat/ChatPanel.vue'
 import EmojiPicker from '@/components/chat/EmojiPicker.vue'
 import MessageInput from '@/components/chat/MessageInput.vue'
-import { messageApi } from '@/api/message';
+import { messageApi } from '@/api/message'
+import { useMessages } from '@/composables/useMessages';
+import { useSharedWebSocket } from '@/composables/useWebSocket';
+import GroupView from '@/views/GroupView.vue';
+import GlobalSearchButton from '@/components/search/GlobalSearchButton.vue';
+import GlobalSearch from '@/components/search/GlobalSearch.vue';
+import SettingsDialog from '@/components/settings/SettingsDialog.vue';
 
 interface User {
   id: string
@@ -1849,6 +1875,7 @@ const contactSearchKeyword = ref('')
 const momentSearchKeyword = ref('')
 const userStatus = ref({ emoji: '🚗', text: '在路上' })
 const showSettingsModal = ref(false)
+const settingsDialogVisible = ref(false)
 const showProfileEditModal = ref(false)
 const showAddFriendModal = ref(false)
 const showUserProfileModal = ref(false)
@@ -1985,12 +2012,12 @@ const contacts = ref<Contact[]>([])
 const moments = ref<Moment[]>([])
 
 // 导航标签页
-const navigationTabs = [
+const navigationTabs = ref([
   { key: 'chat', label: '会话', icon: 'icon-chat', badge: 0 },
   { key: 'contacts', label: '联系人', icon: 'icon-contacts', badge: 0 },
   { key: 'moments', label: '动态', icon: 'icon-moments', badge: 0 },
   { key: 'profile', label: '我', icon: 'icon-profile', badge: 0 }
-]
+])
 
 // 计算属性
 const filteredChats = computed(() => {
@@ -2144,15 +2171,7 @@ const handleSearch = () => {
 const getCurrentChatName = (): string => {
   if (!activeChatId.value) return '';
   
-  // 从会话面板中查找当前会话
-  if (conversationsPanel.value && conversationsPanel.value.chats) {
-    const chat = conversationsPanel.value.chats.find((c: any) => String(c.id) === activeChatId.value);
-    if (chat) {
-      return chat.name || '会话';
-    }
-  }
-  
-  // 如果没有找到，使用当前会话信息
+  // 如果有当前会话信息
   if (currentChatInfo.value) {
     return currentChatInfo.value.name || '会话';
   }
@@ -2164,16 +2183,7 @@ const getCurrentChatName = (): string => {
 const isCurrentChatGroup = (): boolean => {
   if (!activeChatId.value) return false;
   
-  // 从会话面板中查找当前会话
-  if (conversationsPanel.value && conversationsPanel.value.chats) {
-    const chat = conversationsPanel.value.chats.find((c: any) => String(c.id) === activeChatId.value);
-    if (chat) {
-      // 根据会话类型或参与者数量判断
-      return chat.type === 'GROUP' || (chat.participants && chat.participants.length > 2);
-    }
-  }
-  
-  // 如果没有找到，使用当前会话信息
+  // 如果有当前会话信息
   if (currentChatInfo.value) {
     return currentChatInfo.value.type === 'GROUP' || 
            (currentChatInfo.value.participants && currentChatInfo.value.participants.length > 2);
@@ -2291,6 +2301,8 @@ const searchResults = ref<any[]>([])
 const searchLoading = ref(false)
 const contactsLoading = ref(false)
 const friendRequestBadge = ref(0)
+
+
 
 // 添加好友模态框相关
 const friendSearchKeyword = ref('')
@@ -2789,7 +2801,7 @@ const openNewFriends = () => {
 
 // 打开群聊
 const openGroupChats = () => {
-  showSuccessMessage('群聊功能正在开发中')
+  activeTab.value = 'groups';
 }
 
 // 显示标签管理模态框
@@ -4017,19 +4029,19 @@ const loadContactsList = async () => {
         return {
           id: friendId, // 确保ID是数字
           friendId: friendId, // 添加friendId字段，确保是数字
-          name: contact.nickname || contact.friendUsername || '',
-          avatar: contact.avatarUrl,
+        name: contact.nickname || contact.friendUsername || '',
+        avatar: contact.avatarUrl,
           avatarUrl: contact.avatarUrl,
-          signature: contact.signature || '',
-          isOnline: contact.isOnline || false,
-          alias: contact.alias,
-          tags: contact.tags,
-          friend: {
+        signature: contact.signature || '',
+        isOnline: contact.isOnline || false,
+        alias: contact.alias,
+        tags: contact.tags,
+        friend: {
             id: friendId, // 确保friend.id也是数字
-            nickname: contact.nickname,
-            avatarUrl: contact.avatarUrl,
-            signature: contact.signature
-          },
+          nickname: contact.nickname,
+          avatarUrl: contact.avatarUrl,
+          signature: contact.signature
+        },
           nickname: contact.nickname,
           email: contact.email || contact.friend?.email || ''
         }
@@ -5257,9 +5269,14 @@ const deleteFile = async (file: FileItem) => {
 
 
 const openThemes = () => {
-  // 主题与外观功能 - 正在开发中
-  showErrorMessage('主题与外观功能正在开发中，敬请期待！')
-  console.log('主题与外观功能被调用')
+  settingsDialogVisible.value = true
+  // 让SettingsDialog自动选择外观选项卡，需要在下一个事件循环中执行
+  setTimeout(() => {
+    const appearanceTab = document.querySelector('.tab-item[data-tab="appearance"]') as HTMLElement
+    if (appearanceTab) {
+      appearanceTab.click()
+    }
+  }, 0)
 }
 
 // 获取状态显示
@@ -5731,7 +5748,11 @@ const saveProfile = async () => {
 }
 
 const showSettings = () => {
-  showSettingsModal.value = true
+  settingsDialogVisible.value = true
+}
+
+const closeSettingsDialog = () => {
+  settingsDialogVisible.value = false
 }
 
 const logout = () => {
@@ -6932,47 +6953,113 @@ const handleSelectChat = (chat: any) => {
 // 处理会话置顶
 const handlePinChat = async (chat: any) => {
   try {
+    console.log('接收到置顶/取消置顶请求:', chat);
+    
+    // 确保我们有正确的会话ID
+    const chatId = chat.chatId || chat.id;
+    if (!chatId) {
+      console.error('无效的会话ID:', chat);
+      throw new Error('无效的会话ID');
+    }
+    
+    // 确定是否置顶
+    const isPinned = chat.isPinned !== undefined ? chat.isPinned : true;
+    
+    console.log(`执行${isPinned ? '置顶' : '取消置顶'}操作，会话ID: ${chatId}`);
+    
     // 调用消息API进行置顶或取消置顶
-    // await messageApi.pinConversation(chat.id, !chat.isPinned);
+    const response = await messageApi.pinConversation(chatId, isPinned);
+    
+    if (response.success) {
+      console.log(`会话 ${chatId} ${isPinned ? '置顶' : '取消置顶'}成功`);
     
     // 重新加载会话列表
     await conversationsPanel.value?.loadConversations();
     
-    const actionText = chat.isPinned ? '取消置顶' : '置顶';
-    showSuccessMessage(`已${actionText}会话：${chat.name}`);
+      const actionText = !isPinned ? '取消置顶' : '置顶';
+      showSuccessMessage(`已${actionText}会话：${chat.name || '未命名会话'}`);
+    } else {
+      throw new Error(response.message || '操作失败');
+    }
   } catch (error: any) {
-    showErrorMessage(`${chat.isPinned ? '取消置顶' : '置顶'}失败：${error.message}`);
+    console.error('置顶/取消置顶操作失败:', error);
+    showErrorMessage(`${chat?.isPinned ? '取消置顶' : '置顶'}失败：${error.message || '未知错误'}`);
   }
 };
 
 // 处理会话免打扰
-const handleMuteChat = async (chat: any) => {
+const handleMute = async (chat: any) => {
   try {
+    console.log('接收到免打扰/取消免打扰请求:', chat);
+    
+    // 确保我们有正确的会话ID
+    const chatId = chat.chatId || chat.id;
+    if (!chatId) {
+      console.error('无效的会话ID:', chat);
+      throw new Error('无效的会话ID');
+    }
+    
+    // 确定是否免打扰
+    const isDnd = chat.isDnd !== undefined ? !chat.isDnd : true;
+    
+    console.log(`执行${isDnd ? '免打扰' : '取消免打扰'}操作，会话ID: ${chatId}`);
+    
     // 调用消息API进行免打扰设置
-    // await messageApi.muteConversation(chat.id, !chat.isDnd);
+    const response = await messageApi.muteConversation(chatId, isDnd);
+    
+    if (response.success) {
+      console.log(`会话 ${chatId} ${isDnd ? '免打扰' : '取消免打扰'}成功`);
     
     // 重新加载会话列表
     await conversationsPanel.value?.loadConversations();
     
-    const actionText = chat.isDnd ? '取消免打扰' : '设置免打扰';
-    showSuccessMessage(`已${actionText}会话：${chat.name}`);
+      const actionText = !isDnd ? '取消免打扰' : '设置免打扰';
+      showSuccessMessage(`已${actionText}会话：${chat.name || '未命名会话'}`);
+    } else {
+      throw new Error(response.message || '操作失败');
+    }
   } catch (error: any) {
-    showErrorMessage(`${chat.isDnd ? '取消免打扰' : '设置免打扰'}失败：${error.message}`);
+    console.error('免打扰/取消免打扰操作失败:', error);
+    showErrorMessage(`${chat?.isDnd ? '取消免打扰' : '设置免打扰'}失败：${error.message || '未知错误'}`);
   }
 };
 
 // 处理会话归档
 const handleArchiveChat = async (chat: any) => {
   try {
-    // 调用消息API进行归档
-    // await messageApi.archiveConversation(chat.id, true);
+    console.log('接收到归档/取消归档请求:', chat);
+    
+    // 确保我们有正确的会话ID
+    const chatId = chat.chatId || chat.id;
+    if (!chatId) {
+      throw new Error('无效的会话ID');
+    }
+    
+    // 确定是归档还是取消归档操作
+    const isArchived = chat.isArchived !== undefined ? chat.isArchived : true;
+    
+    console.log(`执行${isArchived ? '归档' : '取消归档'}操作，会话ID: ${chatId}`);
+    
+    // 调用消息API进行归档或取消归档
+    const response = await messageApi.archiveConversation(chatId, isArchived);
+    
+    if (response.success) {
+      console.log(`会话 ${chatId} ${isArchived ? '归档' : '取消归档'}成功`);
     
     // 重新加载会话列表
+      if (isArchived) {
+        // 如果是归档操作，重新加载常规会话列表
     await conversationsPanel.value?.loadConversations();
-    
-    showSuccessMessage(`已归档会话：${chat.name}`);
+      } else {
+        // 如果是取消归档操作，重新加载已归档会话列表
+        await conversationsPanel.value?.loadArchivedConversations();
+      }
+    } else {
+      throw new Error(response.message || '操作失败');
+    }
   } catch (error: any) {
-    showErrorMessage(`归档失败：${error.message}`);
+    console.error('归档/取消归档操作失败:', error);
+    showErrorMessage(`${chat.isArchived ? '归档' : '取消归档'}失败：${error.message || '未知错误'}`);
   }
 };
 
@@ -6980,7 +7067,7 @@ const handleArchiveChat = async (chat: any) => {
 const handleDeleteChat = async (chat: any) => {
   try {
     // 调用消息API进行删除
-    // await messageApi.deleteConversation(chat.id);
+    await messageApi.deleteConversation(chat.id);
     
     // 重新加载会话列表
     await conversationsPanel.value?.loadConversations();
@@ -7017,8 +7104,34 @@ const refreshConversations = () => {
   }
 };
 
+// 获取消息相关功能
+const { totalUnreadCount, wsStatus } = useMessages();
+
+// WebSocket连接状态
+const wsConnectionStatus = computed(() => {
+  return wsStatus.value === 'connected' ? true : false;
+});
+
+// 更新导航标签的未读消息数
+const updateNavigationBadges = () => {
+  if (navigationTabs.value && Array.isArray(navigationTabs.value) && navigationTabs.value.length >= 2) {
+    // 明确检查数组索引是否存在
+    if (navigationTabs.value[0]) {
+      navigationTabs.value[0].badge = totalUnreadCount?.value ?? 0;
+    }
+    
+    if (navigationTabs.value[1]) {
+      navigationTabs.value[1].badge = friendRequestBadge.value ?? 0;
+    }
+  }
+};
+
 // 生命周期
 onMounted(async () => {
+  // 初始化共享WebSocket连接
+  const { connect: connectWs } = useSharedWebSocket();
+  connectWs();
+  
   await initData()
   // 启动定时刷新
   startAutoRefresh()
@@ -7029,18 +7142,29 @@ onMounted(async () => {
   
   // 延迟检查会话列表
   setTimeout(() => {
-    if (conversationsPanel.value && (!conversationsPanel.value.chats || conversationsPanel.value.chats.length === 0)) {
-      console.log('会话列表为空，尝试手动刷新');
-      refreshConversations();
-    }
+    console.log('检查会话列表状态，尝试手动刷新');
+    refreshConversations();
   }, 2000);
+  
+  // 设置定时器更新导航标签的未读数
+  badgeIntervalId = window.setInterval(updateNavigationBadges, 2000);
+  
+  // 初始更新一次
+  setTimeout(updateNavigationBadges, 500);
 });
+
+// 用于存储定时器ID
+let badgeIntervalId: number | null = null;
 
 // 组件卸载时清理定时器和事件监听
 onUnmounted(() => {
   stopAutoRefresh()
   // 移除键盘事件监听
   document.removeEventListener('keydown', handleKeydown)
+  // 清除未读数更新定时器
+  if (badgeIntervalId !== null) {
+    clearInterval(badgeIntervalId)
+  }
 })
 </script>
 
@@ -7155,6 +7279,7 @@ onUnmounted(() => {
   min-width: 16px;
   text-align: center;
   line-height: 12px;
+  font-weight: bold;
 }
 
 /* 聊天页面样式 */
@@ -9293,11 +9418,6 @@ onUnmounted(() => {
 
 .btn-primary:hover:not(:disabled) {
   background: #2563eb;
-}
-
-.btn-secondary {
-  background: #6c757d;
-  color: white;
 }
 
 .btn-secondary:hover:not(:disabled) {

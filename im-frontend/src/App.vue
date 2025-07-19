@@ -1,5 +1,64 @@
-<script setup>
-  import { RouterView } from 'vue-router';
+<script setup lang="ts">
+import { onMounted } from 'vue';
+import { RouterView } from 'vue-router';
+import { useSharedWebSocket } from '@/composables/useWebSocket';
+import { useUserSettings } from './composables/useUserSettings';
+import { applyThemeColor, applyFontSize } from './utils/themeUtils';
+
+// 初始化WebSocket连接
+const { connect: connectWebSocket } = useSharedWebSocket();
+
+// 获取用户设置
+const { settings, fetchSettings } = useUserSettings();
+
+// 应用存储的设置到全局样式
+const applyGlobalSettings = () => {
+  console.log('应用全局设置:', settings.value);
+  
+  if (settings.value?.theme) {
+    // 应用主题颜色
+    if (settings.value.theme.color) {
+      console.log('应用主题颜色:', settings.value.theme.color);
+      applyThemeColor(settings.value.theme.color);
+    }
+    
+    // 应用字体大小
+    if (settings.value.theme.fontSize) {
+      console.log('应用字体大小:', settings.value.theme.fontSize);
+      applyFontSize(settings.value.theme.fontSize);
+    }
+    
+    // 应用聊天背景（如果需要）
+    // 这部分可能需要在聊天组件内处理
+  }
+};
+
+// 在应用初始化时检查用户是否已登录
+onMounted(async () => {
+  // 检查本地存储中是否有token，表示用户已登录
+  const hasToken = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
+  
+  if (hasToken) {
+    // 用户已登录，立即激活WebSocket连接
+    console.log('检测到用户已登录，立即激活WebSocket连接');
+    connectWebSocket();
+  } else {
+    console.log('用户未登录，WebSocket连接将在登录后激活');
+  }
+
+  console.log('App组件已挂载，开始加载用户设置');
+  
+  try {
+    // 尝试从API获取设置
+    await fetchSettings();
+    console.log('成功从API获取设置');
+  } catch (error) {
+    console.error('从API获取设置失败，将使用本地存储的设置:', error);
+  }
+  
+  // 无论是从API还是本地存储加载，都应用设置
+  applyGlobalSettings();
+});
 </script>
 
 <template>
@@ -7,6 +66,15 @@
 </template>
 
 <style>
+/* 全局CSS变量 */
+:root {
+  --primary-color: #1890ff;
+  --primary-light-color: rgba(24, 144, 255, 0.2);
+  --primary-dark-color: #096dd9;
+  --font-size-base: 14px;
+  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
 /* 全局样式重置 */
 * {
   margin: 0;
@@ -16,8 +84,8 @@
 
 html, body {
   height: 100%;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  font-size: 14px;
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
   line-height: 1.5;
   color: #333;
   background: #f5f5f5;

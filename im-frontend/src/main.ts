@@ -1,13 +1,21 @@
 import './assets/main.css';
+import './assets/theme-variables.css'; // 导入主题变量CSS
 
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
+import ElementPlus from 'element-plus';
+import 'element-plus/dist/index.css';
 
 import App from './App.vue';
 import router from './router';
 import { useAuth } from './composables/useAuth';
+import { useSharedWebSocket } from './composables/useWebSocket';
 
-const app = createApp(App);
+// 创建应用实例
+const app = createApp(App)
+
+// 使用Element Plus
+app.use(ElementPlus);
 
 // 注册全局点击外部指令
 app.directive('click-outside', {
@@ -41,11 +49,23 @@ app.directive('click-outside', {
   }
 });
 
-app.use(createPinia());
-app.use(router);
+// 使用Pinia
+app.use(createPinia())
+
+// 使用路由
+app.use(router)
 
 // 初始化认证状态
-const { initAuth } = useAuth();
+const { initAuth, getToken } = useAuth();
 initAuth();
 
-app.mount('#app');
+// 初始化WebSocket连接（如果用户已登录）
+const { connect: connectWebSocket } = useSharedWebSocket();
+const token = getToken();
+if (token) {
+  console.log('应用启动时检测到用户已登录，立即初始化WebSocket连接');
+  connectWebSocket();
+}
+
+// 挂载应用
+app.mount('#app')

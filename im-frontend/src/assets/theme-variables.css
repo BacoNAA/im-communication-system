@@ -1,0 +1,149 @@
+/**
+ * 全局主题变量
+ * 这些变量会被JS动态修改，用于实现主题切换
+ */
+
+:root {
+  /* 主题颜色 */
+  --primary-color: #1890ff;
+  --primary-light-color: rgba(24, 144, 255, 0.2);
+  --primary-dark-color: rgb(0, 104, 215);
+  --primary-contrast-color: #ffffff;
+
+  /* 字体大小 */
+  --font-size-base: 14px;
+  --font-size-small: 12px;
+  --font-size-large: 18px;
+  --font-size-xlarge: 21px;
+  --font-size-title: 24px;
+}
+
+/* ===== 主题色应用 ===== */
+
+/* 按钮 */
+.btn-primary, 
+.save-btn, 
+.action-btn {
+  background-color: var(--primary-color);
+  color: var(--primary-contrast-color);
+}
+
+.btn-primary:hover, 
+.save-btn:hover, 
+.action-btn:hover {
+  background-color: var(--primary-dark-color);
+}
+
+/* 标签和选项卡 */
+.tab-item.active {
+  color: var(--primary-color);
+}
+
+.tab-item.active::after {
+  background-color: var(--primary-color);
+}
+
+/* 链接和可点击元素 */
+a, .link, .clickable {
+  color: var(--primary-color);
+}
+
+a:hover, .link:hover, .clickable:hover {
+  color: var(--primary-dark-color);
+}
+
+/* 边框和高亮 */
+.border-primary,
+.focus-highlight:focus,
+.active-highlight.active {
+  border-color: var(--primary-color);
+}
+
+/* 选择状态 */
+.selected-indicator,
+.active-indicator,
+.switch-active,
+.checkbox-checked {
+  background-color: var(--primary-color);
+}
+
+/* 消息气泡 */
+.message-bubble.sent {
+  background-color: var(--primary-light-color);
+  border-color: var(--primary-color);
+}
+
+/* 徽章和通知 */
+.badge, .notification-dot {
+  background-color: var(--primary-color);
+  color: var(--primary-contrast-color);
+}
+
+/* 进度条和加载指示器 */
+.progress-bar, .loading-indicator {
+  background-color: var(--primary-color);
+}
+
+/* 表单元素 */
+.form-control:focus,
+.input-field:focus,
+.select-field:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px var(--primary-light-color);
+}
+
+/* ===== 字体大小应用 ===== */
+
+/* 基础字体大小 */
+body, html, .default-text {
+  font-size: var(--font-size-base);
+}
+
+/* 小号字体 */
+.text-small, .hint-text, .caption, .meta-info, .timestamp {
+  font-size: var(--font-size-small);
+}
+
+/* 大号字体 */
+.text-large, .heading-sub, .section-title {
+  font-size: var(--font-size-large);
+}
+
+/* 特大号字体 */
+.text-xlarge, .heading, .panel-title {
+  font-size: var(--font-size-xlarge);
+}
+
+/* 标题字体 */
+.text-title, h1, h2, .dialog-title {
+  font-size: var(--font-size-title);
+}
+
+/* 聊天消息文本 */
+.message-text, .chat-input {
+  font-size: var(--font-size-base);
+}
+
+/* 设置项文本 */
+.settings-label, .settings-value {
+  font-size: var(--font-size-base);
+}
+
+/* 导航项文本 */
+.nav-item, .sidebar-item {
+  font-size: var(--font-size-base);
+}
+
+/* 列表项文本 */
+.list-item, .menu-item, .dropdown-item {
+  font-size: var(--font-size-base);
+}
+
+/* 对话列表文本 */
+.conversation-name {
+  font-size: var(--font-size-base);
+}
+
+.conversation-preview {
+  font-size: var(--font-size-small);
+} 

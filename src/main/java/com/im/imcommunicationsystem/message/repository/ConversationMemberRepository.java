@@ -164,4 +164,13 @@ public interface ConversationMemberRepository extends JpaRepository<Conversation
      * @return 归档的参与者记录列表
      */
     List<ConversationMember> findByUserIdAndIsArchivedTrue(Long userId);
+
+    /**
+     * 获取用户参与的所有会话ID列表
+     * 
+     * @param userId 用户ID
+     * @return 会话ID列表
+     */
+    @Query("SELECT cm.conversationId FROM ConversationMember cm WHERE cm.userId = :userId")
+    List<Long> findConversationIdsByUserId(@Param("userId") Long userId);
 }

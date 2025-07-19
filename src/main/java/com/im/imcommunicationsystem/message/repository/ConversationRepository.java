@@ -163,4 +163,12 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
      */
     @Query("SELECT c FROM Conversation c WHERE c.deleted = true AND c.deletedAt < :beforeTime")
     List<Conversation> findConversationsToCleanup(@Param("beforeTime") LocalDateTime beforeTime);
+
+    /**
+     * 根据关联的群组ID查询会话
+     * 
+     * @param groupId 群组ID
+     * @return 会话
+     */
+    Conversation findByRelatedGroupId(Long groupId);
 }

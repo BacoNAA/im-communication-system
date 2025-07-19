@@ -24,10 +24,11 @@ import java.util.List;
 public class ForwardMessageRequest {
 
     /**
-     * 要转发的消息ID
+     * 要转发的消息ID列表
      */
-    @NotNull(message = "消息ID不能为空")
-    private Long messageId;
+    @NotEmpty(message = "消息ID列表不能为空")
+    @Size(max = 50, message = "一次最多转发50条消息")
+    private List<Long> messageIds;
 
     /**
      * 目标会话ID列表
@@ -37,45 +38,56 @@ public class ForwardMessageRequest {
     private List<Long> targetConversationIds;
 
     /**
-     * 转发时的附加消息
+     * 转发时的附加评论
      */
-    @Size(max = 500, message = "附加消息不能超过500个字符")
-    private String additionalMessage;
+    @Size(max = 500, message = "附加评论不能超过500个字符")
+    private String comment;
 
     /**
-     * 是否保留原始发送者信息
+     * 转发类型（MERGE: 合并转发, SEPARATE: 逐条转发）
      */
-    private Boolean keepOriginalSender;
+    @NotNull(message = "转发类型不能为空")
+    private ForwardType forwardType;
 
     /**
-     * 转发类型（quote: 引用转发, copy: 复制转发）
+     * 转发类型枚举
      */
-    private String forwardType;
-
-    /**
-     * 检查是否为引用转发
-     * 
-     * @return 是否为引用转发
-     */
-    public boolean isQuoteForward() {
-        return "quote".equals(forwardType);
+    public enum ForwardType {
+        /**
+         * 合并转发 - 将多条消息合并为一条转发
+         */
+        MERGE,
+        
+        /**
+         * 逐条转发 - 每条消息单独转发
+         */
+        SEPARATE
     }
 
     /**
-     * 检查是否为复制转发
+     * 检查是否为合并转发
      * 
-     * @return 是否为复制转发
+     * @return 是否为合并转发
      */
-    public boolean isCopyForward() {
-        return "copy".equals(forwardType);
+    public boolean isMergeForward() {
+        return ForwardType.MERGE.equals(forwardType);
     }
 
     /**
-     * 检查是否有附加消息
+     * 检查是否为逐条转发
      * 
-     * @return 是否有附加消息
+     * @return 是否为逐条转发
      */
-    public boolean hasAdditionalMessage() {
-        return additionalMessage != null && !additionalMessage.trim().isEmpty();
+    public boolean isSeparateForward() {
+        return ForwardType.SEPARATE.equals(forwardType);
+    }
+
+    /**
+     * 检查是否有附加评论
+     * 
+     * @return 是否有附加评论
+     */
+    public boolean hasComment() {
+        return comment != null && !comment.trim().isEmpty();
     }
 }

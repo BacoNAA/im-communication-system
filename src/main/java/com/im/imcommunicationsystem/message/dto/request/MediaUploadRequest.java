@@ -29,6 +29,11 @@ public class MediaUploadRequest {
     private MultipartFile file;
 
     /**
+     * 会话ID
+     */
+    private String conversationId;
+
+    /**
      * 文件类型（image, video, audio, document等）
      */
     @Size(max = 50, message = "文件类型不能超过50个字符")

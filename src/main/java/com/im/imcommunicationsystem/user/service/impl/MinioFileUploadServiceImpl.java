@@ -517,10 +517,33 @@ public class MinioFileUploadServiceImpl implements FileUploadService {
      * 验证文件
      */
     private void validateFile(MultipartFile file) {
-        // 验证文件大小（50MB限制）
-        long maxSize = 50 * 1024 * 1024; // 50MB
+        // 根据文件类型设置不同的大小限制
+        String contentType = file.getContentType();
+        long maxSize;
+        
+        if (contentType != null) {
+            if (contentType.startsWith("video/")) {
+                // 视频文件限制为100MB
+                maxSize = 100 * 1024 * 1024;
+            } else if (contentType.startsWith("image/")) {
+                // 图片文件限制为10MB
+                maxSize = 10 * 1024 * 1024;
+            } else if (contentType.startsWith("audio/")) {
+                // 音频文件限制为20MB
+                maxSize = 20 * 1024 * 1024;
+            } else {
+                // 其他文件类型限制为50MB
+                maxSize = 50 * 1024 * 1024;
+            }
+        } else {
+            // 默认限制为50MB
+            maxSize = 50 * 1024 * 1024;
+        }
+        
         if (file.getSize() > maxSize) {
-            throw new FileUploadException("文件大小不能超过50MB");
+            String fileType = contentType != null ? contentType.split("/")[0] : "文件";
+            String sizeInMB = String.valueOf(maxSize / (1024 * 1024));
+            throw new FileUploadException(fileType + "大小不能超过" + sizeInMB + "MB");
         }
 
         // 验证文件名

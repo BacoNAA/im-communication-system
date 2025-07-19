@@ -129,6 +129,24 @@ public class MessageDTO {
     private Boolean isRead;
 
     /**
+     * 获取消息是否已读
+     * 
+     * @return 是否已读
+     */
+    public Boolean getIsRead() {
+        return isRead != null ? isRead : false;
+    }
+    
+    /**
+     * 设置消息是否已读
+     * 
+     * @param isRead 是否已读
+     */
+    public void setIsRead(Boolean isRead) {
+        this.isRead = isRead != null ? isRead : false;
+    }
+
+    /**
      * 已读时间
      */
     private LocalDateTime readAt;

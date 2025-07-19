@@ -1,23 +1,54 @@
 <template>
   <div 
-    class="conversation-item"
-    :class="{ 'pinned': chat.isPinned, 'active': isActive }" 
+    class="conversation-item" 
+    :class="{ 
+      active: isActive, 
+      'is-pinned': chat.isPinned,
+      'is-archived': isArchived
+    }"
     @click="$emit('click')"
     @contextmenu.prevent="$emit('context-menu', $event)"
   >
-    <div class="avatar">
-      <img v-if="chat.avatar" :src="chat.avatar" :alt="chat.name" />
-      <span v-else class="avatar-text">{{ getAvatarText(chat.name) }}</span>
+    <div v-if="chat.isPinned" class="pin-indicator"></div>
+    <div v-if="isArchived" class="archive-indicator" title="已归档">
+      <i class="fas fa-archive"></i>
     </div>
+    <div class="avatar">
+      <img v-if="chat.avatar" :src="chat.avatar" alt="Avatar" />
+      <div v-else class="default-avatar">
+        {{ getInitials(chat.name) }}
+      </div>
+      <div v-if="chat.isDnd" class="dnd-badge" title="免打扰">
+        <i class="fas fa-bell-slash"></i>
+      </div>
+    </div>
+    
     <div class="content">
       <div class="header">
-        <div class="name" :class="{ 'unread': chat.unreadCount > 0 }">{{ chat.name }}</div>
+        <div class="name" :class="{ 
+          'pinned-name': chat.isPinned,
+          'archived-name': isArchived
+        }">
+          {{ chat.name }}
+          <span v-if="chat.isPinned" class="pin-icon" title="已置顶">
+            <i class="fas fa-thumbtack"></i>
+          </span>
+          <span v-if="isArchived" class="archive-icon" title="已归档">
+            <i class="fas fa-archive"></i>
+          </span>
+          <span v-if="chat.isDnd" class="dnd-icon" title="已开启免打扰">
+            <i class="fas fa-bell-slash"></i>
+          </span>
+        </div>
         <div class="time">{{ formatTime(chat.lastMessageTime) }}</div>
       </div>
-      <div class="preview">
-        <span v-if="chat.isDnd" class="mute-icon">🔕</span>
-        <span class="message">{{ chat.lastMessage || '暂无消息' }}</span>
-        <span v-if="chat.unreadCount > 0" class="badge">{{ chat.unreadCount }}</span>
+      <div class="message">
+        <div class="text">{{ chat.lastMessage }}</div>
+        <div v-if="chat.unreadCount > 0" 
+             class="badge" 
+             :class="{'unread-badge': !chat.isDnd, 'muted-badge': chat.isDnd, 'pulse': !chat.isDnd && chat.unreadCount > 0}">
+          {{ chat.unreadCount > 99 ? '99+' : chat.unreadCount }}
+        </div>
       </div>
     </div>
   </div>
@@ -36,6 +67,10 @@ const props = defineProps({
   activeChatId: {
     type: [Number, String],
     default: null
+  },
+  isArchived: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -62,12 +97,34 @@ const getAvatarText = (name: string): string => {
   return name.charAt(0).toUpperCase();
 };
 
+// 获取名称的首字母作为头像显示
+const getInitials = (name: string): string => {
+  if (!name || typeof name !== 'string') return '?';
+  
+  // 简单地取第一个字符
+  return name.charAt(0).toUpperCase();
+};
+
 // 格式化时间
 const formatTime = (timestamp: string | number | Date): string => {
   if (!timestamp) return '';
   
-  // 使用相对时间格式化
-  return formatRelativeTime(new Date(timestamp));
+  try {
+    // 将时间戳转换为Date对象
+    const date = new Date(timestamp);
+    
+    // 检查日期是否有效
+    if (isNaN(date.getTime())) {
+      console.warn('无效的时间戳:', timestamp);
+      return '';
+    }
+    
+    // 使用相对时间格式化
+    return formatRelativeTime(date);
+  } catch (error) {
+    console.error('格式化时间出错:', error, timestamp);
+    return '';
+  }
 };
 </script>
 
@@ -77,8 +134,8 @@ const formatTime = (timestamp: string | number | Date): string => {
   padding: 12px 16px;
   border-bottom: 1px solid #f0f0f0;
   cursor: pointer;
-  transition: all 0.2s ease;
-  border-left: 4px solid transparent;
+  transition: background-color 0.2s;
+  position: relative;
 }
 
 .conversation-item:hover {
@@ -87,42 +144,89 @@ const formatTime = (timestamp: string | number | Date): string => {
 
 .conversation-item.active {
   background-color: #e6f7ff;
+  border-right: 3px solid #1890ff;
+}
+
+.conversation-item.is-pinned {
+  background-color: #e6f7ff;
   border-left: 4px solid #1890ff;
-  font-weight: 500;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  padding-left: 16px;
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.15);
+  margin: 4px 0;
+  border-radius: 4px;
 }
 
-.conversation-item.active .name {
-  color: #1890ff;
-  font-weight: 600;
+.conversation-item.is-archived {
+  background-color: #f9f0ff;
+  border-left: 4px solid #722ed1;
+  box-shadow: 0 2px 8px rgba(114, 46, 209, 0.15);
+  margin: 4px 0;
+  border-radius: 4px;
 }
 
-.conversation-item.pinned {
-  background-color: #f7f7f7;
+.pin-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 8px 8px 0 0;
+  border-color: #1890ff transparent transparent transparent;
+}
+
+.archive-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 8px 8px 0 0;
+  border-color: #722ed1 transparent transparent transparent;
 }
 
 .avatar {
-  width: 48px;
-  height: 48px;
-  border-radius: 24px;
-  overflow: hidden;
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
   margin-right: 12px;
   flex-shrink: 0;
-  background-color: #e1e1e1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
 }
 
 .avatar img {
   width: 100%;
   height: 100%;
+  border-radius: 50%;
   object-fit: cover;
 }
 
-.avatar-text {
-  font-size: 20px;
+.default-avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background-color: #1890ff;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.dnd-badge {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 16px;
+  height: 16px;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
   color: #666;
 }
 
@@ -134,61 +238,139 @@ const formatTime = (timestamp: string | number | Date): string => {
 .header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
   margin-bottom: 4px;
 }
 
 .name {
   font-weight: 500;
-  font-size: 16px;
-  color: #333;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 70%;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
 }
 
-.name.unread {
+.pinned-name {
   font-weight: 600;
-  color: #000;
+  color: #1890ff;
+}
+
+.archived-name {
+  font-weight: 600;
+  color: #722ed1;
+}
+
+.pin-icon {
+  margin-left: 4px;
+  color: #1890ff;
+  font-size: 14px;
+  transform: rotate(45deg);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.archive-icon {
+  margin-left: 4px;
+  color: #722ed1;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dnd-icon {
+  margin-left: 4px;
+  color: #ff4d4f; /* 免打扰图标颜色 */
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .time {
   font-size: 12px;
   color: #999;
   white-space: nowrap;
-}
-
-.preview {
-  display: flex;
-  align-items: center;
-  color: #666;
-  font-size: 14px;
-}
-
-.mute-icon {
-  margin-right: 4px;
-  font-size: 12px;
+  margin-left: 8px;
 }
 
 .message {
-  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.text {
+  font-size: 13px;
+  color: #666;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
 }
 
 .badge {
-  display: flex;
-  justify-content: center;
-  align-items: center;
   min-width: 20px;
   height: 20px;
   border-radius: 10px;
-  background-color: #ff4d4f;
+  background-color: #8c8c8c;
   color: white;
   font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 0 6px;
-  margin-left: 8px;
+}
+
+.unread-badge {
+  background-color: #ff4d4f;
+  color: white;
+  border-radius: 10px;
+  padding: 0 6px;
+  min-width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.muted-badge {
+  background-color: #ccc; /* 灰色徽章背景 */
+  color: #333; /* 灰色徽章文字 */
+  border-radius: 10px;
+  padding: 0 6px;
+  min-width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.pulse {
+  animation: pulse-animation 1s infinite;
+}
+
+@keyframes pulse-animation {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(255, 77, 79, 0.7);
+  }
+  
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 10px rgba(255, 77, 79, 0);
+  }
+  
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(255, 77, 79, 0);
+  }
 }
 </style> 

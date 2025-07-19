@@ -169,4 +169,13 @@ public class SendMessageRequest {
     public String getEffectiveContent() {
         return content != null ? content.trim() : "";
     }
+
+    /**
+     * 获取临时ID (为了兼容前端)
+     * 
+     * @return 临时消息ID
+     */
+    public String getTempId() {
+        return tempMessageId;
+    }
 }

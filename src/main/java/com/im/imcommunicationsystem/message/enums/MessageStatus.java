@@ -26,11 +26,6 @@ public enum MessageStatus {
     DELIVERED("已送达"),
     
     /**
-     * 已读
-     */
-    READ("已读"),
-    
-    /**
      * 发送失败
      */
     FAILED("发送失败"),
@@ -66,7 +61,7 @@ public enum MessageStatus {
      * @return 是否为最终状态
      */
     public boolean isFinalStatus() {
-        return this == READ || this == FAILED || this == RECALLED || this == DELETED;
+        return this == FAILED || this == RECALLED || this == DELETED;
     }
     
     /**
@@ -75,7 +70,7 @@ public enum MessageStatus {
      * @return 是否为成功状态
      */
     public boolean isSuccessStatus() {
-        return this == SENT || this == DELIVERED || this == READ;
+        return this == SENT || this == DELIVERED;
     }
     
     /**
@@ -102,7 +97,7 @@ public enum MessageStatus {
      * @return 是否可以撤回
      */
     public boolean canRecall() {
-        return this == SENT || this == DELIVERED || this == READ;
+        return this == SENT || this == DELIVERED;
     }
     
     /**
@@ -120,7 +115,7 @@ public enum MessageStatus {
      * @return 是否可以编辑
      */
     public boolean canEdit() {
-        return this == SENT || this == DELIVERED || this == READ;
+        return this == SENT || this == DELIVERED;
     }
     
     /**
@@ -134,8 +129,6 @@ public enum MessageStatus {
                 return SENT;
             case SENT:
                 return DELIVERED;
-            case DELIVERED:
-                return READ;
             default:
                 return this;
         }

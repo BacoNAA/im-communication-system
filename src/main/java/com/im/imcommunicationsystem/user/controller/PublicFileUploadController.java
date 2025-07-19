@@ -127,6 +127,42 @@ public class PublicFileUploadController {
     }
 
     /**
+     * 上传群组头像
+     */
+    @PostMapping(value = "/upload-group-avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse<Map<String, Object>> uploadGroupAvatar(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("groupId") Long groupId,
+            Authentication authentication) {
+        
+        try {
+            Long userId = securityUtils.getCurrentUserId();
+            
+            log.info("开始上传群组头像: groupId={}, userId={}, fileName={}", 
+                    groupId, userId, file.getOriginalFilename());
+            
+            String avatarUrl = publicFileUploadService.uploadGroupAvatar(file, groupId, userId);
+            
+            Map<String, Object> result = new HashMap<>();
+            result.put("avatarUrl", avatarUrl);
+            result.put("imageUrl", avatarUrl); // 兼容性字段
+            result.put("fileName", file.getOriginalFilename());
+            result.put("originalSize", file.getSize());
+            result.put("groupId", groupId);
+            
+            log.info("群组头像上传成功: groupId={}, userId={}, avatarUrl={}", 
+                    groupId, userId, avatarUrl);
+            
+            return ApiResponse.success("群组头像上传成功", result);
+            
+        } catch (Exception e) {
+            log.error("群组头像上传失败: groupId={}, userId={}, fileName={}", 
+                    groupId, securityUtils.getCurrentUserId(), file.getOriginalFilename(), e);
+            return ApiResponse.serverError("群组头像上传失败: " + e.getMessage());
+        }
+    }
+
+    /**
      * 删除公开文件（软删除）
      */
     @DeleteMapping("/{fileId}")

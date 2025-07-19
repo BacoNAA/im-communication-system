@@ -242,6 +242,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useSharedWebSocket } from '@/composables/useWebSocket'
 
 // 路由实例
 const router = useRouter()
@@ -497,6 +498,9 @@ function validateVerificationForm(): boolean {
   return isValid
 }
 
+// 初始化共享WebSocket
+const { connect: connectWebSocket } = useSharedWebSocket()
+
 // 处理密码登录
 async function handlePasswordLogin() {
   if (!validatePasswordForm()) {
@@ -572,6 +576,10 @@ async function handlePasswordLogin() {
         passwordForm.password = ''
       }
       
+      // 立即连接WebSocket
+      connectWebSocket()
+      console.log('登录成功，已激活WebSocket连接')
+      
       showAlert('登录成功，正在跳转...', 'success')
       
       // 延迟跳转到仪表板
@@ -639,19 +647,27 @@ async function handleVerificationLogin() {
   try {
     const deviceInfo = getDeviceInfo()
     const email = verificationForm.email.trim()
-    const verificationCode = verificationForm.code.trim()
+    const code = verificationForm.code.trim()
     
-    const response = await fetch('/api/auth/login/verification-code', {
+    if (!email || !code) {
+      showAlert('邮箱和验证码不能为空', 'error')
+      isLoading.value = false
+      return
+    }
+    
+    const formData = {
+      email: email,
+      verificationCode: code,
+      deviceType: deviceInfo.deviceType,
+      deviceInfo: deviceInfo.deviceInfo
+    }
+    
+    const response = await fetch('/api/auth/login/verification', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        email: email,
-        verificationCode: verificationCode,
-        deviceType: deviceInfo.deviceType,
-        deviceInfo: deviceInfo.deviceInfo
-      })
+      body: JSON.stringify(formData)
     })
     
     const result = await response.json()
@@ -660,18 +676,14 @@ async function handleVerificationLogin() {
       // 登录成功
       const authData = result.data
       
-      // 存储认证信息到sessionStorage（验证码登录不记住状态）
+      // 存储认证信息到sessionStorage（验证码登录默认不记住）
       sessionStorage.setItem('accessToken', authData.accessToken)
       sessionStorage.setItem('refreshToken', authData.refreshToken)
       sessionStorage.setItem('userInfo', JSON.stringify(authData.userInfo))
       
-      // 清除localStorage中的登录信息
-      localStorage.removeItem('accessToken')
-      localStorage.removeItem('refreshToken')
-      localStorage.removeItem('userInfo')
-      localStorage.removeItem('savedEmail')
-      localStorage.removeItem('savedPassword')
-      localStorage.removeItem('rememberMe')
+      // 立即连接WebSocket
+      connectWebSocket()
+      console.log('登录成功，已激活WebSocket连接')
       
       showAlert('登录成功，正在跳转...', 'success')
       
@@ -682,7 +694,7 @@ async function handleVerificationLogin() {
       
     } else {
       // 登录失败
-      const errorMessage = result.message || '验证码错误或已失效，请重新获取'
+      const errorMessage = result.message || '登录失败，请重试'
       showAlert(errorMessage, 'error')
       
       // 恢复表单显示
@@ -693,7 +705,7 @@ async function handleVerificationLogin() {
     }
     
   } catch (error) {
-    console.error('验证码登录失败:', error)
+    console.error('登录请求失败:', error)
     showAlert('网络错误，请检查网络连接后重试', 'error')
     
     // 恢复表单显示

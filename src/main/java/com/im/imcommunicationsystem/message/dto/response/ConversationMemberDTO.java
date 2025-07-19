@@ -67,6 +67,12 @@ public class ConversationMemberDTO {
      * 最后已读消息的ID
      */
     private Long lastReadMessageId;
+    
+    /**
+     * 可接受的最新消息ID，超过此ID的消息不会显示给该用户
+     * 用于处理被移出群聊的情况，确保用户看不到移出后的消息
+     */
+    private Long lastAcceptableMessageId;
 
     /**
      * 检查是否置顶此会话

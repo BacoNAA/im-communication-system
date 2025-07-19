@@ -43,15 +43,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             // 获取Authorization头
             String authHeader = request.getHeader("Authorization");
+            Long userId = null;
+            boolean isAuthenticated = false;
             
-            // 检查是否包含Bearer令牌
+            // 首先尝试通过Authorization头认证
             if (authHeader != null && authHeader.startsWith("Bearer ")) {
                 String token = jwtUtils.extractTokenFromHeader(authHeader);
                 
                 if (token != null && jwtUtils.validateAccessToken(token)) {
                     // 从令牌中提取用户信息
                     String username = jwtUtils.getUsernameFromToken(token);
-                    Long userId = jwtUtils.getUserIdFromToken(token);
+                    userId = jwtUtils.getUserIdFromToken(token);
                     String roles = jwtUtils.getRolesFromToken(token);
                     String deviceType = jwtUtils.getDeviceTypeFromToken(token);
                     
@@ -78,12 +80,48 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         // 设置到安全上下文
                         SecurityContextHolder.getContext().setAuthentication(authToken);
                         
+                        // 标记认证成功
+                        isAuthenticated = true;
+                        
                         log.debug("JWT认证成功，用户: {}, 用户ID: {}, 角色: {}, 设备: {}", username, userId, roles, deviceType);
                     }
                 } else {
                     log.debug("JWT令牌无效或已过期");
                 }
             }
+            
+            // 如果JWT认证失败，尝试其他认证方式
+            if (!isAuthenticated) {
+                // 尝试从X-User-Id头获取用户ID
+                String userIdHeader = request.getHeader("X-User-Id");
+                if (StringUtils.hasText(userIdHeader)) {
+                    try {
+                        userId = Long.parseLong(userIdHeader);
+                        log.debug("从X-User-Id头获取用户ID: {}", userId);
+                    } catch (NumberFormatException e) {
+                        log.warn("X-User-Id头无效: {}", userIdHeader);
+                    }
+                }
+                
+                // 尝试从URL参数获取用户ID
+                if (userId == null) {
+                    String userIdParam = request.getParameter("userId");
+                    if (StringUtils.hasText(userIdParam)) {
+                        try {
+                            userId = Long.parseLong(userIdParam);
+                            log.debug("从URL参数获取用户ID: {}", userId);
+                        } catch (NumberFormatException e) {
+                            log.warn("userId参数无效: {}", userIdParam);
+                        }
+                    }
+                }
+            }
+            
+            // 设置用户ID属性
+            if (userId != null) {
+                request.setAttribute("userId", userId);
+            }
+            
         } catch (Exception e) {
             log.error("JWT认证过程中发生错误: {}", e.getMessage());
             // 清除安全上下文
@@ -130,6 +168,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                path.startsWith("/api/auth/verification/") ||
                path.equals("/api/auth/password/reset") ||
                path.startsWith("/api/public/") ||
+               path.startsWith("/api/media/public/") || // 允许公开访问媒体文件
                path.startsWith("/api/test/") ||
                path.startsWith("/ws/") ||
                path.startsWith("/ws-native/") ||

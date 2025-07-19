@@ -4,6 +4,7 @@ import com.im.imcommunicationsystem.common.dto.ApiResponse;
 import com.im.imcommunicationsystem.common.utils.SecurityUtils;
 import com.im.imcommunicationsystem.user.entity.FileUpload;
 import com.im.imcommunicationsystem.user.service.impl.MinioFileUploadServiceImpl;
+import com.im.imcommunicationsystem.user.repository.FileUploadRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.InputStreamResource;
@@ -34,6 +35,7 @@ public class FileUploadController {
 
     private final MinioFileUploadServiceImpl fileUploadService;
     private final SecurityUtils securityUtils;
+    private final FileUploadRepository fileUploadRepository;
 
     /**
      * 上传文件

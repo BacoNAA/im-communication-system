@@ -22,6 +22,8 @@ public class UserSettingsResponse {
     
     // 聊天设置
     private String theme;
+    private String themeColor; // 主题颜色
+    private String chatBackground; // 聊天背景
     private String language;
     private Integer fontSize;
     
@@ -110,6 +112,22 @@ public class UserSettingsResponse {
         this.theme = theme;
     }
 
+    public String getThemeColor() {
+        return themeColor;
+    }
+
+    public void setThemeColor(String themeColor) {
+        this.themeColor = themeColor;
+    }
+
+    public String getChatBackground() {
+        return chatBackground;
+    }
+
+    public void setChatBackground(String chatBackground) {
+        this.chatBackground = chatBackground;
+    }
+
     public String getLanguage() {
         return language;
     }
@@ -154,6 +172,8 @@ public class UserSettingsResponse {
                 ", enableSoundNotifications=" + enableSoundNotifications +
                 ", enableVibration=" + enableVibration +
                 ", theme='" + theme + '\'' +
+                ", themeColor='" + themeColor + '\'' +
+                ", chatBackground='" + chatBackground + '\'' +
                 ", language='" + language + '\'' +
                 ", fontSize=" + fontSize +
                 ", twoFactorEnabled=" + twoFactorEnabled +
