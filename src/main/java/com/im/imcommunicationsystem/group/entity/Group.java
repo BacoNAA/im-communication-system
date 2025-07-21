@@ -50,6 +50,24 @@ public class Group {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
     
+    /**
+     * 群组是否被封禁
+     */
+    @Column(name = "is_banned", nullable = false)
+    private Boolean isBanned = false;
+    
+    /**
+     * 封禁原因
+     */
+    @Column(name = "banned_reason", length = 255)
+    private String bannedReason;
+    
+    /**
+     * 封禁截止时间
+     */
+    @Column(name = "banned_until")
+    private LocalDateTime bannedUntil;
+    
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
@@ -62,6 +80,10 @@ public class Group {
         
         if (isAllMuted == null) {
             isAllMuted = false;
+        }
+        
+        if (isBanned == null) {
+            isBanned = false;
         }
     }
     

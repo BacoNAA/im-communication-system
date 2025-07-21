@@ -129,18 +129,28 @@ function getUserId(): number | null {
   // 尝试从localStorage获取
   const localUserId = localStorage.getItem('userId');
   if (localUserId) {
-    const parsedId = parseInt(localUserId);
-    if (!isNaN(parsedId) && parsedId > 0) {
-      return parsedId;
+    try {
+      const parsedId = parseInt(localUserId);
+      if (!isNaN(parsedId) && parsedId > 0) {
+        console.log('从localStorage.userId获取到用户ID:', parsedId);
+        return parsedId;
+      }
+    } catch (e) {
+      console.error('解析localStorage.userId失败:', e);
     }
   }
   
   // 尝试从sessionStorage获取
   const sessionUserId = sessionStorage.getItem('userId');
   if (sessionUserId) {
-    const parsedId = parseInt(sessionUserId);
-    if (!isNaN(parsedId) && parsedId > 0) {
-      return parsedId;
+    try {
+      const parsedId = parseInt(sessionUserId);
+      if (!isNaN(parsedId) && parsedId > 0) {
+        console.log('从sessionStorage.userId获取到用户ID:', parsedId);
+        return parsedId;
+      }
+    } catch (e) {
+      console.error('解析sessionStorage.userId失败:', e);
     }
   }
   
@@ -150,7 +160,19 @@ function getUserId(): number | null {
     try {
       const userInfo = JSON.parse(userInfoStr);
       if (userInfo && userInfo.id && typeof userInfo.id === 'number' && userInfo.id > 0) {
+        console.log('从localStorage.userInfo获取到用户ID:', userInfo.id);
+        // 顺便保存到userId中，以便下次直接获取
+        localStorage.setItem('userId', String(userInfo.id));
         return userInfo.id;
+      } else if (userInfo && userInfo.id && typeof userInfo.id === 'string' && userInfo.id.length > 0) {
+        // 处理ID为字符串的情况
+        const parsedId = parseInt(userInfo.id);
+        if (!isNaN(parsedId) && parsedId > 0) {
+          console.log('从localStorage.userInfo获取到字符串用户ID，已转换为数字:', parsedId);
+          // 顺便保存到userId中，以便下次直接获取
+          localStorage.setItem('userId', String(parsedId));
+          return parsedId;
+        }
       }
     } catch (e) {
       console.error('解析localStorage.userInfo失败:', e);
@@ -163,13 +185,26 @@ function getUserId(): number | null {
     try {
       const userInfo = JSON.parse(sessionUserInfoStr);
       if (userInfo && userInfo.id && typeof userInfo.id === 'number' && userInfo.id > 0) {
+        console.log('从sessionStorage.userInfo获取到用户ID:', userInfo.id);
+        // 顺便保存到userId中，以便下次直接获取
+        sessionStorage.setItem('userId', String(userInfo.id));
         return userInfo.id;
+      } else if (userInfo && userInfo.id && typeof userInfo.id === 'string' && userInfo.id.length > 0) {
+        // 处理ID为字符串的情况
+        const parsedId = parseInt(userInfo.id);
+        if (!isNaN(parsedId) && parsedId > 0) {
+          console.log('从sessionStorage.userInfo获取到字符串用户ID，已转换为数字:', parsedId);
+          // 顺便保存到userId中，以便下次直接获取
+          sessionStorage.setItem('userId', String(parsedId));
+          return parsedId;
+        }
       }
     } catch (e) {
       console.error('解析sessionStorage.userInfo失败:', e);
     }
   }
   
+  console.warn('无法从任何存储位置获取用户ID');
   return null;
 }
 
@@ -278,36 +313,40 @@ async function handleResponse<T>(response: Response): Promise<T> {
           
           if (currentUserId) {
             // 为每条消息添加正确的发送者信息
-            data.data.content = data.data.content.map((msg: any) => {
-              // 获取实际发送者ID
-              const senderId = msg.message?.senderId || msg.senderId;
-              console.log('消息发送者ID:', senderId, '当前用户ID:', currentUserId);
-              
-              // 检查消息是否包含mediaFileId
-              const mediaFileId = msg.mediaFileId || (msg.message && msg.message.mediaFileId);
-              if (mediaFileId) {
-                console.log(`消息 ${msg.id} 包含媒体文件ID: ${mediaFileId}`);
-                // 确保mediaFileId存在于顶级对象
-                msg.mediaFileId = mediaFileId;
-              }
-              
-              // 添加isSentByCurrentUser字段
-              if (senderId !== undefined) {
-                const isSentByCurrentUser = String(senderId) === String(currentUserId);
+            if (Array.isArray(data.data.content)) {
+              data.data.content = data.data.content.map((msg: any) => {
+                // 获取实际发送者ID
+                const senderId = msg.message?.senderId || msg.senderId;
+                console.log('消息发送者ID:', senderId, '当前用户ID:', currentUserId);
                 
-                // 添加到顶层
-                msg.isSentByCurrentUser = isSentByCurrentUser;
-                
-                // 添加到嵌套结构
-                if (msg.message) {
-                  msg.message.isSentByCurrentUser = isSentByCurrentUser;
+                // 检查消息是否包含mediaFileId
+                const mediaFileId = msg.mediaFileId || (msg.message && msg.message.mediaFileId);
+                if (mediaFileId) {
+                  console.log(`消息 ${msg.id} 包含媒体文件ID: ${mediaFileId}`);
+                  // 确保mediaFileId存在于顶级对象
+                  msg.mediaFileId = mediaFileId;
                 }
                 
-                console.log('已添加isSentByCurrentUser字段:', isSentByCurrentUser);
-              }
-              
-              return msg;
-            });
+                // 添加isSentByCurrentUser字段
+                if (senderId !== undefined) {
+                  const isSentByCurrentUser = String(senderId) === String(currentUserId);
+                  
+                  // 添加到顶层
+                  msg.isSentByCurrentUser = isSentByCurrentUser;
+                  
+                  // 添加到嵌套结构
+                  if (msg.message) {
+                    msg.message.isSentByCurrentUser = isSentByCurrentUser;
+                  }
+                  
+                  console.log('已添加isSentByCurrentUser字段:', isSentByCurrentUser);
+                }
+                
+                return msg;
+              });
+            } else {
+              console.log('data.data.content 不是数组，跳过 map 操作');
+            }
           }
         } else if (data.data.message) {
           // 单个消息对象的处理
@@ -391,10 +430,10 @@ export async function request<T = any>(
   const fullUrl = `${BASE_URL}${url}`;
   
   if (DEBUG_API) {
-    console.log(`发送${mergedConfig.method}请求: ${fullUrl}`);
-    console.log('请求头:', mergedConfig.headers);
-    if (mergedConfig.method === 'POST' || mergedConfig.method === 'PUT' || mergedConfig.method === 'PATCH') {
-      console.log('请求体:', JSON.stringify(mergedConfig.body, null, 2));
+  console.log(`发送${mergedConfig.method}请求: ${fullUrl}`);
+  console.log('请求头:', mergedConfig.headers);
+  if (mergedConfig.method === 'POST' || mergedConfig.method === 'PUT' || mergedConfig.method === 'PATCH') {
+    console.log('请求体:', JSON.stringify(mergedConfig.body, null, 2));
     }
   }
   
@@ -449,7 +488,7 @@ export async function request<T = any>(
 
   try {
     // 设置超时
-    const controller = new AbortController();
+  const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), mergedConfig.timeout || TIMEOUT);
 
     // 构建请求选项

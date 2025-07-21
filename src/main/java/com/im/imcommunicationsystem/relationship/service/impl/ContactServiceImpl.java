@@ -6,11 +6,14 @@ import com.im.imcommunicationsystem.relationship.dto.response.ContactResponse;
 import com.im.imcommunicationsystem.relationship.dto.response.ContactTagResponse;
 import com.im.imcommunicationsystem.relationship.entity.Contact;
 import com.im.imcommunicationsystem.relationship.entity.ContactId;
+import com.im.imcommunicationsystem.relationship.event.ContactBlockEvent;
+import com.im.imcommunicationsystem.relationship.event.ContactUnblockEvent;
 import com.im.imcommunicationsystem.relationship.repository.ContactRepository;
 import com.im.imcommunicationsystem.relationship.service.ContactService;
 import com.im.imcommunicationsystem.relationship.service.ContactTagAssignmentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +34,7 @@ public class ContactServiceImpl implements ContactService {
     private final ContactRepository contactRepository;
     private final UserRepository userRepository;
     private final ContactTagAssignmentService contactTagAssignmentService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional(readOnly = true)
@@ -72,6 +76,10 @@ public class ContactServiceImpl implements ContactService {
                     // 获取该联系人的标签信息
                     List<ContactTagResponse> tags = contactTagsMap.getOrDefault(contact.getFriendId(), new ArrayList<>());
                     
+                    // 记录原始isBlocked值
+                    log.info("联系人拉黑状态详情: userId={}, friendId={}, isBlocked={}", 
+                            userId, friend.getId(), contact.getIsBlocked());
+                    
                     ContactResponse response = ContactResponse.builder()
                              .userId(userId)
                              .friendId(friend.getId())
@@ -86,9 +94,9 @@ public class ContactServiceImpl implements ContactService {
                              .tagCount(tags.size())
                              .build();
                     
-                    log.info("构建ContactResponse: userId={}, friendId={}, nickname={}, alias={}, tagCount={}", 
+                    log.info("构建ContactResponse: userId={}, friendId={}, nickname={}, alias={}, isBlocked={}, tagCount={}", 
                             response.getUserId(), response.getFriendId(), response.getNickname(), 
-                            response.getAlias(), response.getTagCount());
+                            response.getAlias(), response.getIsBlocked(), response.getTagCount());
                     
                     contactResponses.add(response);
                 } else {
@@ -206,17 +214,105 @@ public class ContactServiceImpl implements ContactService {
     @Override
     @Transactional
     public boolean blockContact(Long userId, Long friendId) {
-        // TODO: 实现屏蔽联系人逻辑
-        return false;
+        log.info("拉黑联系人: userId={}, friendId={}", userId, friendId);
+        
+        try {
+            // 验证参数
+            if (userId == null || friendId == null) {
+                log.warn("拉黑联系人失败: 用户ID或好友ID为空");
+                return false;
+            }
+            
+            if (userId.equals(friendId)) {
+                log.warn("拉黑联系人失败: 不能拉黑自己");
+                return false;
+            }
+            
+            // 查找联系人关系
+            Optional<Contact> contactOpt = contactRepository.findByUserIdAndFriendId(userId, friendId);
+            if (contactOpt.isEmpty()) {
+                log.warn("拉黑联系人失败: 联系人关系不存在, userId={}, friendId={}", userId, friendId);
+                return false;
+            }
+            
+            Contact contact = contactOpt.get();
+            
+            // 如果联系人已被拉黑，则直接返回成功
+            if (Boolean.TRUE.equals(contact.getIsBlocked())) {
+                log.info("联系人已被拉黑，无需重复操作: userId={}, friendId={}", userId, friendId);
+                return true;
+            }
+            
+            // 更新联系人关系为已拉黑
+            contact.setIsBlocked(true);
+            contactRepository.save(contact);
+            
+            // 发布拉黑事件
+            log.info("发布拉黑联系人事件: userId={}, friendId={}", userId, friendId);
+            eventPublisher.publishEvent(new ContactBlockEvent(this, userId, friendId));
+            log.info("拉黑联系人事件已发布: userId={}, friendId={}", userId, friendId);
+            
+            log.info("成功拉黑联系人: userId={}, friendId={}", userId, friendId);
+            return true;
+            
+        } catch (Exception e) {
+            log.error("拉黑联系人异常: userId={}, friendId={}, error={}", 
+                     userId, friendId, e.getMessage(), e);
+            return false;
+        }
     }
 
     @Override
     @Transactional
     public boolean unblockContact(Long userId, Long friendId) {
-        // TODO: 实现解除屏蔽逻辑
-        return false;
+        log.info("解除拉黑联系人: userId={}, friendId={}", userId, friendId);
+        
+        try {
+            // 验证参数
+            if (userId == null || friendId == null) {
+                log.warn("解除拉黑联系人失败: 用户ID或好友ID为空");
+                return false;
+            }
+            
+            if (userId.equals(friendId)) {
+                log.warn("解除拉黑联系人失败: 不能操作自己");
+                return false;
+            }
+            
+            // 查找联系人关系
+            Optional<Contact> contactOpt = contactRepository.findByUserIdAndFriendId(userId, friendId);
+            if (contactOpt.isEmpty()) {
+                log.warn("解除拉黑联系人失败: 联系人关系不存在, userId={}, friendId={}", userId, friendId);
+                return false;
+            }
+            
+            Contact contact = contactOpt.get();
+            
+            // 如果联系人未被拉黑，则直接返回成功
+            if (Boolean.FALSE.equals(contact.getIsBlocked())) {
+                log.info("联系人未被拉黑，无需解除: userId={}, friendId={}", userId, friendId);
+                return true;
+            }
+            
+            // 更新联系人关系为未拉黑
+            contact.setIsBlocked(false);
+            contactRepository.save(contact);
+            
+            // 发布解除拉黑事件
+            log.info("发布解除拉黑联系人事件: userId={}, friendId={}", userId, friendId);
+            eventPublisher.publishEvent(new ContactUnblockEvent(this, userId, friendId));
+            log.info("解除拉黑联系人事件已发布: userId={}, friendId={}", userId, friendId);
+            
+            log.info("成功解除拉黑联系人: userId={}, friendId={}", userId, friendId);
+            return true;
+            
+        } catch (Exception e) {
+            log.error("解除拉黑联系人异常: userId={}, friendId={}, error={}", 
+                     userId, friendId, e.getMessage(), e);
+            return false;
+        }
     }
-
+    
     @Override
     @Transactional
     public boolean deleteContact(Long userId, Long friendId) {

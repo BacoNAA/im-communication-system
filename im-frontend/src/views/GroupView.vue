@@ -6,7 +6,14 @@
         <GroupList @select-group="handleGroupSelected" />
       </el-aside>
       <el-main>
+        <!-- 未选择群组时的搜索界面 -->
+        <div v-if="!activeGroupId && activeTab === 'search'" class="search-container">
+          <GroupSearch />
+        </div>
+
+        <!-- 选择了群组时的内容 -->
         <div v-if="activeGroupId" class="group-content">
+          <!-- 修改群组头部，添加退出群聊按钮 -->
           <div class="group-header">
             <div class="group-info">
               <el-avatar :size="60">
@@ -19,10 +26,13 @@
                 </div>
               </div>
             </div>
-            <div class="group-actions" v-if="isCurrentUserOwnerOrAdmin">
-              <el-button type="primary" @click="showEditForm = true">
+            <div class="group-actions">
+              <el-button type="primary" @click="showEditForm = true" v-if="isCurrentUserOwnerOrAdmin">
                 修改群资料
-                </el-button>
+              </el-button>
+              <el-button type="danger" @click="handleLeaveGroup" v-if="!isCurrentUserOwner">
+                退出群聊
+              </el-button>
             </div>
           </div>
 
@@ -43,6 +53,12 @@
           </el-dialog>
 
           <el-tabs v-model="activeTab" class="group-tabs">
+            <el-tab-pane label="搜索群组" name="search" v-if="!activeGroupId">
+              <div class="group-search-tab">
+                <GroupSearch />
+              </div>
+            </el-tab-pane>
+
             <el-tab-pane label="群聊" name="chat">
               <div class="group-chat">
                 <el-button type="primary" @click="goToConversation">
@@ -50,6 +66,7 @@
                 </el-button>
               </div>
             </el-tab-pane>
+
             <el-tab-pane label="成员" name="members">
               <div class="group-members">
                 <el-tabs type="card">
@@ -92,99 +109,99 @@
                           {{ scope.row.joinedAt ? new Date(scope.row.joinedAt).toLocaleString() : '未知' }}
                     </template>
                   </el-table-column>
-                      <el-table-column label="操作" width="180" v-if="isCurrentUserOwnerOrAdmin">
+                      <el-table-column label="操作" width="180">
                     <template #default="scope">
-                          <div class="member-actions">
-                      <el-button
-                        v-if="canManageMember(scope.row)"
-                        type="danger"
-                        size="small"
-                        @click="handleRemoveMember(scope.row)"
-                      >
-                        移除
-                      </el-button>
-                            <el-dropdown 
-                              v-if="canSetAdmin(scope.row) || canCancelAdmin(scope.row)"
-                              trigger="click"
-                              @command="(command: string) => handleAdminCommand(command, scope.row)"
-                            >
-                              <el-button type="primary" size="small">
-                                管理员操作
-                                <el-icon class="el-icon--right"><arrow-down /></el-icon>
-                      </el-button>
-                              <template #dropdown>
-                                <el-dropdown-menu>
-                                  <el-dropdown-item 
-                                    v-if="canSetAdmin(scope.row)" 
-                                    command="set-admin"
-                                  >
-                                    设为管理员
-                                  </el-dropdown-item>
-                                  <el-dropdown-item 
-                                    v-if="canCancelAdmin(scope.row)" 
-                                    command="cancel-admin"
-                                  >
-                                    取消管理员
-                                  </el-dropdown-item>
-                                </el-dropdown-menu>
-                              </template>
-                            </el-dropdown>
-                            
-                            <!-- 添加禁言操作下拉菜单 -->
-                            <el-dropdown 
-                              v-if="canManageMute(scope.row)"
-                              trigger="click"
-                              @command="(command: string) => handleMuteCommand(command, scope.row)"
-                            >
-                      <el-button
-                                :type="scope.row.isMuted ? 'warning' : 'info'" 
-                        size="small"
-                      >
-                                {{ scope.row.isMuted ? '已禁言' : '禁言' }}
-                                <el-icon class="el-icon--right"><arrow-down /></el-icon>
-                      </el-button>
-                              <template #dropdown>
-                                <el-dropdown-menu>
-                                  <el-dropdown-item 
-                                    v-if="!scope.row.isMuted" 
-                                    command="mute-custom"
-                                  >
-                                    设置禁言
-                                  </el-dropdown-item>
-                                  <el-dropdown-item 
-                                    v-if="!scope.row.isMuted" 
-                                    command="mute-10"
-                                  >
-                                    禁言10分钟
-                                  </el-dropdown-item>
-                                  <el-dropdown-item 
-                                    v-if="!scope.row.isMuted" 
-                                    command="mute-30"
-                                  >
-                                    禁言30分钟
-                                  </el-dropdown-item>
-                                  <el-dropdown-item 
-                                    v-if="!scope.row.isMuted" 
-                                    command="mute-60"
-                                  >
-                                    禁言1小时
-                                  </el-dropdown-item>
-                                  <el-dropdown-item 
-                                    v-if="!scope.row.isMuted" 
-                                    command="mute-1440"
-                                  >
-                                    禁言24小时
-                                  </el-dropdown-item>
-                                  <el-dropdown-item 
-                                    v-if="scope.row.isMuted" 
-                                    command="unmute"
-                                  >
-                                    解除禁言
-                                  </el-dropdown-item>
-                                </el-dropdown-menu>
-                              </template>
-                            </el-dropdown>
-                          </div>
+                      <div class="member-actions">
+                        <el-button
+                          v-if="canManageMember(scope.row)"
+                          type="danger"
+                          size="small"
+                          @click="handleRemoveMember(scope.row)"
+                        >
+                          移除
+                        </el-button>
+                        <el-dropdown 
+                          v-if="canSetAdmin(scope.row) || canCancelAdmin(scope.row)"
+                          trigger="click"
+                          @command="(command: string) => handleAdminCommand(command, scope.row)"
+                        >
+                          <el-button type="primary" size="small">
+                            管理员操作
+                            <el-icon class="el-icon--right"><arrow-down /></el-icon>
+                          </el-button>
+                          <template #dropdown>
+                            <el-dropdown-menu>
+                              <el-dropdown-item 
+                                v-if="canSetAdmin(scope.row)" 
+                                command="set-admin"
+                              >
+                                设为管理员
+                              </el-dropdown-item>
+                              <el-dropdown-item 
+                                v-if="canCancelAdmin(scope.row)" 
+                                command="cancel-admin"
+                              >
+                                取消管理员
+                              </el-dropdown-item>
+                            </el-dropdown-menu>
+                          </template>
+                        </el-dropdown>
+                        
+                        <!-- 添加禁言操作下拉菜单 -->
+                        <el-dropdown 
+                          v-if="canManageMute(scope.row)"
+                          trigger="click"
+                          @command="(command: string) => handleMuteCommand(command, scope.row)"
+                        >
+                          <el-button
+                            :type="scope.row.isMuted ? 'warning' : 'info'" 
+                            size="small"
+                          >
+                            {{ scope.row.isMuted ? '已禁言' : '禁言' }}
+                            <el-icon class="el-icon--right"><arrow-down /></el-icon>
+                          </el-button>
+                          <template #dropdown>
+                            <el-dropdown-menu>
+                              <el-dropdown-item 
+                                v-if="!scope.row.isMuted" 
+                                command="mute-custom"
+                              >
+                                设置禁言
+                              </el-dropdown-item>
+                              <el-dropdown-item 
+                                v-if="!scope.row.isMuted" 
+                                command="mute-10"
+                              >
+                                禁言10分钟
+                              </el-dropdown-item>
+                              <el-dropdown-item 
+                                v-if="!scope.row.isMuted" 
+                                command="mute-30"
+                              >
+                                禁言30分钟
+                              </el-dropdown-item>
+                              <el-dropdown-item 
+                                v-if="!scope.row.isMuted" 
+                                command="mute-60"
+                              >
+                                禁言1小时
+                              </el-dropdown-item>
+                              <el-dropdown-item 
+                                v-if="!scope.row.isMuted" 
+                                command="mute-1440"
+                              >
+                                禁言24小时
+                              </el-dropdown-item>
+                              <el-dropdown-item 
+                                v-if="scope.row.isMuted" 
+                                command="unmute"
+                              >
+                                解除禁言
+                              </el-dropdown-item>
+                            </el-dropdown-menu>
+                          </template>
+                        </el-dropdown>
+                      </div>
                     </template>
                   </el-table-column>
                 </el-table>
@@ -329,9 +346,43 @@
                 </div>
               </div>
             </el-tab-pane>
+
+            <el-tab-pane 
+              :label="`加入请求${pendingRequestCount > 0 ? '(' + pendingRequestCount + ')' : ''}`" 
+              name="requests" 
+              v-if="isCurrentUserOwnerOrAdmin && activeGroupId"
+            >
+              <div class="group-requests">
+                <GroupJoinRequests 
+                  :groupId="Number(activeGroupId)" 
+                  @update:count="updateRequestCount" 
+                />
+              </div>
+            </el-tab-pane>
+            
+            <!-- 添加群投票标签页 -->
+            <el-tab-pane
+              label="群投票"
+              name="polls"
+              v-if="activeGroupId"
+            >
+              <div class="group-polls-container">
+                <GroupPolls 
+                  :groupId="activeGroupId ? Number(activeGroupId) : 0"
+                  :isGroupOwner="currentUserRole === 'owner'"
+                  :isGroupAdmin="currentUserRole === 'admin'"
+                />
+              </div>
+            </el-tab-pane>
           </el-tabs>
         </div>
-        <el-empty v-else description="请选择或创建一个群组" />
+
+        <!-- 未选择群组时的提示 -->
+        <div v-if="!activeGroupId && activeTab !== 'search'" class="empty-group-container">
+          <el-empty description="请选择一个群组">
+            <el-button type="primary" @click="activeTab = 'search'">搜索新群组</el-button>
+          </el-empty>
+        </div>
       </el-main>
     </el-container>
     
@@ -503,6 +554,9 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import { ArrowDown, More, Edit, Top, Delete } from '@element-plus/icons-vue';
 import GroupList from '@/components/group/GroupList.vue';
 import GroupEditForm from '@/components/group/GroupEditForm.vue';
+import GroupSearch from '@/components/group/GroupSearch.vue'; // 导入群组搜索组件
+import GroupJoinRequests from '@/components/group/GroupJoinRequests.vue'; // 导入群组加入请求组件
+import GroupPolls from '@/components/group/GroupPolls.vue'; // 导入群组投票组件
 import { 
   getGroupById, 
   getGroupMembers, 
@@ -516,7 +570,8 @@ import {
   publishAnnouncement as createGroupAnnouncement,
   updateAnnouncement as updateGroupAnnouncement,
   deleteAnnouncement as deleteGroupAnnouncement,
-  pinAnnouncement as setGroupAnnouncementPinStatus
+  pinAnnouncement as setGroupAnnouncementPinStatus,
+  leaveGroup
 } from '@/api/group';
 import { useGroupUpdates } from '@/composables/useGroupUpdates';
 import type { GroupUpdateEvent } from '@/composables/useGroupUpdates';
@@ -538,10 +593,13 @@ export default {
   name: 'GroupView',
   components: {
     GroupList,
-    GroupEditForm
+    GroupEditForm,
+    GroupSearch,
+    GroupJoinRequests, // 注册GroupJoinRequests组件
+    GroupPolls // 注册GroupPolls组件
   },
   setup() {
-    const route = useRouter();
+    const router = useRouter();
     const activeGroupId = ref<number | null>(null);
     const members = ref<GroupMember[]>([]);
     const loading = ref(false);
@@ -596,6 +654,12 @@ export default {
     // 置顶公告
     const pinnedAnnouncement = ref<any>(null);
 
+    // 加入请求相关变量
+    const pendingRequestCount = ref(0);
+    const updateRequestCount = (count: number) => {
+      pendingRequestCount.value = count;
+    };
+
     // 计算属性：成员头像URL（确保不为undefined）
     const memberAvatarUrl = computed(() => {
       return memberToMute.value?.avatarUrl || '';
@@ -622,7 +686,7 @@ export default {
           loadMembers();
         } else if (event.updateType === 'DELETE') {
           ElMessage.warning('该群组已被解散');
-          route.push('/groups');
+          router.push('/groups');
         } else if (event.updateType === 'MEMBER_JOIN' || event.updateType === 'MEMBER_LEAVE' || event.updateType === 'MEMBER_REMOVED') {
           // 刷新成员列表
           loadMembers();
@@ -678,10 +742,35 @@ export default {
       }
     };
     
-    // 在组件挂载时添加监听器
+    // 监听activeGroupId变化，如果没有选择群组，默认切换到搜索标签页
+    watch(activeGroupId, (newId) => {
+      if (!newId && activeTab.value !== 'search') {
+        activeTab.value = 'search';
+      }
+    });
+    
+    // 处理路由参数变化
+    watch(() => router.currentRoute.value.params.id, (newId) => {
+      if (newId && typeof newId === 'string') {
+        activeGroupId.value = parseInt(newId, 10);
+        loadMembers();
+        loadGroupDetail();
+      }
+    }, { immediate: true });
+
+    // 监听标签页变化
+    watch(activeTab, (newTab) => {
+      if (newTab === 'announcements' && activeGroupId.value) {
+        loadAnnouncements();
+      }
+      if (newTab === 'requests' && activeGroupId.value) {
+        // 在请求标签页切换时，也更新请求数量
+        updateRequestCount(0); // 假设切换时请求数量为0，实际需要API调用
+      }
+    });
+    
+    // 组件挂载时初始化
     onMounted(() => {
-      addListener(handleGroupUpdate);
-      
       // 获取当前用户ID
       const userInfoStr = localStorage.getItem('userInfo');
       if (userInfoStr) {
@@ -691,16 +780,23 @@ export default {
             currentUserId.value = userInfo.id;
           }
         } catch (e) {
-          console.error('解析用户信息失败:', e);
+          console.error('解析userInfo失败:', e);
         }
       }
       
-      // 从路由参数获取群组ID
-      if (route.currentRoute.value.params.id) {
-        activeGroupId.value = parseInt(route.currentRoute.value.params.id as string);
+      // 如果路由中有群组ID，则加载该群组
+      const routeId = router.currentRoute.value.params.id;
+      if (routeId && typeof routeId === 'string') {
+        activeGroupId.value = parseInt(routeId, 10);
         loadMembers();
         loadGroupDetail();
+      } else {
+        // 没有选中群组，默认显示搜索页
+        activeTab.value = 'search';
       }
+      
+      // 添加WebSocket监听
+      addListener(handleGroupUpdate);
     });
     
     // 在组件卸载时移除监听器
@@ -708,9 +804,29 @@ export default {
       removeListener(handleGroupUpdate);
     });
 
+    // 处理群组选择
+    const handleGroupSelected = (groupId: number) => {
+      activeGroupId.value = groupId;
+      // 如果在搜索标签页，切换到成员标签页
+      if (activeTab.value === 'search') {
+        activeTab.value = 'members';
+      }
+      loadMembers();
+      loadGroupDetail();
+      
+      // 如果当前是公告标签页，则加载公告
+      if (activeTab.value === 'announcements') {
+        loadAnnouncements();
+      }
+      // 如果当前是请求标签页，则更新请求数量
+      if (activeTab.value === 'requests') {
+        updateRequestCount(0); // 切换群组时请求数量为0，实际需要API调用
+      }
+    };
+
     // 加载群成员
-    const loadMembers = async () => {
-      if (!activeGroupId.value) return;
+    const loadMembers = () => {
+      if (activeGroupId.value === null) return;
       
       loading.value = true;
       try {
@@ -723,18 +839,24 @@ export default {
           params.keyword = searchKeyword.value;
         }
         
-        const response = await getGroupMembers(activeGroupId.value, params);
+        const groupId = activeGroupId.value;
         
+        getGroupMembers(groupId, params).then(response => {
         if (response.code === 200) {
           members.value = response.data.content || [];
           total.value = response.data.totalElements || 0;
         } else {
           ElMessage.error(response.message || '获取群成员失败');
         }
+          loading.value = false;
+        }).catch(error => {
+          console.error('获取群成员失败:', error);
+          ElMessage.error('获取群成员失败，请稍后重试');
+          loading.value = false;
+        });
       } catch (error) {
         console.error('获取群成员失败:', error);
         ElMessage.error('获取群成员失败，请稍后重试');
-      } finally {
         loading.value = false;
       }
     };
@@ -758,40 +880,29 @@ export default {
       loadMembers();
     };
 
-    // 处理群组选择
-    const handleGroupSelected = (groupId: number) => {
-      activeGroupId.value = groupId;
-      loadMembers();
-      loadGroupDetail();
-      
-      // 如果当前是公告标签页，则加载公告
-      if (activeTab.value === 'announcements') {
-        loadAnnouncements();
-      }
+    // 转到会话页面
+    const goToConversation = () => {
+      if (!activeGroupId.value) return;
+      // 使用路由跳转到会话页面，并传递群组ID
+      router.push(`/conversation/group/${activeGroupId.value}`);
     };
-    
-    // 监听标签页变化
-    watch(activeTab, (newTab) => {
-      if (newTab === 'announcements' && activeGroupId.value) {
-        loadAnnouncements();
-      }
-    });
 
     // 加载群组详情
-    const loadGroupDetail = async () => {
-      if (!activeGroupId.value) return;
+    const loadGroupDetail = () => {
+      if (activeGroupId.value === null) return;
       
-      try {
-        const response = await getGroupById(activeGroupId.value);
+      const groupId = activeGroupId.value;
+      
+      getGroupById(groupId).then(response => {
         if (response.code === 200) {
           currentGroup.value = response.data;
         } else {
           ElMessage.error(response.message || '获取群组详情失败');
         }
-      } catch (error) {
+      }).catch(error => {
         console.error('获取群组详情失败:', error);
         ElMessage.error('获取群组详情失败，请稍后重试');
-      }
+      });
     };
 
     // 解散群组
@@ -960,8 +1071,7 @@ export default {
       const isMemberRegular = member.role === 'MEMBER' || member.role === 'member';
       
       // 当前用户必须是群主
-      const currentMember = members.value.find(m => m.userId === currentUserId.value);
-      const isCurrentUserOwner = currentMember && (currentMember.role === 'OWNER' || currentMember.role === 'owner');
+      const isCurrentUserOwner = currentUserRole.value === 'owner';
       
       return isCurrentUserOwner && isMemberRegular;
     };
@@ -975,8 +1085,7 @@ export default {
       const isMemberAdmin = member.role === 'ADMIN' || member.role === 'admin';
       
       // 当前用户必须是群主
-      const currentMember = members.value.find(m => m.userId === currentUserId.value);
-      const isCurrentUserOwner = currentMember && (currentMember.role === 'OWNER' || currentMember.role === 'owner');
+      const isCurrentUserOwner = currentUserRole.value === 'owner';
       
       return isCurrentUserOwner && isMemberAdmin;
     };
@@ -1001,6 +1110,23 @@ export default {
       );
     });
 
+    // 检查当前用户角色
+    const currentUserRole = computed(() => {
+      if (!currentUserId.value) return null;
+      
+      const currentMember = members.value.find(member => member.userId === currentUserId.value);
+      if (!currentMember) return null;
+      
+      if (currentMember.role === 'OWNER' || currentMember.role === 'owner') return 'owner';
+      if (currentMember.role === 'ADMIN' || currentMember.role === 'admin') return 'admin';
+      return 'member';
+    });
+
+    // 检查当前用户是否为群主
+    const isCurrentUserOwner = computed(() => {
+      return currentUserRole.value === 'owner';
+    });
+
     // 检查是否可管理成员
     const canManageMember = (member: GroupMember) => {
       // 不能移除自己
@@ -1008,31 +1134,22 @@ export default {
         return false;
       }
       
-      // 获取当前用户的成员信息
-      const currentMember = members.value.find(m => m.userId === currentUserId.value);
-      if (!currentMember) {
-        return false;
-      }
-      
-      // 检查当前用户是否为群主
-      const isCurrentUserOwner = currentMember.role === 'OWNER' || currentMember.role === 'owner';
-      
-      // 检查当前用户是否为管理员
-      const isCurrentUserAdmin = currentMember.role === 'ADMIN' || currentMember.role === 'admin';
-      
       // 检查目标成员是否为群主
       const isTargetOwner = member.role === 'OWNER' || member.role === 'owner';
       
       // 检查目标成员是否为管理员
       const isTargetAdmin = member.role === 'ADMIN' || member.role === 'admin';
       
+      // 使用计算属性获取当前用户角色
+      const role = currentUserRole.value;
+      
       // 群主可以移除任何人（除了自己）
-      if (isCurrentUserOwner) {
+      if (role === 'owner') {
         return !isTargetOwner; // 群主不能被移除
       }
       
       // 管理员只能移除普通成员
-      if (isCurrentUserAdmin) {
+      if (role === 'admin') {
         return !isTargetOwner && !isTargetAdmin; // 管理员不能移除群主和其他管理员
       }
       
@@ -1047,31 +1164,22 @@ export default {
         return false;
       }
       
-      // 获取当前用户的成员信息
-      const currentMember = members.value.find(m => m.userId === currentUserId.value);
-      if (!currentMember) {
-        return false;
-      }
-      
-      // 检查当前用户是否为群主
-      const isCurrentUserOwner = currentMember.role === 'OWNER' || currentMember.role === 'owner';
-      
-      // 检查当前用户是否为管理员
-      const isCurrentUserAdmin = currentMember.role === 'ADMIN' || currentMember.role === 'admin';
-      
       // 检查目标成员是否为群主
       const isTargetOwner = member.role === 'OWNER' || member.role === 'owner';
       
       // 检查目标成员是否为管理员
       const isTargetAdmin = member.role === 'ADMIN' || member.role === 'admin';
       
+      // 使用计算属性获取当前用户角色
+      const role = currentUserRole.value;
+      
       // 群主可以禁言任何人（除了自己）
-      if (isCurrentUserOwner) {
+      if (role === 'owner') {
         return !isTargetOwner; // 群主不能被禁言
       }
       
       // 管理员只能禁言普通成员
-      if (isCurrentUserAdmin) {
+      if (role === 'admin') {
         return !isTargetOwner && !isTargetAdmin; // 管理员不能禁言群主和其他管理员
       }
       
@@ -1165,31 +1273,6 @@ export default {
       }
     };
 
-    // 跳转到会话页面
-    const goToConversation = () => {
-      if (!activeGroupId.value) return;
-      // 使用路由跳转到会话页面，并传递群组ID
-      route.push(`/conversation/group/${activeGroupId.value}`);
-    };
-
-    // 监听路由参数变化
-    watch(() => route.currentRoute.value.params.id, (newId) => {
-      if (newId) {
-        activeGroupId.value = parseInt(newId as string, 10);
-        loadMembers();
-        loadGroupDetail();
-      }
-    }, { immediate: true });
-
-    onMounted(() => {
-      // 如果路由中有群组ID，则加载该群组
-      if (route.currentRoute.value.params.id) {
-        activeGroupId.value = parseInt(route.currentRoute.value.params.id as string, 10);
-        loadMembers();
-        loadGroupDetail();
-      }
-    });
-
     // 处理群组编辑成功更新
     const handleUpdateSuccess = (updatedGroup: any) => {
       showEditForm.value = false;
@@ -1205,13 +1288,47 @@ export default {
       ElMessage.success('群组信息已更新');
     };
 
-    // 检查当前用户是否为群主
-    const isCurrentUserOwner = computed(() => {
-      if (!currentUserId.value) return false;
-      const currentMember = members.value.find(m => m.userId === currentUserId.value);
-      if (!currentMember) return false;
-      return currentMember.role === 'OWNER' || currentMember.role === 'owner';
-    });
+    // 退出群组
+    const handleLeaveGroup = async () => {
+      if (!activeGroupId.value) return;
+      if (!currentUserId.value) {
+        ElMessage.error('获取用户信息失败，请重新登录');
+        return;
+      }
+
+      try {
+        await ElMessageBox.confirm('确定要退出该群组吗？退出后将无法接收和发送群消息。', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        });
+
+        loading.value = true;
+        
+        // 确保activeGroupId.value和currentUserId.value是数字
+        const groupId = Number(activeGroupId.value);
+        const userId = Number(currentUserId.value);
+        
+        console.log(`尝试退出群组: 群组ID=${groupId}, 用户ID=${userId}`);
+        
+        // 直接使用removeGroupMember API
+        const response = await removeGroupMember(groupId, userId);
+
+        if (response.code === 200) {
+          ElMessage.success('已退出群组');
+          router.push('/groups'); // 退出后跳转到群组列表
+        } else {
+          ElMessage.error(response.message || '退出群组失败');
+        }
+      } catch (error) {
+        if (error !== 'cancel') {
+          console.error('退出群组失败:', error);
+          ElMessage.error('退出群组失败，请稍后重试');
+        }
+      } finally {
+        loading.value = false;
+      }
+    };
 
     // 取消移除成员
     const cancelRemoveMember = () => {
@@ -1554,7 +1671,10 @@ export default {
       submitAnnouncementForm,
       confirmDeleteAnnouncement,
       cancelDeleteAnnouncement,
-      loadAnnouncements
+      loadAnnouncements,
+      pendingRequestCount,
+      updateRequestCount,
+      handleLeaveGroup
     };
   }
 };
@@ -1824,5 +1944,28 @@ export default {
 
 .delete-announcement-content p {
   margin: 5px 0;
+}
+
+.search-container {
+  height: 100%;
+}
+
+.empty-group-container {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.group-search-tab {
+  height: 100%;
+}
+
+.group-requests {
+  height: 100%;
+}
+
+.group-polls-container {
+  height: 100%;
 }
 </style> 

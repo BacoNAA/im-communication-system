@@ -46,6 +46,16 @@
       <div class="menu-item" @click="handleManageTags">
         管理标签
       </div>
+      <div v-if="selectedContact && !isContactBlocked(selectedContact)" 
+           class="menu-item warning" 
+           @click="handleBlockContact">
+        拉黑联系人
+      </div>
+      <div v-else-if="selectedContact && isContactBlocked(selectedContact)" 
+           class="menu-item success" 
+           @click="handleUnblockContact">
+        解除拉黑
+      </div>
       <div class="menu-item delete" @click="handleDeleteContact">
         删除联系人
       </div>
@@ -74,6 +84,8 @@ const emit = defineEmits([
   'edit-alias', 
   'manage-tags', 
   'delete-contact',
+  'block-contact',
+  'unblock-contact',
   'error'
 ]);
 
@@ -112,9 +124,12 @@ const loadContacts = async () => {
     loading.value = true;
     error.value = null;
     
-    const response = await contactApi.getContacts(props.currentUserId);
+    // includeBlocked设置为true，以便加载被拉黑的联系人
+    const response = await contactApi.getContacts(props.currentUserId, true);
     
     if (response.success && response.data) {
+      console.log('从API获取的原始联系人数据:', response.data);
+      
       contacts.value = response.data.map((contact: any) => {
         // 确保ID是有效的数字
         let contactId = contact.id;
@@ -142,6 +157,27 @@ const loadContacts = async () => {
         // 确保ID是有效的数字
         contactId = Number(contactId);
         
+        // 确定拉黑状态
+        // 可能的字段：isBlocked, is_blocked, status
+        let isBlocked = false;
+        
+        if (typeof contact.isBlocked === 'boolean') {
+          isBlocked = contact.isBlocked;
+        } else if (typeof contact.is_blocked === 'boolean') {
+          isBlocked = contact.is_blocked;
+        } else if (contact.status === 'BLOCKED') {
+          isBlocked = true;
+        }
+        
+        console.log('处理联系人拉黑状态:', {
+          id: contactId,
+          name: contact.alias || contact.nickname || contact.email || `用户${contactId}`,
+          原始isBlocked: contact.isBlocked,
+          原始is_blocked: contact.is_blocked,
+          原始status: contact.status,
+          最终拉黑状态: isBlocked
+        });
+        
         return {
           id: contactId, // 确保ID是数字
           friendId: contactId, // 添加friendId字段，确保是数字
@@ -151,6 +187,8 @@ const loadContacts = async () => {
           online: contact.online || false,
           alias: contact.alias,
           email: contact.email,
+          isBlocked: isBlocked, // 明确设置拉黑状态
+          status: contact.status, // 保留原始状态
           rawData: contact
         };
       }).filter((contact: any) => contact.id > 0); // 过滤掉无效的联系人
@@ -159,7 +197,7 @@ const loadContacts = async () => {
       if (contacts.value.length > 0) {
         console.log('联系人列表加载完成，ID示例:');
         contacts.value.slice(0, 3).forEach(contact => {
-          console.log(`联系人ID: ${contact.id}, 类型: ${typeof contact.id}, 名称: ${contact.name}`);
+          console.log(`联系人ID: ${contact.id}, 类型: ${typeof contact.id}, 名称: ${contact.name}, 状态: ${contact.status}, 是否拉黑: ${contact.isBlocked}`);
         });
       } else {
         console.log('联系人列表为空');
@@ -347,6 +385,66 @@ const handleManageTags = () => {
   closeMenu();
 };
 
+// 拉黑联系人
+const handleBlockContact = async () => {
+  if (!selectedContact.value) return;
+  
+  const contactId = ensureValidContactId(selectedContact.value.id);
+  if (!contactId) {
+    console.error('无法获取有效的联系人ID');
+    emit('error', '无法获取有效的联系人ID');
+    return;
+  }
+
+  try {
+    const response = await contactApi.blockFriend(contactId, props.currentUserId);
+    if (response.success) {
+      console.log('联系人已拉黑');
+      // 刷新联系人列表或更新UI
+      loadContacts();
+      emit('block-contact', contactId); // 发射拉黑事件
+      emit('error', '联系人已拉黑');
+    } else {
+      throw new Error(response.message || '拉黑联系人失败');
+    }
+  } catch (err: any) {
+    error.value = err.message || '拉黑联系人失败';
+    emit('error', error.value);
+  } finally {
+    closeMenu();
+  }
+};
+
+// 解除拉黑联系人
+const handleUnblockContact = async () => {
+  if (!selectedContact.value) return;
+  
+  const contactId = ensureValidContactId(selectedContact.value.id);
+  if (!contactId) {
+    console.error('无法获取有效的联系人ID');
+    emit('error', '无法获取有效的联系人ID');
+    return;
+  }
+
+  try {
+    const response = await contactApi.unblockFriend(contactId, props.currentUserId);
+    if (response.success) {
+      console.log('联系人已解除拉黑');
+      // 刷新联系人列表或更新UI
+      loadContacts();
+      emit('unblock-contact', contactId); // 发射解除拉黑事件
+      emit('error', '联系人已解除拉黑');
+    } else {
+      throw new Error(response.message || '解除拉黑联系人失败');
+    }
+  } catch (err: any) {
+    error.value = err.message || '解除拉黑联系人失败';
+    emit('error', error.value);
+  } finally {
+    closeMenu();
+  }
+};
+
 // 删除联系人
 const handleDeleteContact = () => {
   if (!selectedContact.value) return;
@@ -400,6 +498,25 @@ const ensureValidContactId = (rawId: any): number | null => {
   }
   
   return contactId;
+};
+
+// 判断联系人是否被拉黑
+const isContactBlocked = (contact: any) => {
+  if (!contact) {
+    console.warn('isContactBlocked: 联系人对象为空');
+    return false;
+  }
+  
+  // 详细记录联系人拉黑状态检查
+  console.log('isContactBlocked检查:', {
+    id: contact.id,
+    name: contact.name,
+    isBlocked: contact.isBlocked,
+    status: contact.status
+  });
+  
+  // 直接检查isBlocked字段
+  return Boolean(contact.isBlocked);
 };
 
 // 组件挂载时加载联系人列表
@@ -485,5 +602,21 @@ defineExpose({
 
 .menu-item.delete:hover {
   background-color: #fee;
+}
+
+.menu-item.warning {
+  color: #f39c12;
+}
+
+.menu-item.warning:hover {
+  background-color: #fdf5e6;
+}
+
+.menu-item.success {
+  color: #2ecc71;
+}
+
+.menu-item.success:hover {
+  background-color: #e8f5e9;
 }
 </style> 

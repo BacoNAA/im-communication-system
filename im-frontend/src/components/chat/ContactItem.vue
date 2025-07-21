@@ -1,6 +1,6 @@
 <template>
   <div 
-    class="contact-item" 
+    :class="['contact-item', { 'blocked': contact.isBlocked }]" 
     @click="handleClick"
     @contextmenu.prevent="$emit('context-menu', $event)"
   >
@@ -18,7 +18,10 @@
     </div>
     
     <div class="contact-info">
-      <div class="contact-name">{{ contact.name }}</div>
+      <div class="contact-name">
+        {{ contact.name }}
+        <span v-if="contact.isBlocked" class="blocked-indicator">已拉黑</span>
+      </div>
       <div class="contact-signature" v-if="contact.signature">{{ contact.signature }}</div>
       <!-- 添加标签显示 -->
       <div v-if="contact.tags && contact.tags.length > 0" class="contact-tags">
@@ -38,6 +41,7 @@
         class="chat-button" 
         @click.stop="startChat"
         title="开始聊天"
+        :disabled="contact.isBlocked"
       >
         <span class="icon">💬</span>
       </button>
@@ -315,6 +319,26 @@ const startChat = async (event: MouseEvent) => {
 
 .chat-button:hover {
   background-color: rgba(0, 0, 0, 0.1);
+}
+
+.chat-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.contact-item.blocked {
+  background-color: rgba(0, 0, 0, 0.03);
+  opacity: 0.8;
+  border-left: 3px solid #e74c3c;
+}
+
+.blocked-indicator {
+  font-size: 12px;
+  color: #e74c3c;
+  background-color: rgba(231, 76, 60, 0.1);
+  border-radius: 4px;
+  padding: 2px 6px;
+  margin-left: 6px;
 }
 
 .icon {

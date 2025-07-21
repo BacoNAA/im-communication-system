@@ -1,15 +1,20 @@
-import './assets/main.css';
-import './assets/theme-variables.css'; // 导入主题变量CSS
-
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
 import ElementPlus from 'element-plus';
 import 'element-plus/dist/index.css';
+// 导入自定义样式，确保它们在Element Plus样式之后，以便可以覆盖Element Plus的样式
+import './assets/main.css';
+import './assets/theme-variables.css'; // 导入主题变量CSS
+import './assets/custom-theme.css'; // 导入自定义主题样式，确保最高优先级
 
 import App from './App.vue';
 import router from './router';
 import { useAuth } from './composables/useAuth';
 import { useSharedWebSocket } from './composables/useWebSocket';
+import { initTheme } from './utils/themeUtils'; // 导入主题初始化函数
+
+// 初始化主题设置
+initTheme();
 
 // 创建应用实例
 const app = createApp(App)

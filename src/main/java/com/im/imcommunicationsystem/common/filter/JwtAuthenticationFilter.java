@@ -184,5 +184,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                path.startsWith("/css/") ||
                path.startsWith("/js/") ||
                path.startsWith("/images/");
+               
+        // 注意: /api/moments/upload/images 需要认证，不在跳过列表中
     }
 }

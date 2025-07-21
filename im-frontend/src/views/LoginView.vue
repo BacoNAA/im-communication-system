@@ -243,6 +243,7 @@
 import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useSharedWebSocket } from '@/composables/useWebSocket'
+import { getUserSettings } from '@/composables/useUserSettings';
 
 // 路由实例
 const router = useRouter()
@@ -501,24 +502,165 @@ function validateVerificationForm(): boolean {
 // 初始化共享WebSocket
 const { connect: connectWebSocket } = useSharedWebSocket()
 
+// 保存用户数据并应用设置
+const saveUserData = (authData: any) => {
+  const rememberMe = passwordForm.rememberMe;
+  
+  // 确保我们有用户ID
+  if (!authData || !authData.userInfo || !authData.userInfo.id) {
+    console.error('保存用户数据失败：无效的用户信息', authData);
+    return;
+  }
+  
+  const userId = String(authData.userInfo.id);
+  console.log('保存用户数据，用户ID:', userId);
+  
+  if (rememberMe) {
+    // 记住登录状态：保存到localStorage（持久化）
+    localStorage.setItem('accessToken', authData.accessToken);
+    localStorage.setItem('refreshToken', authData.refreshToken);
+    localStorage.setItem('userInfo', JSON.stringify(authData.userInfo));
+    localStorage.setItem('userId', userId);
+    // 保存邮箱、密码和记住我状态，用于下次自动填充
+    localStorage.setItem('savedEmail', passwordForm.email);
+    // 只有在后端返回密码时才保存（安全考虑）
+    if (authData.userInfo && authData.userInfo.password) {
+      localStorage.setItem('savedPassword', authData.userInfo.password);
+    }
+    localStorage.setItem('rememberMe', 'true');
+    // 清除sessionStorage中可能存在的数据
+    sessionStorage.removeItem('accessToken');
+    sessionStorage.removeItem('refreshToken');
+    sessionStorage.removeItem('userInfo');
+    sessionStorage.removeItem('userId');
+  } else {
+    // 不记住登录状态：保存到sessionStorage（会话级别）
+    sessionStorage.setItem('accessToken', authData.accessToken);
+    sessionStorage.setItem('refreshToken', authData.refreshToken);
+    sessionStorage.setItem('userInfo', JSON.stringify(authData.userInfo));
+    sessionStorage.setItem('userId', userId);
+    // 清除localStorage中的登录信息
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('userInfo');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('savedEmail');
+    localStorage.removeItem('savedPassword');
+    localStorage.removeItem('rememberMe');
+    // 清空密码输入框，防止刷新页面后密码仍然存在
+    passwordForm.password = '';
+  }
+  
+  // 在控制台输出当前存储的用户ID，用于调试
+  console.log('当前存储的用户ID:',
+    'localStorage:', localStorage.getItem('userId'),
+    'sessionStorage:', sessionStorage.getItem('userId')
+  );
+};
+
+// 加载用户设置并应用
+const loadAndApplyUserSettings = async () => {
+  // 加载并应用用户个性化设置
+  const { fetchSettings, applySettingsToUI, settings } = getUserSettings();
+  try {
+    console.log('正在加载用户个性化设置...');
+    
+    // 检查settings是否为null，如果是则初始化默认值
+    if (!settings.value) {
+      console.log('设置为空，初始化默认值');
+      settings.value = {
+        theme: {
+          color: '#1890ff',
+          chatBackground: 'default',
+          fontSize: 14
+        },
+        privacy: {
+          showOnlineStatus: true,
+          allowFriendRequests: true,
+          showLastSeen: true
+        },
+        notification: {
+          enableNotifications: true,
+          enableSoundNotifications: true,
+          enableVibration: true
+        }
+      };
+    }
+    
+    // 检查用户ID是否已保存
+    const userId = localStorage.getItem('userId') || sessionStorage.getItem('userId');
+    console.log('当前用户ID:', userId);
+    
+    if (!userId) {
+      console.warn('无法加载用户设置：用户ID未保存');
+      return;
+    }
+    
+    // 从服务器获取设置
+    await fetchSettings();
+    console.log('设置加载成功，正在应用...', settings.value);
+    
+    // 确保多次应用设置，以防设置未正确应用
+    applySettingsToUI();
+    
+    // 延迟再次应用，确保DOM已更新
+    setTimeout(() => {
+      console.log('延迟再次应用设置...', settings.value);
+      if (!settings.value) {
+        console.warn('设置仍然为空，初始化默认值');
+        settings.value = {
+          theme: {
+            color: '#1890ff',
+            chatBackground: 'default',
+            fontSize: 14
+          },
+          privacy: {
+            showOnlineStatus: true,
+            allowFriendRequests: true,
+            showLastSeen: true
+          },
+          notification: {
+            enableNotifications: true,
+            enableSoundNotifications: true,
+            enableVibration: true
+          }
+        };
+      }
+      
+      applySettingsToUI();
+      
+      // 强制刷新样式
+      document.body.style.visibility = 'hidden';
+      setTimeout(() => {
+        document.body.style.visibility = '';
+      }, 5);
+    }, 500);
+    
+    console.log('用户设置已成功应用');
+  } catch (error) {
+    console.error('加载用户设置失败:', error);
+    // 即使加载失败，仍然继续登录流程
+  }
+};
+
 // 处理密码登录
 async function handlePasswordLogin() {
   if (!validatePasswordForm()) {
-    return
+    return;
   }
   
   // 显示加载状态
-  isLoading.value = true
+  isLoading.value = true;
   
   try {
-    const deviceInfo = getDeviceInfo()
-    const email = passwordForm.email.trim()
-    const password = passwordForm.password
+    const deviceInfo = getDeviceInfo();
+    const email = passwordForm.email.trim();
+    const password = passwordForm.password;
 
     if (!email || !password) {
-      showAlert('邮箱和密码不能为空', 'error')
-      isLoading.value = false
-      return
+      showAlert('邮箱和密码不能为空', 'error');
+      isLoading.value = false;
+      return;
     }
 
     const formData = {
@@ -527,7 +669,7 @@ async function handlePasswordLogin() {
       deviceType: deviceInfo.deviceType,
       deviceInfo: deviceInfo.deviceInfo,
       rememberMe: passwordForm.rememberMe
-    }
+    };
     
     const response = await fetch('/api/auth/login/password', {
       method: 'POST',
@@ -535,76 +677,57 @@ async function handlePasswordLogin() {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(formData)
-    })
+    });
     
-    const result = await response.json()
+    const result = await response.json();
     
     if (response.ok && result.success) {
       // 登录成功
-      const authData = result.data
+      const authData = result.data;
       
-      // 存储认证信息
-      if (formData.rememberMe) {
-        // 记住登录状态：保存到localStorage（持久化）
-        localStorage.setItem('accessToken', authData.accessToken)
-        localStorage.setItem('refreshToken', authData.refreshToken)
-        localStorage.setItem('userInfo', JSON.stringify(authData.userInfo))
-        // 保存邮箱、密码和记住我状态，用于下次自动填充
-        localStorage.setItem('savedEmail', formData.email)
-        // 只有在后端返回密码时才保存（安全考虑）
-        if (authData.userInfo && authData.userInfo.password) {
-          localStorage.setItem('savedPassword', authData.userInfo.password)
-        }
-        localStorage.setItem('rememberMe', 'true')
-        // 清除sessionStorage中可能存在的数据
-        sessionStorage.removeItem('accessToken')
-        sessionStorage.removeItem('refreshToken')
-        sessionStorage.removeItem('userInfo')
-      } else {
-        // 不记住登录状态：保存到sessionStorage（会话级别）
-        sessionStorage.setItem('accessToken', authData.accessToken)
-        sessionStorage.setItem('refreshToken', authData.refreshToken)
-        sessionStorage.setItem('userInfo', JSON.stringify(authData.userInfo))
-        // 清除localStorage中的登录信息
-        localStorage.removeItem('accessToken')
-        localStorage.removeItem('refreshToken')
-        localStorage.removeItem('userInfo')
-        localStorage.removeItem('savedEmail')
-        localStorage.removeItem('savedPassword')
-        localStorage.removeItem('rememberMe')
-        // 清空密码输入框，防止刷新页面后密码仍然存在
-        passwordForm.password = ''
+      // 检查用户ID是否存在
+      if (!authData.userInfo || !authData.userInfo.id) {
+        console.error('登录成功但用户ID缺失:', authData);
+        showAlert('登录成功但无法获取用户信息，请重试', 'error');
+        isLoading.value = false;
+        return;
       }
       
-      // 立即连接WebSocket
-      connectWebSocket()
-      console.log('登录成功，已激活WebSocket连接')
+      // 存储认证信息
+      saveUserData(authData);
       
-      showAlert('登录成功，正在跳转...', 'success')
+      // 加载并应用用户设置
+      await loadAndApplyUserSettings();
+      
+      // 立即连接WebSocket
+      connectWebSocket();
+      console.log('登录成功，已激活WebSocket连接');
+      
+      showAlert('登录成功，正在跳转...', 'success');
       
       // 延迟跳转到仪表板
       setTimeout(() => {
-        router.push('/dashboard')
-      }, 1500)
+        router.push('/dashboard');
+      }, 1500);
       
     } else {
       // 登录失败
-      const errorMessage = result.message || '登录失败，请重试'
-      showAlert(errorMessage, 'error')
+      const errorMessage = result.message || '登录失败，请重试';
+      showAlert(errorMessage, 'error');
       
       // 恢复表单显示
-      isLoading.value = false
+      isLoading.value = false;
       
       // 清空密码输入框
-      passwordForm.password = ''
+      passwordForm.password = '';
     }
     
   } catch (error) {
-    console.error('登录请求失败:', error)
-    showAlert('网络错误，请检查网络连接后重试', 'error')
+    console.error('登录请求失败:', error);
+    showAlert('网络错误，请检查网络连接后重试', 'error');
     
     // 恢复表单显示
-    isLoading.value = false
+    isLoading.value = false;
   }
 }
 
@@ -638,21 +761,21 @@ function loadSavedLoginInfo() {
 // 处理验证码登录
 async function handleVerificationLogin() {
   if (!validateVerificationForm()) {
-    return
+    return;
   }
   
   // 显示加载状态
-  isLoading.value = true
+  isLoading.value = true;
   
   try {
-    const deviceInfo = getDeviceInfo()
-    const email = verificationForm.email.trim()
-    const code = verificationForm.code.trim()
+    const deviceInfo = getDeviceInfo();
+    const email = verificationForm.email.trim();
+    const code = verificationForm.code.trim();
     
     if (!email || !code) {
-      showAlert('邮箱和验证码不能为空', 'error')
-      isLoading.value = false
-      return
+      showAlert('邮箱和验证码不能为空', 'error');
+      isLoading.value = false;
+      return;
     }
     
     const formData = {
@@ -660,7 +783,7 @@ async function handleVerificationLogin() {
       verificationCode: code,
       deviceType: deviceInfo.deviceType,
       deviceInfo: deviceInfo.deviceInfo
-    }
+    };
     
     const response = await fetch('/api/auth/login/verification', {
       method: 'POST',
@@ -668,48 +791,57 @@ async function handleVerificationLogin() {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(formData)
-    })
+    });
     
-    const result = await response.json()
+    const result = await response.json();
     
     if (response.ok && result.success) {
       // 登录成功
-      const authData = result.data
+      const authData = result.data;
+      
+      // 检查用户ID是否存在
+      if (!authData.userInfo || !authData.userInfo.id) {
+        console.error('登录成功但用户ID缺失:', authData);
+        showAlert('登录成功但无法获取用户信息，请重试', 'error');
+        isLoading.value = false;
+        return;
+      }
       
       // 存储认证信息到sessionStorage（验证码登录默认不记住）
-      sessionStorage.setItem('accessToken', authData.accessToken)
-      sessionStorage.setItem('refreshToken', authData.refreshToken)
-      sessionStorage.setItem('userInfo', JSON.stringify(authData.userInfo))
+      saveUserData({...authData, rememberMe: false});
+      
+      // 加载并应用用户设置
+      await loadAndApplyUserSettings();
       
       // 立即连接WebSocket
-      connectWebSocket()
-      console.log('登录成功，已激活WebSocket连接')
+      connectWebSocket();
+      console.log('登录成功，已激活WebSocket连接');
       
-      showAlert('登录成功，正在跳转...', 'success')
+      showAlert('登录成功，正在跳转...', 'success');
       
       // 延迟跳转到仪表板
       setTimeout(() => {
-        router.push('/dashboard')
-      }, 1500)
+        router.push('/dashboard');
+      }, 1500);
       
     } else {
       // 登录失败
-      const errorMessage = result.message || '登录失败，请重试'
-      showAlert(errorMessage, 'error')
+      const errorMessage = result.message || '登录失败，请重试';
+      showAlert(errorMessage, 'error');
       
       // 恢复表单显示
-      isLoading.value = false
+      isLoading.value = false;
       
       // 清空验证码输入框
-      verificationForm.code = ''
+      verificationForm.code = '';
     }
     
   } catch (error) {
-    console.error('登录请求失败:', error)
-    showAlert('网络错误，请检查网络连接后重试', 'error')
+    console.error('登录请求失败:', error);
+    showAlert('网络错误，请检查网络连接后重试', 'error');
     
     // 恢复表单显示
-    isLoading.value = false
+    isLoading.value = false;
   }
 }
 

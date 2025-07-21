@@ -136,9 +136,11 @@ public class MessageServiceImpl implements MessageService {
                     boolean isBlockedResult = contactService.isBlocked(recipientId, senderId);
                     log.info("屏蔽状态检查结果: recipientId={}, senderId={}, isBlocked={}", recipientId, senderId, isBlockedResult);
                     
+                    // 即使被拉黑，也允许发送消息，消息会被保存到数据库
+                    // 但接收方不会通过WebSocket收到该消息（由WebSocketService负责过滤）
                     if (isBlockedResult) {
-                        log.warn("User {} is blocked by user {}, cannot send message", senderId, recipientId);
-                        return MessageResponse.error("您已被对方屏蔽，无法发送消息");
+                        log.info("User {} is blocked by user {}, but still allowing message to be sent and stored", 
+                                senderId, recipientId);
                     }
                 }
             } else if (request.getRecipientId() != null) {
@@ -158,9 +160,11 @@ public class MessageServiceImpl implements MessageService {
                 boolean isBlockedResult = contactService.isBlocked(recipientId, senderId);
                 log.info("新会话屏蔽状态检查结果: recipientId={}, senderId={}, isBlocked={}", recipientId, senderId, isBlockedResult);
                 
+                // 即使被拉黑，也允许发送消息，消息会被保存到数据库
+                // 但接收方不会通过WebSocket收到该消息（由WebSocketService负责过滤）
                 if (isBlockedResult) {
-                    log.warn("User {} is blocked by user {}, cannot send message", senderId, recipientId);
-                    return MessageResponse.error("您已被对方屏蔽，无法发送消息");
+                    log.info("User {} is blocked by user {}, but still allowing new conversation and message to be sent and stored", 
+                            senderId, recipientId);
                 }
                 
                 conversation = conversationService.getOrCreatePrivateConversation(senderId, recipientId);

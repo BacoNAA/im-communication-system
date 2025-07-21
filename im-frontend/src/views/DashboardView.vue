@@ -310,52 +310,8 @@
       <!-- 动态列表 -->
       <div :class="['tab-content', { active: activeTab === 'moments' }]">
         <div class="moments-page">
-          <div class="moments-header">
-            <div class="moments-title">朋友圈</div>
-            <button class="publish-btn" @click="publishMoment" title="发布动态">
-              📷
-            </button>
-          </div>
-          
-          <div class="moments-list">
-            <div v-if="filteredMoments.length === 0" class="no-moments">
-              {{ momentSearchKeyword ? '未找到匹配的动态' : '暂无动态' }}
-            </div>
-            <div 
-              v-for="moment in filteredMoments" 
-              :key="moment.id"
-              class="moment-item"
-            >
-              <div class="moment-avatar">
-                <img v-if="moment.user.avatar" :src="moment.user.avatar" :alt="moment.user.name" />
-                <span v-else>{{ getAvatarText(moment.user.name) }}</span>
-              </div>
-              <div class="moment-content">
-                <div class="moment-header">
-                  <span class="moment-author">{{ moment.user.name }}</span>
-                  <span class="moment-time">{{ moment.createTime ? formatRelativeTime(new Date(moment.createTime)) : '未知时间' }}</span>
-                </div>
-                <div class="moment-text">{{ moment.content }}</div>
-                <div v-if="moment.images && moment.images.length > 0" class="moment-images">
-                  <img 
-                    v-for="(image, index) in moment.images" 
-                    :key="index"
-                    :src="image" 
-                    :alt="`图片${index + 1}`"
-                    class="moment-image"
-                  />
-                </div>
-                <div class="moment-actions">
-                  <button class="moment-action" @click="likeMoment(moment)">
-                    👍 {{ moment.likeCount || 0 }}
-                  </button>
-                  <button class="moment-action" @click="commentMoment(moment)">
-                    💬 {{ moment.commentCount || 0 }}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+          <!-- 使用新的MomentView组件 -->
+          <moment-view />
         </div>
       </div>
       
@@ -1814,6 +1770,8 @@ import GroupView from '@/views/GroupView.vue';
 import GlobalSearchButton from '@/components/search/GlobalSearchButton.vue';
 import GlobalSearch from '@/components/search/GlobalSearch.vue';
 import SettingsDialog from '@/components/settings/SettingsDialog.vue';
+import MomentView from '@/components/moment/MomentView.vue';
+import { getUserSettings } from '@/composables/useUserSettings';
 
 interface User {
   id: string
@@ -1855,24 +1813,18 @@ interface Contact {
   nickname?: string
 }
 
-interface Moment {
-  id: string
-  user: User
-  content: string
-  images?: string[]
-  createTime: string
-  likeCount: number
-  commentCount: number
-  isLiked: boolean
-}
+// Moment接口定义已移至动态组件
 
 const router = useRouter()
 
 // 响应式数据
 const activeTab = ref('chat')
+  
+// 可用标签页
+const tabNames = ['chat', 'contacts', 'moments', 'discover', 'me']
 const chatSearchKeyword = ref('')
 const contactSearchKeyword = ref('')
-const momentSearchKeyword = ref('')
+// 动态搜索已移至MomentView组件
 const userStatus = ref({ emoji: '🚗', text: '在路上' })
 const showSettingsModal = ref(false)
 const settingsDialogVisible = ref(false)
@@ -2008,14 +1960,13 @@ const chats = ref<Chat[]>([])
 // 联系人列表
 const contacts = ref<Contact[]>([])
 
-// 动态列表
-const moments = ref<Moment[]>([])
+// 动态模块相关状态已移至MomentView组件
 
 // 导航标签页
 const navigationTabs = ref([
   { key: 'chat', label: '会话', icon: 'icon-chat', badge: 0 },
   { key: 'contacts', label: '联系人', icon: 'icon-contacts', badge: 0 },
-  { key: 'moments', label: '动态', icon: 'icon-moments', badge: 0 },
+  { key: 'moments', label: '朋友圈', icon: 'icon-moments', badge: 0 },
   { key: 'profile', label: '我', icon: 'icon-profile', badge: 0 }
 ])
 
@@ -2036,13 +1987,7 @@ const filteredContacts = computed(() => {
   )
 })
 
-const filteredMoments = computed(() => {
-  if (!momentSearchKeyword.value) return moments.value
-  return moments.value.filter(moment => 
-    moment.content.toLowerCase().includes(momentSearchKeyword.value.toLowerCase()) ||
-    moment.user.name.toLowerCase().includes(momentSearchKeyword.value.toLowerCase())
-  )
-})
+// 动态过滤逻辑已移至MomentView组件
 
 // 方法
 const getAvatarText = (name: string | undefined): string => {
@@ -4259,22 +4204,7 @@ const openContactChat = async (contact: any) => {
   }
 }
 
-const publishMoment = () => {
-  // 实现发布动态逻辑
-  console.log('发布动态')
-  // 这里可以打开发布动态的对话框
-}
-
-const likeMoment = (moment: Moment) => {
-  // 实现点赞逻辑
-  moment.isLiked = !moment.isLiked
-  moment.likeCount += moment.isLiked ? 1 : -1
-}
-
-const commentMoment = (moment: Moment) => {
-  // 实现评论逻辑
-  console.log('评论动态:', moment)
-}
+// 所有动态相关的逻辑都已经移至MomentView组件
 
 const editProfile = () => {
   // 初始化个人资料数据
@@ -6626,38 +6556,7 @@ const initContactsList = async () => {
   }
 }
 
-// 初始化动态列表
-const initMomentsList = () => {
-  // 模拟动态数据
-  moments.value = [
-    {
-      id: '1',
-      user: {
-        id: '1',
-        name: '张三',
-        email: 'zhangsan@example.com'
-      },
-      content: '今天天气真不错，出来走走心情都变好了 ☀️',
-      createTime: new Date().toISOString(),
-      likeCount: 5,
-      commentCount: 2,
-      isLiked: false
-    },
-    {
-      id: '2',
-      user: {
-        id: '2',
-        name: '李四',
-        email: 'lisi@example.com'
-      },
-      content: '刚完成了一个重要项目，感谢团队的努力！🎉',
-      createTime: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-      likeCount: 12,
-      commentCount: 8,
-      isLiked: false
-    }
-  ]
-}
+// 动态列表初始化已移至MomentView组件
 
 // 初始化数据
 const initData = async () => {
@@ -6762,7 +6661,7 @@ const initData = async () => {
         await initChatList()
         await initContactsList()
         await loadFriendRequests()
-        initMomentsList()
+        // 动态列表初始化已移至MomentView组件
         
         // 初始化文件管理
         await loadFileList()
@@ -7131,6 +7030,10 @@ onMounted(async () => {
   // 初始化共享WebSocket连接
   const { connect: connectWs } = useSharedWebSocket();
   connectWs();
+  
+  // 应用用户个性化设置
+  const { applySettingsToUI } = getUserSettings();
+  applySettingsToUI();
   
   await initData()
   // 启动定时刷新

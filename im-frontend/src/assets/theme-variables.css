@@ -16,6 +16,10 @@
   --font-size-large: 18px;
   --font-size-xlarge: 21px;
   --font-size-title: 24px;
+  
+  /* 聊天背景 */
+  --chat-background: #f9f9f9;
+  --chat-background-image: none;
 }
 
 /* ===== 主题色应用 ===== */

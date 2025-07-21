@@ -23,6 +23,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import java.util.Optional;
+import com.im.imcommunicationsystem.message.entity.ConversationMember;
+import com.im.imcommunicationsystem.message.entity.ConversationMemberId;
+import com.im.imcommunicationsystem.message.repository.ConversationMemberRepository;
 
 /**
  * WebSocket服务实现类
@@ -42,16 +46,19 @@ public class WebSocketServiceImpl extends TextWebSocketHandler implements WebSoc
     private final ConversationService conversationService;
     private final ApplicationEventPublisher eventPublisher;
     private final GroupMemberRepository groupMemberRepository;
+    private final ConversationMemberRepository conversationMemberRepository;
     
     @Autowired
     public WebSocketServiceImpl(ObjectMapper objectMapper, 
                                ConversationService conversationService,
                                ApplicationEventPublisher eventPublisher,
-                               GroupMemberRepository groupMemberRepository) {
+                               GroupMemberRepository groupMemberRepository,
+                               ConversationMemberRepository conversationMemberRepository) {
         this.objectMapper = objectMapper;
         this.conversationService = conversationService;
         this.eventPublisher = eventPublisher;
         this.groupMemberRepository = groupMemberRepository;
+        this.conversationMemberRepository = conversationMemberRepository;
     }
 
     /**
@@ -708,6 +715,29 @@ public class WebSocketServiceImpl extends TextWebSocketHandler implements WebSoc
                 }
             }
             
+            // 提取消息ID（如果存在）
+            Long messageId = null;
+            if (message instanceof Map) {
+                Map<String, Object> msgMap = (Map<String, Object>) message;
+                if (msgMap.containsKey("data") && msgMap.get("data") instanceof Map) {
+                    Map<String, Object> dataMap = (Map<String, Object>) msgMap.get("data");
+                    if (dataMap.containsKey("id")) {
+                        Object idObj = dataMap.get("id");
+                        if (idObj instanceof Number) {
+                            messageId = ((Number) idObj).longValue();
+                        } else if (idObj instanceof String) {
+                            try {
+                                messageId = Long.parseLong((String) idObj);
+                            } catch (NumberFormatException e) {
+                                // 非数字ID，忽略
+                            }
+                        }
+                    }
+                }
+            }
+            
+            log.debug("消息ID: {}, 类型: {}", messageId, (messageId != null ? messageId.getClass().getName() : "null"));
+            
             // 转换消息为JSON字符串
             String messageJson = objectMapper.writeValueAsString(message);
             
@@ -719,6 +749,43 @@ public class WebSocketServiceImpl extends TextWebSocketHandler implements WebSoc
                 // 排除指定用户（通常是消息发送者自己）
                 if (excludeUserId != null && memberId.equals(excludeUserId)) {
                     log.debug("跳过发送者自己: {}", excludeUserId);
+                    continue;
+                }
+                
+                // 检查拉黑状态 - 获取last_acceptable_message_id
+                // 拉黑机制说明：
+                // 1. 当用户A拉黑用户B时，设置A的last_acceptable_message_id为拉黑时的最后一条消息ID
+                // 2. 用户B仍可以发送消息，但这些消息不会通过WebSocket发送给A
+                // 3. 如果消息ID大于A的last_acceptable_message_id，则不发送给A
+                // 4. 当A解除对B的拉黑时，将A的last_acceptable_message_id设为null，恢复正常的消息接收
+                boolean shouldSkip = false;
+                
+                if (messageId != null && conversation.getConversationType() == ConversationType.PRIVATE) {
+                    try {
+                        // 获取会话成员信息
+                        Optional<ConversationMember> memberOpt = conversationMemberRepository.findById(
+                                new ConversationMemberId(conversationId, memberId));
+                        
+                        if (memberOpt.isPresent()) {
+                            ConversationMember member = memberOpt.get();
+                            Long lastAcceptableMessageId = member.getLastAcceptableMessageId();
+                            
+                            // 如果设置了last_acceptable_message_id，且当前消息ID大于该值，则跳过发送
+                            if (lastAcceptableMessageId != null && messageId > lastAcceptableMessageId) {
+                                log.info("消息ID {} 大于用户 {} 设置的last_acceptable_message_id {}, 跳过发送",
+                                        messageId, memberId, lastAcceptableMessageId);
+                                shouldSkip = true;
+                            }
+                        }
+                    } catch (Exception e) {
+                        log.error("检查拉黑状态失败: conversationId={}, memberId={}, error={}",
+                                conversationId, memberId, e.getMessage(), e);
+                        // 出错时继续发送
+                    }
+                }
+                
+                if (shouldSkip) {
+                    log.info("用户 {} 已拉黑，跳过发送消息 {} 给会话 {}", memberId, messageId, conversationId);
                     continue;
                 }
                 

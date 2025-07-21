@@ -1422,3 +1422,651 @@ export async function pinAnnouncement(groupId: number, announcementId: number, i
     };
   }
 } 
+
+/**
+ * 搜索群组
+ * @param {Object} params - 搜索参数
+ * @returns {Promise}
+ */
+export async function searchGroups(params: {
+  keyword: string;
+  page?: number;
+  size?: number;
+}): Promise<ApiResponse<any>> {
+  try {
+    // 获取当前用户ID
+    let currentUserId = 0;
+    const userInfoStr = localStorage.getItem('userInfo');
+    if (userInfoStr) {
+      try {
+        const userInfo = JSON.parse(userInfoStr);
+        if (userInfo && userInfo.id && typeof userInfo.id === 'number' && userInfo.id > 0) {
+          currentUserId = userInfo.id;
+        }
+      } catch (e) {
+        console.error('解析localStorage.userInfo失败:', e);
+      }
+    }
+    
+    // 获取认证令牌
+    const authTokens = [
+      localStorage.getItem('accessToken'),
+      localStorage.getItem('auth_token'),
+      localStorage.getItem('token'),
+      sessionStorage.getItem('accessToken'),
+      sessionStorage.getItem('auth_token'),
+      sessionStorage.getItem('token')
+    ].filter(Boolean);
+    
+    const token = authTokens[0] || '';
+    
+    if (!token) {
+      console.error('未找到有效的认证令牌，请先登录');
+      throw new Error('未找到有效的认证令牌，请先登录');
+    }
+    
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+      'X-User-Id': String(currentUserId)
+    };
+    
+    console.log('发送POST请求到:', `/groups/search`);
+    console.log('请求头:', headers);
+    console.log('请求参数:', params);
+    
+    const response = await api.post('/groups/search', params, { headers });
+    console.log('搜索群组API调用成功:', response);
+    return response;
+  } catch (error) {
+    console.error('搜索群组API调用失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 获取可搜索的群组详情
+ * @param {number} groupId - 群组ID
+ * @returns {Promise}
+ */
+export async function getSearchableGroupById(groupId: number): Promise<ApiResponse<any>> {
+  try {
+    // 获取当前用户ID
+    let currentUserId = 0;
+    const userInfoStr = localStorage.getItem('userInfo');
+    if (userInfoStr) {
+      try {
+        const userInfo = JSON.parse(userInfoStr);
+        if (userInfo && userInfo.id && typeof userInfo.id === 'number' && userInfo.id > 0) {
+          currentUserId = userInfo.id;
+        }
+      } catch (e) {
+        console.error('解析localStorage.userInfo失败:', e);
+      }
+    }
+    
+    // 获取认证令牌
+    const authTokens = [
+      localStorage.getItem('accessToken'),
+      localStorage.getItem('auth_token'),
+      localStorage.getItem('token'),
+      sessionStorage.getItem('accessToken'),
+      sessionStorage.getItem('auth_token'),
+      sessionStorage.getItem('token')
+    ].filter(Boolean);
+    
+    const token = authTokens[0] || '';
+    
+    if (!token) {
+      console.error('未找到有效的认证令牌，请先登录');
+      throw new Error('未找到有效的认证令牌，请先登录');
+    }
+    
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+      'X-User-Id': String(currentUserId)
+    };
+    
+    console.log('发送GET请求到:', `/groups/search/${groupId}`);
+    console.log('请求头:', headers);
+    
+    const response = await api.get(`/groups/search/${groupId}`, { headers });
+    console.log('获取群组详情API调用成功:', response);
+    return response;
+  } catch (error) {
+    console.error('获取群组详情API调用失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 申请加入群组
+ * @param {Object} data - 申请数据
+ * @returns {Promise}
+ */
+export async function applyToJoinGroup(data: {
+  groupId: number;
+  message?: string;
+}): Promise<ApiResponse<any>> {
+  try {
+    // 获取当前用户ID
+    let currentUserId = 0;
+    const userInfoStr = localStorage.getItem('userInfo');
+    if (userInfoStr) {
+      try {
+        const userInfo = JSON.parse(userInfoStr);
+        if (userInfo && userInfo.id && typeof userInfo.id === 'number' && userInfo.id > 0) {
+          currentUserId = userInfo.id;
+        }
+      } catch (e) {
+        console.error('解析localStorage.userInfo失败:', e);
+      }
+    }
+    
+    // 获取认证令牌
+    const authTokens = [
+      localStorage.getItem('accessToken'),
+      localStorage.getItem('auth_token'),
+      localStorage.getItem('token'),
+      sessionStorage.getItem('accessToken'),
+      sessionStorage.getItem('auth_token'),
+      sessionStorage.getItem('token')
+    ].filter(Boolean);
+    
+    const token = authTokens[0] || '';
+    
+    if (!token) {
+      console.error('未找到有效的认证令牌，请先登录');
+      throw new Error('未找到有效的认证令牌，请先登录');
+    }
+    
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+      'X-User-Id': String(currentUserId)
+    };
+    
+    console.log('发送POST请求到:', `/groups/search/join`);
+    console.log('请求头:', headers);
+    console.log('请求体:', data);
+    
+    const response = await api.post('/groups/search/join', data, { headers });
+    console.log('申请加入群组API调用成功:', response);
+    return response;
+  } catch (error) {
+    console.error('申请加入群组API调用失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 获取群组加入请求列表
+ * @param {number} groupId - 群组ID
+ * @param {Object} params - 查询参数
+ * @returns {Promise}
+ */
+export async function getGroupJoinRequests(groupId: number, params: {
+  status?: string;
+  page?: number;
+  size?: number;
+} = {}): Promise<ApiResponse<any>> {
+  try {
+    if (!groupId || groupId <= 0) {
+      throw new Error('必须提供有效的群组ID');
+    }
+    
+    // 获取当前用户ID
+    let currentUserId = 0;
+    const userInfoStr = localStorage.getItem('userInfo');
+    if (userInfoStr) {
+      try {
+        const userInfo = JSON.parse(userInfoStr);
+        if (userInfo && userInfo.id && typeof userInfo.id === 'number' && userInfo.id > 0) {
+          currentUserId = userInfo.id;
+        }
+      } catch (e) {
+        console.error('解析localStorage.userInfo失败:', e);
+      }
+    }
+    
+    // 获取认证令牌
+    const authTokens = [
+      localStorage.getItem('accessToken'),
+      localStorage.getItem('auth_token'),
+      localStorage.getItem('token'),
+      sessionStorage.getItem('accessToken'),
+      sessionStorage.getItem('auth_token'),
+      sessionStorage.getItem('token')
+    ].filter(Boolean);
+    
+    const token = authTokens[0] || '';
+    
+    if (!token) {
+      console.error('未找到有效的认证令牌，请先登录');
+      throw new Error('未找到有效的认证令牌，请先登录');
+    }
+    
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+      'X-User-Id': String(currentUserId)
+    };
+    
+    const queryParams: Record<string, string> = {
+      page: String(params.page || 0),
+      size: String(params.size || 20)
+    };
+    
+    if (params.status) {
+      queryParams.status = params.status;
+    }
+    
+    const queryString = Object.entries(queryParams)
+      .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+      .join('&');
+    
+    console.log(`发送GET请求到: /groups/${groupId}/join-requests?${queryString}`);
+    console.log('请求头:', headers);
+    
+    const response = await api.get(`/groups/${groupId}/join-requests?${queryString}`, { headers });
+    console.log('获取群组加入请求列表API调用成功:', response);
+    return response;
+  } catch (error) {
+    console.error('获取群组加入请求列表API调用失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 处理群组加入请求
+ * @param {number} groupId - 群组ID
+ * @param {number} requestId - 请求ID
+ * @param {boolean} approve - 是否批准
+ * @returns {Promise}
+ */
+export async function handleJoinRequest(groupId: number, requestId: number, approve: boolean): Promise<ApiResponse<any>> {
+  try {
+    // 获取当前用户ID
+    let currentUserId = 0;
+    const userInfoStr = localStorage.getItem('userInfo');
+    if (userInfoStr) {
+      try {
+        const userInfo = JSON.parse(userInfoStr);
+        if (userInfo && userInfo.id && typeof userInfo.id === 'number' && userInfo.id > 0) {
+          currentUserId = userInfo.id;
+        }
+      } catch (e) {
+        console.error('解析localStorage.userInfo失败:', e);
+      }
+    }
+    
+    // 获取认证令牌
+    const authTokens = [
+      localStorage.getItem('accessToken'),
+      localStorage.getItem('auth_token'),
+      localStorage.getItem('token'),
+      sessionStorage.getItem('accessToken'),
+      sessionStorage.getItem('auth_token'),
+      sessionStorage.getItem('token')
+    ].filter(Boolean);
+    
+    const token = authTokens[0] || '';
+    
+    if (!token) {
+      console.error('未找到有效的认证令牌，请先登录');
+      throw new Error('未找到有效的认证令牌，请先登录');
+    }
+    
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+      'X-User-Id': String(currentUserId)
+    };
+    
+    console.log('发送PUT请求到:', `/groups/${groupId}/join-requests/${requestId}?approve=${approve}`);
+    console.log('请求头:', headers);
+    
+    const response = await api.put(`/groups/${groupId}/join-requests/${requestId}?approve=${approve}`, {}, { headers });
+    console.log('处理群组加入请求API调用成功:', response);
+    return response;
+  } catch (error) {
+    console.error('处理群组加入请求API调用失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 取消加入请求
+ * @param {number} requestId - 请求ID
+ * @returns {Promise}
+ */
+export async function cancelJoinRequest(requestId: number): Promise<ApiResponse<any>> {
+  try {
+    // 获取当前用户ID
+    let currentUserId = 0;
+    const userInfoStr = localStorage.getItem('userInfo');
+    if (userInfoStr) {
+      try {
+        const userInfo = JSON.parse(userInfoStr);
+        if (userInfo && userInfo.id && typeof userInfo.id === 'number' && userInfo.id > 0) {
+          currentUserId = userInfo.id;
+        }
+      } catch (e) {
+        console.error('解析localStorage.userInfo失败:', e);
+      }
+    }
+    
+    // 获取认证令牌
+    const authTokens = [
+      localStorage.getItem('accessToken'),
+      localStorage.getItem('auth_token'),
+      localStorage.getItem('token'),
+      sessionStorage.getItem('accessToken'),
+      sessionStorage.getItem('auth_token'),
+      sessionStorage.getItem('token')
+    ].filter(Boolean);
+    
+    const token = authTokens[0] || '';
+    
+    if (!token) {
+      console.error('未找到有效的认证令牌，请先登录');
+      throw new Error('未找到有效的认证令牌，请先登录');
+    }
+    
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+      'X-User-Id': String(currentUserId)
+    };
+    
+    console.log('发送DELETE请求到:', `/groups/join-requests/${requestId}`);
+    console.log('请求头:', headers);
+    
+    const response = await api.delete(`/groups/join-requests/${requestId}`, { headers });
+    console.log('取消加入请求API调用成功:', response);
+    return response;
+  } catch (error) {
+    console.error('取消加入请求API调用失败:', error);
+    throw error;
+  }
+} 
+
+/**
+ * 创建群投票
+ * @param {number} groupId - 群组ID
+ * @param {object} pollData - 投票数据
+ * @returns {Promise} 创建结果
+ */
+export async function createPoll(groupId: number, pollData: any): Promise<ApiResponse<any>> {
+  try {
+    console.log(`创建群投票: groupId=${groupId}`, pollData);
+    const response = await api.post(`/groups/${groupId}/polls`, pollData);
+    return response;
+  } catch (error) {
+    console.error('创建群投票API调用失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 获取群组投票列表
+ * @param {number} groupId - 群组ID
+ * @param {object} params - 查询参数
+ * @returns {Promise} 投票列表
+ */
+export async function getGroupPolls(groupId: number, params: {
+  status?: string;
+  page?: number;
+  size?: number;
+} = {}): Promise<ApiResponse<any>> {
+  try {
+    // 验证参数
+    if (!groupId || groupId <= 0) {
+      throw new Error('群组ID无效');
+    }
+    
+    // 构建查询参数
+    const queryParams: Record<string, string> = {
+      page: String(params.page ?? 0),
+      size: String(params.size ?? 10)
+    };
+    
+    if (params.status) {
+      queryParams.status = params.status;
+    }
+    
+    const queryString = new URLSearchParams(queryParams).toString();
+    const url = `/groups/${groupId}/polls${queryString ? `?${queryString}` : ''}`;
+    
+    console.log(`发送投票列表请求: ${url}`);
+    
+    // 添加重试机制
+    let retries = 2;
+    let lastError;
+    
+    while (retries >= 0) {
+      try {
+        const response = await api.get(url);
+        
+        // 处理返回数据中的日期字段
+        if (response.code === 200 && response.data && response.data.content) {
+          response.data.content = response.data.content.map((poll: any) => {
+            // 记录原始日期格式
+            if (poll.endTime) {
+              console.log(`处理前的结束时间: ${poll.endTime}, 类型: ${typeof poll.endTime}`);
+            }
+            
+            // 确保日期是有效格式
+            try {
+              if (poll.endTime) {
+                const date = new Date(poll.endTime);
+                if (!isNaN(date.getTime())) {
+                  console.log(`转换后的结束时间: ${date.toISOString()}`);
+                } else {
+                  console.error(`无效的结束时间格式: ${poll.endTime}`);
+                }
+              }
+            } catch (error) {
+              console.error(`转换日期格式出错: ${poll.endTime}`, error);
+            }
+            
+            return poll;
+          });
+        }
+        
+        return response;
+      } catch (error) {
+        console.error(`获取群组投票列表失败，剩余重试次数: ${retries}`, error);
+        lastError = error;
+        retries--;
+        
+        if (retries >= 0) {
+          // 等待一段时间后重试
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+    }
+    
+    throw lastError;
+  } catch (error) {
+    console.error('获取群组投票列表API调用失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 获取投票详情
+ * @param {number} groupId - 群组ID
+ * @param {number} pollId - 投票ID
+ * @returns {Promise} 投票详情
+ */
+export async function getPollDetails(groupId: number, pollId: number): Promise<ApiResponse<any>> {
+  try {
+    const response = await api.get(`/groups/${groupId}/polls/${pollId}`);
+    return response;
+  } catch (error) {
+    console.error('获取投票详情API调用失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 参与投票
+ * @param {number} groupId - 群组ID
+ * @param {number} pollId - 投票ID
+ * @param {object} voteData - 投票数据
+ * @returns {Promise} 投票结果
+ */
+export async function votePoll(groupId: number, pollId: number, voteData: any): Promise<ApiResponse<any>> {
+  try {
+    // 验证必要参数
+    if (!groupId || groupId <= 0) {
+      throw new Error('群组ID无效');
+    }
+    if (!pollId || pollId <= 0) {
+      throw new Error('投票ID无效');
+    }
+    if (!voteData || !voteData.optionIds || !Array.isArray(voteData.optionIds) || voteData.optionIds.length === 0) {
+      throw new Error('投票选项不能为空');
+    }
+    
+    // 打印请求信息
+    console.log(`参与投票请求: groupId=${groupId}, pollId=${pollId}, voteData=`, JSON.stringify(voteData));
+    
+    // 发送请求
+    const response = await api.post(`/groups/${groupId}/polls/${pollId}/vote`, voteData);
+    console.log('参与投票API调用成功:', response);
+    return response;
+  } catch (error) {
+    console.error('参与投票API调用失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 结束投票
+ * @param {number} groupId - 群组ID
+ * @param {number} pollId - 投票ID
+ * @returns {Promise} 操作结果
+ */
+export async function endPoll(groupId: number, pollId: number): Promise<ApiResponse<any>> {
+  try {
+    const response = await api.post(`/groups/${groupId}/polls/${pollId}/end`);
+    return response;
+  } catch (error) {
+    console.error('结束投票API调用失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 取消投票
+ * @param {number} groupId - 群组ID
+ * @param {number} pollId - 投票ID
+ * @returns {Promise} 操作结果
+ */
+export async function cancelPoll(groupId: number, pollId: number): Promise<ApiResponse<any>> {
+  try {
+    const response = await api.post(`/groups/${groupId}/polls/${pollId}/cancel`);
+    return response;
+  } catch (error) {
+    console.error('取消投票API调用失败:', error);
+    throw error;
+  }
+} 
+
+/**
+ * 退出群组（普通成员主动退出）
+ * @param {number} groupId - 群组ID
+ * @returns {Promise}
+ */
+export async function leaveGroup(groupId: number): Promise<ApiResponse<any>> {
+  console.log('leaveGroup API调用:', { groupId });
+  
+  try {
+    // 获取当前用户ID
+    let currentUserId = 0;
+    const userInfoStr = localStorage.getItem('userInfo');
+    if (userInfoStr) {
+      try {
+        const userInfo = JSON.parse(userInfoStr);
+        if (userInfo && userInfo.id && typeof userInfo.id === 'number' && userInfo.id > 0) {
+          currentUserId = userInfo.id;
+        }
+      } catch (e) {
+        console.error('解析localStorage.userInfo失败:', e);
+      }
+    }
+    
+    if (currentUserId === 0) {
+      const localUserId = localStorage.getItem('userId');
+      if (localUserId) {
+        currentUserId = parseInt(localUserId);
+      }
+    }
+    
+    if (currentUserId === 0) {
+      const sessionUserId = sessionStorage.getItem('userId');
+      if (sessionUserId) {
+        currentUserId = parseInt(sessionUserId);
+      }
+    }
+    
+    if (currentUserId === 0) {
+      throw new Error('未找到有效的用户ID，请先登录');
+    }
+    
+    // 获取认证令牌
+    const authTokens = [
+      localStorage.getItem('accessToken'),
+      localStorage.getItem('auth_token'),
+      localStorage.getItem('token'),
+      sessionStorage.getItem('accessToken'),
+      sessionStorage.getItem('auth_token'),
+      sessionStorage.getItem('token')
+    ].filter(Boolean);
+    
+    const token = authTokens[0] || '';
+    
+    if (!token) {
+      console.error('未找到有效的认证令牌，请先登录');
+      throw new Error('未找到有效的认证令牌，请先登录');
+    }
+    
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+      'X-User-Id': String(currentUserId)
+    };
+    
+    console.log('发送POST请求到:', `/groups/${groupId}/leave`);
+    console.log('请求头:', headers);
+    
+    const response = await api.post(`/groups/${groupId}/leave`, {}, { headers });
+    console.log('退出群组API调用成功:', response);
+    return response;
+  } catch (error: any) {
+    console.error('退出群组API调用失败:', error);
+    
+    // 增强错误信息
+    let errorMessage = '退出群组失败';
+    let errorCode = 500;
+    
+    if (error.response) {
+      errorCode = error.response.status;
+      errorMessage = error.response.data?.message || `服务器错误 (${error.response.status})`;
+    } else if (error.request) {
+      errorMessage = '服务器无响应，请检查网络连接';
+    } else {
+      errorMessage = error.message || '请求设置错误';
+    }
+    
+    return {
+      code: errorCode,
+      success: false,
+      message: errorMessage,
+      data: null
+    };
+  }
+} 

@@ -163,6 +163,7 @@ import { useRouter, useRoute } from 'vue-router'; // 导入路由
 import MediaLibraryButton from './MediaLibraryButton.vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import * as groupApi from '@/api/group';
+import { getUserSettings } from '@/composables/useUserSettings';
 
 const props = defineProps<{
   conversationId: string;
@@ -1677,6 +1678,31 @@ onMounted(() => {
   if (props.conversationId) {
     loadMessages(props.conversationId);
   }
+  
+  // 在组件挂载后应用个性化设置
+  const { settings } = getUserSettings();
+  if (settings.value?.theme?.chatBackground) {
+    // 使用setTimeout确保DOM已完全挂载
+    setTimeout(() => {
+      const background = settings.value?.theme?.chatBackground || 'default';
+      console.log('聊天面板挂载时应用背景:', background);
+      
+      if (messageContainerRef.value) {
+        const element = messageContainerRef.value;
+        if (background === 'default') {
+          element.style.background = '';
+          element.style.backgroundImage = 'none';
+        } else if (background.startsWith('#')) {
+          element.style.background = background;
+          element.style.backgroundImage = 'none';
+        } else {
+          element.style.backgroundImage = `url(${background})`;
+          element.style.backgroundSize = 'cover';
+          element.style.backgroundPosition = 'center';
+        }
+      }
+    }, 100);
+  }
 });
 
 // 暴露方法供父组件调用
@@ -1787,6 +1813,7 @@ const openSearchPanel = () => {
   flex-direction: column;
   height: 100%;
   position: relative;
+  background-color: transparent !important;
 }
 
 .chat-header {
@@ -1848,7 +1875,10 @@ const openSearchPanel = () => {
   flex: 1;
   overflow-y: auto;
   padding: 16px;
-  background-color: #f9f9f9;
+  background-color: var(--chat-background, #f9f9f9) !important;
+  background-image: var(--chat-background-image, none) !important;
+  background-size: cover !important;
+  background-position: center !important;
   font-size: var(--font-size-base);
 }
 

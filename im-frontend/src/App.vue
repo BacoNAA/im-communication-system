@@ -2,36 +2,14 @@
 import { onMounted } from 'vue';
 import { RouterView } from 'vue-router';
 import { useSharedWebSocket } from '@/composables/useWebSocket';
-import { useUserSettings } from './composables/useUserSettings';
-import { applyThemeColor, applyFontSize } from './utils/themeUtils';
+import { getUserSettings } from './composables/useUserSettings';
+import { applyThemeColor, applyFontSize, applyBackground } from './utils/themeUtils';
 
 // 初始化WebSocket连接
 const { connect: connectWebSocket } = useSharedWebSocket();
 
 // 获取用户设置
-const { settings, fetchSettings } = useUserSettings();
-
-// 应用存储的设置到全局样式
-const applyGlobalSettings = () => {
-  console.log('应用全局设置:', settings.value);
-  
-  if (settings.value?.theme) {
-    // 应用主题颜色
-    if (settings.value.theme.color) {
-      console.log('应用主题颜色:', settings.value.theme.color);
-      applyThemeColor(settings.value.theme.color);
-    }
-    
-    // 应用字体大小
-    if (settings.value.theme.fontSize) {
-      console.log('应用字体大小:', settings.value.theme.fontSize);
-      applyFontSize(settings.value.theme.fontSize);
-    }
-    
-    // 应用聊天背景（如果需要）
-    // 这部分可能需要在聊天组件内处理
-  }
-};
+const { settings, fetchSettings, loadLocalSettings, applySettingsToUI } = getUserSettings();
 
 // 在应用初始化时检查用户是否已登录
 onMounted(async () => {
@@ -48,16 +26,59 @@ onMounted(async () => {
 
   console.log('App组件已挂载，开始加载用户设置');
   
-  try {
-    // 尝试从API获取设置
-    await fetchSettings();
-    console.log('成功从API获取设置');
-  } catch (error) {
-    console.error('从API获取设置失败，将使用本地存储的设置:', error);
+  // 确保settings不为null
+  if (!settings.value) {
+    console.log('设置为空，初始化默认值');
+    settings.value = {
+      theme: {
+        color: '#1890ff',
+        chatBackground: 'default',
+        fontSize: 14
+      },
+      privacy: {
+        showOnlineStatus: true,
+        allowFriendRequests: true,
+        showLastSeen: true
+      },
+      notification: {
+        enableNotifications: true,
+        enableSoundNotifications: true,
+        enableVibration: true
+      }
+    };
   }
   
-  // 无论是从API还是本地存储加载，都应用设置
-  applyGlobalSettings();
+  try {
+    // 先尝试从本地存储加载设置，以便快速应用
+    const hasLocalSettings = loadLocalSettings();
+    console.log('从本地存储加载设置:', hasLocalSettings ? '成功' : '失败');
+    
+    // 尝试从API获取设置（无论本地是否有设置）
+    if (hasToken) {
+      await fetchSettings();
+      console.log('成功从API获取设置');
+    }
+  } catch (error) {
+    console.error('从API获取设置失败，将使用本地存储的设置:', error);
+    // 如果从API获取失败，确保应用了本地设置
+    loadLocalSettings();
+  }
+  
+  // 确保应用了设置
+  console.log('确保应用设置，当前设置:', settings.value);
+  applySettingsToUI();
+  
+  // 延迟再次应用，确保DOM已更新
+  setTimeout(() => {
+    console.log('延迟再次应用设置');
+    applySettingsToUI();
+    
+    // 强制刷新样式
+    document.body.style.visibility = 'hidden';
+    setTimeout(() => {
+      document.body.style.visibility = '';
+    }, 5);
+  }, 500);
 });
 </script>
 

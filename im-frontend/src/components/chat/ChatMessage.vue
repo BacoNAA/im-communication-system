@@ -1126,6 +1126,7 @@ const forwardMessage = () => {
   display: flex;
   align-items: flex-start;
   width: 100%;
+  background-color: transparent !important; /* 确保背景完全透明 */
 }
 
 .avatar-container {
@@ -1157,25 +1158,29 @@ const forwardMessage = () => {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  background-color: transparent !important; /* 确保背景完全透明 */
 }
 
 .message-content-wrapper::after {
   content: "";
   display: table;
   clear: both;
+  background-color: transparent !important; /* 确保伪元素也是透明的 */
 }
 
 .message-self .message-content-wrapper {
   align-items: flex-end;
+  background-color: transparent !important; /* 确保自己消息的容器也是透明的 */
 }
 
 .message-other .message-content-wrapper {
   align-items: flex-start;
+  background-color: transparent !important; /* 确保对方消息的容器也是透明的 */
 }
 
 /* 强化对方消息气泡边框 */
 .other-bubble {
-  background-color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.9);
   border: 2px solid #555555;
   border-top-left-radius: 0;
   float: left;
@@ -1223,7 +1228,7 @@ const forwardMessage = () => {
 }
 
 .self-bubble {
-  background-color: #e6f7ff;
+  background-color: rgba(230, 247, 255, 0.9);
   border: 1px solid #91d5ff;
   border-top-right-radius: 0;
   float: right;

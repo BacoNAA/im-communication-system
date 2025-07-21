@@ -162,10 +162,33 @@ export const contactApi = {
           
           console.log(`contactApi.getContacts: 路径 ${path} 成功返回 ${validData.length} 条有效联系人数据`);
           
+          // 处理拉黑状态
+          const processedData = validData.map((contact: any) => {
+            // 记录原始数据，方便调试
+            console.log('contactApi.getContacts: 处理联系人数据:', contact);
+            
+            // 确保isBlocked字段存在
+            // 后端可能返回isBlocked或is_blocked字段，或者在status字段中标记为BLOCKED
+            let isBlocked = false;
+            
+            if (typeof contact.isBlocked === 'boolean') {
+              isBlocked = contact.isBlocked;
+            } else if (typeof contact.is_blocked === 'boolean') {
+              isBlocked = contact.is_blocked;
+            } else if (contact.status === 'BLOCKED') {
+              isBlocked = true;
+            }
+            
+            return {
+              ...contact,
+              isBlocked: isBlocked
+            };
+          });
+          
           // 返回有效的数据
           return {
             ...response,
-            data: validData
+            data: processedData
           };
         } else {
           console.warn(`contactApi.getContacts: 路径 ${path} 响应无效数据:`, response);
@@ -278,8 +301,25 @@ export const contactApi = {
   },
 
   // 拉黑好友
+  // 此操作会设置last_acceptable_message_id为拉黑时的最后一条消息，
+  // 同时确保WebSocket在私聊中不向主动拉黑的一方广播
   async blockFriend(friendId: number, userId: number): Promise<ApiResponse<string>> {
-    return api.post<ApiResponse<string>>(`/contacts/${friendId}/block`, undefined, {
+    console.log('拉黑联系人:', { friendId, userId });
+    
+    // 确保friendId是有效的数字
+    if (isNaN(friendId) || friendId <= 0) {
+      console.error('无效的联系人ID:', friendId);
+      return {
+        code: 400,
+        message: '无效的联系人ID',
+        data: '',
+        success: false
+      };
+    }
+    
+    return api.post<ApiResponse<string>>(`/contacts/${friendId}/block`, {
+      userId: userId  // 添加userId参数以标识当前用户
+    }, {
       headers: {
         'X-User-Id': userId.toString()
       }
@@ -287,8 +327,24 @@ export const contactApi = {
   },
 
   // 取消拉黑
+  // 此操作会将last_acceptable_message_id设置为NULL，恢复正常的消息传递
   async unblockFriend(friendId: number, userId: number): Promise<ApiResponse<string>> {
-    return api.post<ApiResponse<string>>(`/contacts/${friendId}/unblock`, undefined, {
+    console.log('解除拉黑联系人:', { friendId, userId });
+    
+    // 确保friendId是有效的数字
+    if (isNaN(friendId) || friendId <= 0) {
+      console.error('无效的联系人ID:', friendId);
+      return {
+        code: 400,
+        message: '无效的联系人ID',
+        data: '',
+        success: false
+      };
+    }
+    
+    return api.post<ApiResponse<string>>(`/contacts/${friendId}/unblock`, {
+      userId: userId  // 添加userId参数以标识当前用户
+    }, {
       headers: {
         'X-User-Id': userId.toString()
       }

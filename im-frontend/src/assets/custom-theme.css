@@ -1,0 +1,120 @@
+/**
+ * 自定义主题样式
+ * 这个文件包含高优先级的样式，用于覆盖Element Plus和其他库的默认样式
+ */
+
+/* 强制应用主题颜色 */
+.el-button--primary {
+  --el-button-bg-color: var(--primary-color) !important;
+  --el-button-border-color: var(--primary-color) !important;
+  --el-button-hover-bg-color: var(--primary-dark-color) !important;
+  --el-button-hover-border-color: var(--primary-dark-color) !important;
+  --el-button-active-bg-color: var(--primary-dark-color) !important;
+  --el-button-active-border-color: var(--primary-dark-color) !important;
+}
+
+.el-checkbox__input.is-checked .el-checkbox__inner {
+  background-color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+}
+
+.el-radio__input.is-checked .el-radio__inner {
+  background-color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+}
+
+.el-switch.is-checked .el-switch__core {
+  background-color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+}
+
+.el-pagination.is-background .el-pager li:not(.disabled).active {
+  background-color: var(--primary-color) !important;
+}
+
+.el-menu-item.is-active {
+  color: var(--primary-color) !important;
+}
+
+.el-tabs__active-bar {
+  background-color: var(--primary-color) !important;
+}
+
+.el-tabs__item.is-active {
+  color: var(--primary-color) !important;
+}
+
+.el-input__wrapper.is-focus {
+  box-shadow: 0 0 0 1px var(--primary-color) inset !important;
+}
+
+.el-input__wrapper.is-focus .el-input__inner {
+  border-color: var(--primary-color) !important;
+}
+
+/* 强制应用字体大小 */
+body, html {
+  font-size: var(--font-size-base) !important;
+}
+
+.el-button {
+  font-size: var(--font-size-base) !important;
+}
+
+.el-input__inner {
+  font-size: var(--font-size-base) !important;
+}
+
+.el-menu-item {
+  font-size: var(--font-size-base) !important;
+}
+
+.el-tabs__item {
+  font-size: var(--font-size-base) !important;
+}
+
+.el-checkbox__label {
+  font-size: var(--font-size-base) !important;
+}
+
+.el-radio__label {
+  font-size: var(--font-size-base) !important;
+}
+
+/* 聊天背景样式 */
+.message-container {
+  background-color: var(--chat-background, #f9f9f9) !important;
+  background-image: var(--chat-background-image, none) !important;
+  background-size: cover !important;
+  background-position: center !important;
+}
+
+/* 确保聊天面板其他部分透明 */
+.chat-panel {
+  background-color: transparent !important;
+}
+
+/* 消息内容容器样式 */
+.message-content-wrapper {
+  background-color: transparent !important;
+}
+
+.message-content-wrapper * {
+  background-color: inherit;
+}
+
+/* 消息气泡样式 */
+.message-bubble {
+  /* 使用透明背景 */
+  background-color: transparent !important;
+}
+
+.self-bubble {
+  background-color: rgba(230, 247, 255, 0.9) !important;
+  border: 1px solid rgba(145, 213, 255, 0.9) !important;
+}
+
+.other-bubble {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  border: 2px solid rgba(85, 85, 85, 0.9) !important;
+} 

@@ -50,14 +50,15 @@ public class ContactController {
             log.info("获取联系人列表请求: userId={}, includeBlocked={}", userId, includeBlocked);
             List<ContactResponse> contacts = contactService.getContactList(userId, includeBlocked);
         
-        // 添加详细的返回数据日志
-        log.info("返回联系人列表数据: contacts.size()={}", contacts.size());
-        for (ContactResponse contact : contacts) {
-            log.info("返回联系人数据: userId={}, friendId={}, nickname={}, alias={}", 
-                    contact.getUserId(), contact.getFriendId(), contact.getNickname(), contact.getAlias());
-        }
+            // 添加详细的返回数据日志
+            log.info("返回联系人列表数据: contacts.size()={}", contacts.size());
+            for (ContactResponse contact : contacts) {
+                log.info("返回联系人数据: userId={}, friendId={}, nickname={}, alias={}, isBlocked={}", 
+                        contact.getUserId(), contact.getFriendId(), contact.getNickname(), 
+                        contact.getAlias(), contact.getIsBlocked());
+            }
         
-        return ApiResponse.success(contacts);
+            return ApiResponse.success(contacts);
         } catch (Exception e) {
             log.error("获取联系人列表失败: userId={}, includeBlocked={}, error={}", userId, includeBlocked, e.getMessage(), e);
             return ApiResponse.error(500, "获取联系人列表失败: " + e.getMessage());
@@ -134,25 +135,105 @@ public class ContactController {
     /**
      * 屏蔽联系人
      */
-    @Operation(summary = "屏蔽联系人", description = "屏蔽指定的联系人")
-    @PutMapping("/{friendId}/block")
+    @Operation(summary = "拉黑联系人", description = "拉黑指定的联系人，同时设置last_acceptable_message_id为拉黑时的最后一条消息")
+    @PostMapping("/{friendId}/block")
     public ApiResponse<Void> blockContact(
-            @Parameter(description = "用户ID") @RequestParam Long userId,
-            @Parameter(description = "好友ID") @PathVariable Long friendId) {
-        // 实现屏蔽联系人逻辑
-        return null;
+            @Parameter(description = "好友ID") @PathVariable Long friendId,
+            @RequestBody(required = false) Map<String, Object> requestBody,
+            HttpServletRequest httpRequest) {
+        try {
+            // 从JWT token或请求参数中获取用户ID
+            Long userId;
+            if (requestBody != null && requestBody.containsKey("userId")) {
+                userId = Long.valueOf(requestBody.get("userId").toString());
+            } else {
+                String token = httpRequest.getHeader("Authorization");
+                if (token != null && token.startsWith("Bearer ")) {
+                    token = token.substring(7);
+                }
+                userId = jwtUtils.getUserIdFromToken(token);
+                
+                if (userId == null) {
+                    // 尝试从请求参数中获取
+                    String userIdParam = httpRequest.getParameter("userId");
+                    if (userIdParam != null && !userIdParam.isEmpty()) {
+                        userId = Long.valueOf(userIdParam);
+                    }
+                }
+            }
+            
+            // 检查参数有效性
+            if (userId == null || friendId == null) {
+                log.warn("拉黑联系人失败: 参数无效, userId={}, friendId={}", userId, friendId);
+                return ApiResponse.badRequest("用户ID和好友ID不能为空");
+            }
+            
+            log.info("拉黑联系人请求: userId={}, friendId={}", userId, friendId);
+            
+            boolean success = contactService.blockContact(userId, friendId);
+            if (success) {
+                log.info("成功拉黑联系人: userId={}, friendId={}", userId, friendId);
+                return ApiResponse.success("拉黑联系人成功", null);
+            } else {
+                log.warn("拉黑联系人失败: userId={}, friendId={}", userId, friendId);
+                return ApiResponse.badRequest("拉黑联系人失败，请检查好友关系是否存在");
+            }
+        } catch (Exception e) {
+            log.error("拉黑联系人异常: friendId={}, error={}", friendId, e.getMessage(), e);
+            return ApiResponse.serverError("系统异常，请联系管理员");
+        }
     }
 
     /**
-     * 解除屏蔽
+     * 解除拉黑
      */
-    @Operation(summary = "解除屏蔽", description = "解除对指定联系人的屏蔽")
-    @PutMapping("/{friendId}/unblock")
+    @Operation(summary = "解除拉黑", description = "解除对指定联系人的拉黑，同时将last_acceptable_message_id设置为NULL")
+    @PostMapping("/{friendId}/unblock")
     public ApiResponse<Void> unblockContact(
-            @Parameter(description = "用户ID") @RequestParam Long userId,
-            @Parameter(description = "好友ID") @PathVariable Long friendId) {
-        // 实现解除屏蔽逻辑
-        return null;
+            @Parameter(description = "好友ID") @PathVariable Long friendId,
+            @RequestBody(required = false) Map<String, Object> requestBody,
+            HttpServletRequest httpRequest) {
+        try {
+            // 从JWT token或请求参数中获取用户ID
+            Long userId;
+            if (requestBody != null && requestBody.containsKey("userId")) {
+                userId = Long.valueOf(requestBody.get("userId").toString());
+            } else {
+                String token = httpRequest.getHeader("Authorization");
+                if (token != null && token.startsWith("Bearer ")) {
+                    token = token.substring(7);
+                }
+                userId = jwtUtils.getUserIdFromToken(token);
+                
+                if (userId == null) {
+                    // 尝试从请求参数中获取
+                    String userIdParam = httpRequest.getParameter("userId");
+                    if (userIdParam != null && !userIdParam.isEmpty()) {
+                        userId = Long.valueOf(userIdParam);
+                    }
+                }
+            }
+            
+            // 检查参数有效性
+            if (userId == null || friendId == null) {
+                log.warn("解除拉黑联系人失败: 参数无效, userId={}, friendId={}", userId, friendId);
+                return ApiResponse.badRequest("用户ID和好友ID不能为空");
+            }
+            
+            log.info("解除拉黑联系人请求: userId={}, friendId={}", userId, friendId);
+            
+            boolean success = contactService.unblockContact(userId, friendId);
+            if (success) {
+                log.info("成功解除拉黑联系人: userId={}, friendId={}", userId, friendId);
+                return ApiResponse.success("解除拉黑联系人成功", null);
+            } else {
+                log.warn("解除拉黑联系人失败: userId={}, friendId={}", userId, friendId);
+                return ApiResponse.badRequest("解除拉黑联系人失败，请检查好友关系是否存在");
+            }
+        } catch (Exception e) {
+            log.error("解除拉黑联系人异常: friendId={}, error={}", friendId, e.getMessage(), e);
+            return ApiResponse.serverError("系统异常，请联系管理员");
+        }
     }
 
     /**

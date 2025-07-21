@@ -12,6 +12,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import com.im.imcommunicationsystem.message.entity.ConversationMember;
+import com.im.imcommunicationsystem.message.entity.ConversationMemberId;
+import com.im.imcommunicationsystem.message.repository.ConversationMemberRepository;
 
 /**
  * 已读状态服务实现类
@@ -28,6 +31,7 @@ public class ReadStatusServiceImpl implements ReadStatusService {
 
     private final ReadStatusRepository readStatusRepository;
     private final MessageRepository messageRepository;
+    private final ConversationMemberRepository conversationMemberRepository;
 
     @Override
     public ReadStatus updateReadStatus(Long userId, Long conversationId, Long lastReadMessageId) {
@@ -117,10 +121,25 @@ public class ReadStatusServiceImpl implements ReadStatusService {
         log.debug("Counting unread messages for user {} in conversation {}", userId, conversationId);
         
         try {
-            // 获取最后可接受的消息ID（会话中最新的消息ID）
-            Long lastAcceptableMessageId = messageRepository.findFirstByConversationIdOrderByIdDesc(conversationId)
-                    .map(message -> message.getId())
-                    .orElse(Long.MAX_VALUE);
+            // 获取最后可接受的消息ID（考虑拉黑设置）
+            // 从ConversationMember表中获取该用户的last_acceptable_message_id
+            Long lastAcceptableMessageId;
+            
+            // 检查是否有last_acceptable_message_id限制
+            Optional<ConversationMember> member = conversationMemberRepository.findById(
+                    new ConversationMemberId(conversationId, userId));
+            
+            if (member.isPresent() && member.get().getLastAcceptableMessageId() != null) {
+                // 如果有拉黑限制，使用last_acceptable_message_id
+                lastAcceptableMessageId = member.get().getLastAcceptableMessageId();
+                log.debug("使用拉黑限制的last_acceptable_message_id: {}", lastAcceptableMessageId);
+            } else {
+                // 否则使用会话中最新的消息ID
+                lastAcceptableMessageId = messageRepository.findFirstByConversationIdOrderByIdDesc(conversationId)
+                        .map(message -> message.getId())
+                        .orElse(Long.MAX_VALUE);
+                log.debug("使用会话最新消息ID作为last_acceptable_message_id: {}", lastAcceptableMessageId);
+            }
             
             // 获取用户在会话中的已读状态
             Optional<ReadStatus> readStatus = readStatusRepository.findByUserIdAndConversationId(userId, conversationId);
