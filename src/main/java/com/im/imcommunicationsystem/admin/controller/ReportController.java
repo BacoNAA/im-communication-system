@@ -17,6 +17,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 /**
  * 举报控制器
  */
@@ -94,6 +96,24 @@ public class ReportController {
     }
 
     /**
+     * 获取被举报内容的详情
+     *
+     * @param contentType 内容类型
+     * @param contentId 内容ID
+     * @return 被举报内容的详细信息
+     */
+    @GetMapping("/api/admin/reports/content/{contentType}/{contentId}")
+    public ResponseEntity<ResponseUtils.ApiResponse<Map<String, Object>>> getReportedContentDetails(
+            @PathVariable String contentType,
+            @PathVariable Long contentId) {
+        
+        log.info("获取被举报内容详情，内容类型: {}, 内容ID: {}", contentType, contentId);
+        Map<String, Object> contentDetails = reportService.getReportedContentDetails(contentType, contentId);
+        
+        return ResponseEntity.ok(ResponseUtils.success("内容详情获取成功", contentDetails));
+    }
+
+    /**
      * 处理举报
      *
      * @param reportId 举报ID
@@ -104,20 +124,36 @@ public class ReportController {
     @PostMapping("/api/admin/reports/{reportId}/handle")
     public ResponseEntity<ResponseUtils.ApiResponse<ReportResponse>> handleReport(
             @PathVariable Long reportId,
-            @Valid @RequestBody ReportHandleRequest request,
-            @AuthenticationPrincipal UserDetails userDetails) {
+            @Valid @RequestBody ReportHandleRequest request) {
         
-        log.info("处理举报，举报ID: {}，操作: {}", reportId, request.getAction());
+        log.info("收到处理举报请求，举报ID: {}，操作: {}", reportId, request.getAction());
         
-        // 设置举报ID
+        // 验证请求
+        if (request == null) {
+            log.error("处理举报失败：请求体为空");
+            return ResponseEntity.badRequest().body(ResponseUtils.error(400, "请求体不能为空"));
+        }
+        
+        try {
+            // 设置举报ID - 优先从URL路径获取
         request.setReportId(reportId);
+            log.info("设置举报ID: {}", reportId);
         
-        // 从已认证用户中提取管理员ID
-        Long adminId = Long.valueOf(userDetails.getUsername());
-        
-        ReportResponse updatedReport = reportService.handleReport(adminId, request);
-        
-        return ResponseEntity.ok(ResponseUtils.success("举报处理成功", updatedReport));
+            // 获取当前管理员ID
+            Long adminId = securityUtils.getCurrentUserId();
+            if (adminId == null) {
+                log.error("处理举报失败：未获取到管理员ID");
+                return ResponseEntity.status(401).body(ResponseUtils.error(401, "未认证，请先登录"));
+            }
+            
+            log.info("开始处理举报，举报ID: {}，管理员ID: {}", reportId, adminId);
+            ReportResponse updatedReport = reportService.handleReport(adminId, request);
+            
+            return ResponseEntity.ok(ResponseUtils.success("举报处理成功", updatedReport));
+        } catch (Exception e) {
+            log.error("处理举报时发生异常: ", e);
+            return ResponseEntity.status(500).body(ResponseUtils.error(500, "处理举报失败：" + e.getMessage()));
+        }
     }
 
     /**

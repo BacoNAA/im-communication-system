@@ -368,5 +368,60 @@ export default {
         
         const headers = { 'Authorization': `Bearer ${token}` };
         return api.post(url, { adminId: adminIdStr }, { headers });
+    },
+    
+    // 获取系统概览数据
+    async getSystemOverview(period: string = 'today'): Promise<ApiResponse<any>> {
+        const token = getAdminToken();
+        if (!token) {
+            throw new Error('管理员未登录');
+        }
+        
+        const headers = { 'Authorization': `Bearer ${token}` };
+        return api.get(`/admin/dashboard/overview?period=${period}`, { headers });
+    },
+    
+    // 获取统计数据
+    async getStatistics(type: string, period: string = 'week'): Promise<ApiResponse<any>> {
+        const token = getAdminToken();
+        if (!token) {
+            throw new Error('管理员未登录');
+        }
+        
+        const headers = { 'Authorization': `Bearer ${token}` };
+        return api.get(`/admin/dashboard/statistics/${type}?period=${period}`, { headers });
+    },
+    
+    // 获取用户活跃度分布
+    async getUserActivityDistribution(period: string = 'week'): Promise<ApiResponse<any>> {
+        const token = getAdminToken();
+        if (!token) {
+            throw new Error('管理员未登录');
+        }
+        
+        const headers = { 'Authorization': `Bearer ${token}` };
+        return api.get(`/admin/dashboard/user-activity?period=${period}`, { headers });
+    },
+    
+    // 获取内容类型分布
+    async getContentTypeDistribution(period: string = 'week'): Promise<ApiResponse<any>> {
+        const token = getAdminToken();
+        if (!token) {
+            throw new Error('管理员未登录');
+        }
+        
+        const headers = { 'Authorization': `Bearer ${token}` };
+        return api.get(`/admin/dashboard/content-distribution?period=${period}`, { headers });
+    },
+    
+    // 获取消息趋势
+    async getMessageTrend(period: string = 'week'): Promise<ApiResponse<any>> {
+        const token = getAdminToken();
+        if (!token) {
+            throw new Error('管理员未登录');
+        }
+        
+        const headers = { 'Authorization': `Bearer ${token}` };
+        return api.get(`/admin/dashboard/message-trend?period=${period}`, { headers });
     }
 }; 

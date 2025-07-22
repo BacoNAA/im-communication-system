@@ -5,6 +5,8 @@ import com.im.imcommunicationsystem.admin.dto.response.ReportResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.Map;
+
 /**
  * 举报服务接口
  */
@@ -27,6 +29,15 @@ public interface ReportService {
      * @return 举报响应对象
      */
     ReportResponse getReportDetails(Long reportId);
+
+    /**
+     * 获取被举报内容的详情
+     *
+     * @param contentType 内容类型（USER, MESSAGE, GROUP, GROUP_MEMBER, MOMENT等）
+     * @param contentId 内容ID
+     * @return 内容详情，包含基本信息和特定类型的信息
+     */
+    Map<String, Object> getReportedContentDetails(String contentType, Long contentId);
 
     /**
      * 处理举报

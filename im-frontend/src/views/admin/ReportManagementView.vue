@@ -84,12 +84,12 @@
             查看详情
           </el-button>
           <el-button 
-            v-if="scope.row.status === 'pending'"
+            v-if="scope.row.status === 'pending' || scope.row.status === 'processing'"
             size="small" 
-            type="success" 
+            :type="scope.row.status === 'pending' ? 'success' : 'primary'" 
             @click="handleReport(scope.row)"
           >
-            处理
+            {{ scope.row.status === 'pending' ? '处理' : '继续处理' }}
           </el-button>
         </template>
       </el-table-column>
@@ -110,7 +110,7 @@
     <el-dialog
       v-model="showReportDetails"
       title="举报详情"
-      width="700px"
+      width="600px"
       destroy-on-close
     >
       <div v-if="currentReport" class="report-details">
@@ -170,156 +170,13 @@
             </span>
           </div>
           
-          <!-- 被举报内容详情 -->
-          <div v-if="contentDetails" class="content-details">
+          <!-- 添加被举报内容查看组件 -->
+          <div class="reported-content-section">
             <h4>内容详情</h4>
-            <el-divider></el-divider>
-            
-            <!-- 加载状态 -->
-            <div v-if="contentLoading" class="content-loading">
-              <el-skeleton :rows="3" animated />
-            </div>
-            
-            <!-- 加载失败 -->
-            <div v-else-if="contentError" class="content-error">
-              <el-alert
-                type="error"
-                :title="contentError"
-                show-icon
-              />
-              <el-button size="small" type="primary" @click="loadReportedContent" class="mt-2">
-                重试加载
-              </el-button>
-            </div>
-            
-            <!-- 用户内容 -->
-            <div v-else-if="currentReport.reportedContentType === 'USER'" class="user-content">
-              <div class="user-profile">
-                <div class="user-avatar">
-                  <el-avatar :size="64" :src="contentDetails.avatar || '/images/default-avatar.png'" />
-                </div>
-                <div class="user-info">
-                  <h3>{{ contentDetails.nickname || contentDetails.username || '未知用户' }}</h3>
-                  <p v-if="contentDetails.email">邮箱: {{ contentDetails.email }}</p>
-                  <p v-if="contentDetails.signature">个性签名: {{ contentDetails.signature }}</p>
-                  <p>注册时间: {{ formatDate(contentDetails.createdAt) }}</p>
-                </div>
-              </div>
-            </div>
-            
-            <!-- 消息内容 -->
-            <div v-else-if="currentReport.reportedContentType === 'MESSAGE'" class="message-content">
-              <div class="message-header">
-                <span>发送者: {{ contentDetails.senderName || contentDetails.nickname || `用户#${contentDetails.senderId}` }}</span>
-                <span>发送时间: {{ formatDate(contentDetails.createdAt) }}</span>
-              </div>
-              <div class="message-body">
-                <div v-if="contentDetails.messageType === 'TEXT' || !contentDetails.messageType" class="text-message">
-                  {{ contentDetails.content || contentDetails.text || contentDetails.message || '无内容' }}
-                </div>
-                <div v-else-if="contentDetails.messageType === 'IMAGE'" class="image-message">
-                  <el-image 
-                    :src="contentDetails.fileUrl || contentDetails.content" 
-                    :preview-src-list="[contentDetails.fileUrl || contentDetails.content]"
-                    fit="contain"
-                    style="max-width: 300px; max-height: 200px;"
-                  />
-                </div>
-                <div v-else class="other-message">
-                  <p>消息类型: {{ contentDetails.messageType }}</p>
-                  <p v-if="contentDetails.content || contentDetails.text">{{ contentDetails.content || contentDetails.text }}</p>
-                  <p v-if="contentDetails.fileUrl">
-                    <a :href="contentDetails.fileUrl" target="_blank">{{ contentDetails.fileName || '查看文件' }}</a>
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            <!-- 群组内容 -->
-            <div v-else-if="currentReport.reportedContentType === 'GROUP'" class="group-content">
-              <div class="group-header">
-                <h3>{{ contentDetails.name || `群组#${currentReport.reportedContentId}` }}</h3>
-                <p v-if="contentDetails.description">{{ contentDetails.description }}</p>
-                <p>成员数: {{ contentDetails.memberCount || '未知' }}</p>
-                <p>创建时间: {{ formatDate(contentDetails.createdAt) }}</p>
-              </div>
-            </div>
-            
-            <!-- 群组成员内容 -->
-            <div v-else-if="currentReport.reportedContentType === 'GROUP_MEMBER'" class="group-member-content">
-              <div class="member-info">
-                <el-avatar :size="50" :src="contentDetails.avatar || '/images/default-avatar.png'" />
-                <div class="member-details">
-                  <h3>{{ contentDetails.nickname || contentDetails.username || `用户#${currentReport.reportedContentId}` }}</h3>
-                  <p v-if="contentDetails.groupName">所在群组: {{ contentDetails.groupName }}</p>
-                  <p v-if="contentDetails.role">角色: {{ contentDetails.role }}</p>
-                  <p v-if="contentDetails.joinTime">加入时间: {{ formatDate(contentDetails.joinTime) }}</p>
-                </div>
-              </div>
-            </div>
-            
-            <!-- 动态内容 -->
-            <div v-else-if="currentReport.reportedContentType === 'MOMENT'" class="moment-content">
-              <div class="moment-header">
-                <div class="moment-user">
-                  <el-avatar :size="40" :src="contentDetails.avatar || contentDetails.userAvatar || '/images/default-avatar.png'" />
-                  <span>{{ contentDetails.nickname || contentDetails.username || contentDetails.authorName || `用户#${contentDetails.userId || contentDetails.authorId}` }}</span>
-                </div>
-                <span class="moment-time">{{ formatDate(contentDetails.createdAt || contentDetails.createTime) }}</span>
-              </div>
-              <div class="moment-body">
-                <p class="moment-text">{{ contentDetails.text || contentDetails.content || contentDetails.description || '无内容' }}</p>
-                
-                <!-- 处理媒体显示 -->
-                <div v-if="hasMomentMedia" class="moment-media">
-                  <template v-if="Array.isArray(contentDetails.mediaUrls)">
-                    <el-image 
-                      v-for="(url, index) in contentDetails.mediaUrls" 
-                      :key="index"
-                      :src="url"
-                      :preview-src-list="contentDetails.mediaUrls"
-                      fit="cover"
-                      class="moment-image"
-                    />
-                  </template>
-                  <template v-else-if="contentDetails.mediaUrl || contentDetails.imageUrl">
-                    <el-image 
-                      :src="contentDetails.mediaUrl || contentDetails.imageUrl"
-                      :preview-src-list="[contentDetails.mediaUrl || contentDetails.imageUrl]"
-                      fit="cover"
-                      class="moment-image"
-                    />
-                  </template>
-                  <template v-else-if="Array.isArray(contentDetails.images)">
-                    <el-image 
-                      v-for="(img, index) in contentDetails.images" 
-                      :key="index"
-                      :src="img.url || img"
-                      :preview-src-list="contentDetails.images.map(img => img.url || img)"
-                      fit="cover"
-                      class="moment-image"
-                    />
-                  </template>
-                </div>
-                
-                <div class="moment-stats">
-                  <span><i class="el-icon-thumb"></i> {{ contentDetails.likeCount || contentDetails.likes || 0 }}</span>
-                  <span><i class="el-icon-chat-dot-round"></i> {{ contentDetails.commentCount || contentDetails.comments || 0 }}</span>
-                </div>
-              </div>
-            </div>
-            
-            <!-- 其他类型内容 -->
-            <div v-else class="other-content">
-              <el-alert
-                type="info"
-                title="无法显示此类型内容的详情"
-                show-icon
-              />
-              <div v-if="contentDetails.content" class="raw-content">
-                <pre>{{ contentDetails.content }}</pre>
-              </div>
-            </div>
+            <ReportedContentViewer 
+              :content-type="currentReport.reportedContentType" 
+              :content-id="currentReport.reportedContentId"
+            />
           </div>
         </div>
         
@@ -339,11 +196,11 @@
         <div class="dialog-footer">
           <el-button @click="showReportDetails = false">关闭</el-button>
           <el-button 
-            v-if="currentReport && currentReport.status === 'pending'"
+            v-if="currentReport && (currentReport.status === 'pending' || currentReport.status === 'processing')"
             type="primary" 
             @click="handleReport(currentReport)"
           >
-            处理举报
+            {{ currentReport.status === 'pending' ? '处理举报' : '继续处理' }}
           </el-button>
         </div>
       </template>
@@ -352,27 +209,52 @@
     <!-- 处理举报对话框 -->
     <el-dialog
       v-model="showHandleReportDialog"
-      title="处理举报"
+      :title="currentReport && currentReport.status === 'processing' ? '继续处理举报' : '处理举报'"
       width="500px"
       destroy-on-close
     >
       <div v-if="currentReport" class="handle-report-form">
+        <!-- 添加处理流程提示 -->
+        <div class="process-tip">
+          <el-alert
+            :title="currentReport.status === 'pending' ? '处理流程: 待处理 → 处理中 → 已解决/已拒绝' : '处理流程: 处理中 → 已解决/已拒绝'"
+            type="info"
+            :closable="false"
+            show-icon
+          >
+            <template #default>
+              <p class="tip-content">
+                {{ currentReport.status === 'pending' 
+                   ? '您可以将此举报标记为"处理中"进行初步处理，或直接标记为"已解决/已拒绝"完成处理。' 
+                   : '此举报当前状态为"处理中"，您可以将其标记为"已解决"或"已拒绝"完成处理。' }}
+              </p>
+            </template>
+          </el-alert>
+        </div>
         <el-form :model="handleForm" label-width="100px">
           <el-form-item label="处理方式" required>
             <el-radio-group v-model="handleForm.action">
-              <el-radio label="process">标记处理中</el-radio>
+              <el-radio 
+                label="process" 
+                :disabled="currentReport && currentReport.status === 'processing'"
+              >标记处理中</el-radio>
               <el-radio label="resolve">解决举报</el-radio>
               <el-radio label="reject">拒绝举报</el-radio>
             </el-radio-group>
           </el-form-item>
           
           <el-form-item label="处理结果" required>
-            <el-input 
+            <el-select 
               v-model="handleForm.result" 
-              placeholder="请输入处理结果"
-              type="textarea"
-              :rows="2"
-            ></el-input>
+              placeholder="请选择处理结果"
+            >
+              <el-option 
+                v-for="option in resultOptions" 
+                :key="option.value" 
+                :label="option.label" 
+                :value="option.value"
+              ></el-option>
+            </el-select>
           </el-form-item>
           
           <el-form-item label="处理备注">
@@ -384,23 +266,77 @@
             ></el-input>
           </el-form-item>
           
-          <el-form-item label="对用户操作">
-            <el-select v-model="handleForm.userAction" placeholder="选择对用户的操作">
-              <el-option label="无操作" value="none"></el-option>
-              <el-option label="警告" value="warn"></el-option>
-              <el-option label="临时封禁" value="temporary_ban"></el-option>
-              <el-option label="永久封禁" value="permanent_ban"></el-option>
-            </el-select>
-          </el-form-item>
+          <!-- 根据内容类型显示不同的操作选项 -->
+          <template v-if="['MESSAGE', 'MOMENT'].includes(currentReport.reportedContentType)">
+            <el-form-item label="对用户操作">
+              <el-select v-model="handleForm.userAction" placeholder="选择对用户的操作">
+                <el-option label="无操作" value="none"></el-option>
+                <el-option label="临时封禁" value="temporary_ban"></el-option>
+                <el-option label="永久封禁" value="permanent_ban"></el-option>
+              </el-select>
+            </el-form-item>
+            
+            <el-form-item v-if="handleForm.userAction === 'temporary_ban'" label="封禁时长(小时)">
+              <el-input-number v-model="handleForm.banDuration" :min="1" :max="720" />
+            </el-form-item>
+            
+            <el-form-item label="对内容操作">
+              <el-select v-model="handleForm.contentAction" placeholder="选择对内容的操作">
+                <el-option label="无操作" value="none"></el-option>
+                <el-option label="删除内容" value="delete"></el-option>
+              </el-select>
+            </el-form-item>
+          </template>
           
-          <el-form-item label="对内容操作">
-            <el-select v-model="handleForm.contentAction" placeholder="选择对内容的操作">
-              <el-option label="无操作" value="none"></el-option>
-              <el-option label="删除内容" value="delete"></el-option>
-              <el-option label="隐藏内容" value="hide"></el-option>
-              <el-option label="标记为敏感" value="mark_as_sensitive"></el-option>
-            </el-select>
-          </el-form-item>
+          <template v-else-if="currentReport.reportedContentType === 'USER'">
+            <el-form-item label="对用户操作">
+              <el-select v-model="handleForm.userAction" placeholder="选择对用户的操作">
+                <el-option label="无操作" value="none"></el-option>
+                <el-option label="临时封禁" value="temporary_ban"></el-option>
+                <el-option label="永久封禁" value="permanent_ban"></el-option>
+              </el-select>
+            </el-form-item>
+            
+            <el-form-item v-if="handleForm.userAction === 'temporary_ban'" label="封禁时长(小时)">
+              <el-input-number v-model="handleForm.banDuration" :min="1" :max="720" />
+            </el-form-item>
+          </template>
+          
+          <template v-else-if="currentReport.reportedContentType === 'GROUP'">
+            <el-form-item label="对群组操作">
+              <el-select v-model="handleForm.contentAction" placeholder="选择对群组的操作">
+                <el-option label="无操作" value="none"></el-option>
+                <el-option label="临时封禁" value="temporary_ban"></el-option>
+                <el-option label="永久封禁" value="permanent_ban"></el-option>
+                <el-option label="解散群组" value="dissolve"></el-option>
+              </el-select>
+            </el-form-item>
+            
+            <el-form-item v-if="handleForm.contentAction === 'temporary_ban'" label="封禁时长(小时)">
+              <el-input-number v-model="handleForm.banDuration" :min="1" :max="720" />
+            </el-form-item>
+          </template>
+          
+          <template v-else-if="currentReport.reportedContentType === 'GROUP_MEMBER'">
+            <el-form-item label="对成员操作">
+              <el-select v-model="handleForm.userAction" placeholder="选择对成员的操作">
+                <el-option label="无操作" value="none"></el-option>
+                <el-option label="移出群组" value="remove_member"></el-option>
+                <el-option label="封禁用户" value="ban_user"></el-option>
+              </el-select>
+            </el-form-item>
+            
+            <el-form-item v-if="handleForm.userAction === 'ban_user'" label="封禁时长(小时)">
+              <el-input-number v-model="handleForm.banDuration" :min="1" :max="720" />
+            </el-form-item>
+            
+            <el-form-item label="对群组操作">
+              <el-select v-model="handleForm.contentAction" placeholder="选择对群组的操作">
+                <el-option label="无操作" value="none"></el-option>
+                <el-option label="封禁群组" value="ban_group"></el-option>
+              </el-select>
+            </el-form-item>
+          </template>
         </el-form>
       </div>
       <template #footer>
@@ -424,6 +360,7 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { reportApi } from '@/api/report';
+import ReportedContentViewer from '@/components/admin/ReportedContentViewer.vue';
 
 // 分页参数
 const currentPage = ref(1);
@@ -456,16 +393,24 @@ const showHandleReportDialog = ref(false);
 const submitting = ref(false);
 const handleForm = ref({
   action: 'process',
-  result: '',
+  result: '正在进行处理',
   note: '',
   userAction: 'none',
-  contentAction: 'none'
+  contentAction: 'none',
+  banDuration: 1 // 新增封禁时长
 });
 
-// 举报内容详情
-const contentDetails = ref(null);
-const contentLoading = ref(false);
-const contentError = ref(null);
+// 监听action变化，更新默认result
+watch(() => handleForm.value.action, (newAction) => {
+  // 根据新的处理方式设置对应的处理结果
+  if (newAction === 'process') {
+    handleForm.value.result = '正在进行处理';
+  } else if (newAction === 'resolve') {
+    handleForm.value.result = '举报内容违规，已处理';
+  } else if (newAction === 'reject') {
+    handleForm.value.result = '举报内容不违规，已驳回';
+  }
+});
 
 // 加载举报列表
 const loadReports = async () => {
@@ -512,18 +457,6 @@ const loadReportStats = async () => {
   }
 };
 
-// 判断动态是否有媒体内容
-const hasMomentMedia = computed(() => {
-  if (!contentDetails.value) return false;
-  
-  return (
-    (Array.isArray(contentDetails.value.mediaUrls) && contentDetails.value.mediaUrls.length > 0) ||
-    (contentDetails.value.mediaUrl) ||
-    (contentDetails.value.imageUrl) ||
-    (Array.isArray(contentDetails.value.images) && contentDetails.value.images.length > 0)
-  );
-});
-
 // 处理页码变化
 const handlePageChange = (page) => {
   currentPage.value = page;
@@ -537,9 +470,6 @@ const viewReportDetails = async (report) => {
     if (response.success) {
       currentReport.value = response.data;
       showReportDetails.value = true;
-      
-      // 加载举报内容详情
-      loadReportedContent();
     } else {
       ElMessage.error(response.message || '获取举报详情失败');
     }
@@ -549,61 +479,33 @@ const viewReportDetails = async (report) => {
   }
 };
 
-// 加载举报内容详情
-const loadReportedContent = async () => {
-  if (!currentReport.value) return;
-  
-  const contentType = currentReport.value.reportedContentType;
-  const contentId = currentReport.value.reportedContentId;
-  
-  contentLoading.value = true;
-  contentError.value = null;
-  contentDetails.value = null;
-  
-  try {
-    let response;
-    
-    switch (contentType) {
-      case 'USER':
-        response = await reportApi.getUserDetails(contentId);
-        break;
-      case 'MESSAGE':
-        response = await reportApi.getMessageDetails(contentId);
-        break;
-      case 'GROUP':
-        response = await reportApi.getGroupDetails(contentId);
-        break;
-      case 'MOMENT':
-        response = await reportApi.getMomentDetails(contentId);
-        break;
-      default:
-        // 尝试使用通用API
-        response = await reportApi.getReportedContentDetails(contentType, contentId);
-    }
-    
-    if (response.success && response.data) {
-      contentDetails.value = response.data;
-    } else {
-      contentError.value = response.message || '获取内容详情失败';
-    }
-  } catch (error) {
-    console.error('加载举报内容详情失败:', error);
-    contentError.value = error instanceof Error ? error.message : '加载内容详情失败，请稍后重试';
-  } finally {
-    contentLoading.value = false;
-  }
-};
-
 // 处理举报
 const handleReport = (report) => {
   currentReport.value = report;
+  
+  // 根据当前状态设置默认操作
+  if (report.status === 'pending') {
+    // 待处理状态，默认设置为处理中
   handleForm.value = {
     action: 'process',
-    result: '',
+    result: '正在进行处理',
     note: '',
     userAction: 'none',
-    contentAction: 'none'
+    contentAction: 'none',
+    banDuration: 1
   };
+  } else if (report.status === 'processing') {
+    // 处理中状态，默认设置为已解决
+    handleForm.value = {
+      action: 'resolve',
+      result: '举报内容违规，已处理',
+      note: '',
+      userAction: 'none',
+      contentAction: 'none',
+      banDuration: 1
+    };
+  }
+  
   showHandleReportDialog.value = true;
   showReportDetails.value = false; // 关闭详情对话框
 };
@@ -618,7 +520,7 @@ const submitHandleReport = async () => {
   }
   
   if (!handleForm.value.result) {
-    ElMessage.warning('请输入处理结果');
+    ElMessage.warning('请选择处理结果');
     return;
   }
   
@@ -630,7 +532,8 @@ const submitHandleReport = async () => {
       handleForm.value.result,
       handleForm.value.note,
       handleForm.value.userAction,
-      handleForm.value.contentAction
+      handleForm.value.contentAction,
+      handleForm.value.banDuration // 封禁时长参数
     );
     
     if (response.success) {
@@ -714,6 +617,24 @@ const formatDate = (dateString) => {
   const date = new Date(dateString);
   return date.toLocaleString();
 };
+
+// 处理结果选项
+const resultOptions = computed(() => {
+  const options = [];
+  if (handleForm.value.action === 'process') {
+    options.push({ label: '正在进行处理', value: '正在进行处理' });
+  } else if (handleForm.value.action === 'resolve') {
+    options.push({ label: '举报内容违规，已处理', value: '举报内容违规，已处理' });
+    options.push({ label: '内容已删除', value: '内容已删除' });
+    options.push({ label: '用户已封禁', value: '用户已封禁' });
+    options.push({ label: '群组已封禁', value: '群组已封禁' });
+    options.push({ label: '群组已解散', value: '群组已解散' });
+  } else if (handleForm.value.action === 'reject') {
+    options.push({ label: '举报内容不违规，已驳回', value: '举报内容不违规，已驳回' });
+    options.push({ label: '证据不足，无法处理', value: '证据不足，无法处理' });
+  }
+  return options;
+});
 
 // 监听筛选条件变化
 watch([statusFilter, contentTypeFilter], () => {
@@ -855,152 +776,25 @@ onMounted(() => {
   justify-content: flex-end;
 }
 
-.content-details {
+.reported-content-section {
   margin-top: 15px;
-  background-color: #f9f9f9;
-  border-radius: 4px;
-  padding: 15px;
 }
 
-.content-loading {
-  padding: 20px 0;
-}
-
-.content-error {
-  padding: 10px 0;
-}
-
-.mt-2 {
-  margin-top: 8px;
-}
-
-/* 用户内容样式 */
-.user-profile {
-  display: flex;
-  align-items: flex-start;
-  gap: 15px;
-}
-
-.user-info h3 {
-  margin-top: 0;
-  margin-bottom: 8px;
-}
-
-.user-info p {
-  margin: 5px 0;
-  color: #666;
-}
-
-/* 消息内容样式 */
-.message-header {
-  display: flex;
-  justify-content: space-between;
+.reported-content-section h4 {
+  font-size: 16px;
   margin-bottom: 10px;
-  color: #666;
+  color: #303133;
+  font-weight: 500;
+}
+
+/* 处理流程提示样式 */
+.process-tip {
+  margin-bottom: 15px;
+}
+
+.tip-content {
   font-size: 14px;
-}
-
-.message-body {
-  padding: 10px;
-  background-color: #fff;
-  border-radius: 4px;
-  border: 1px solid #ebeef5;
-}
-
-/* 群组内容样式 */
-.group-header h3 {
-  margin-top: 0;
-  margin-bottom: 8px;
-}
-
-.group-header p {
-  margin: 5px 0;
-  color: #666;
-}
-
-/* 群组成员样式 */
-.member-info {
-  display: flex;
-  align-items: flex-start;
-  gap: 15px;
-}
-
-.member-details h3 {
-  margin-top: 0;
-  margin-bottom: 8px;
-}
-
-.member-details p {
-  margin: 5px 0;
-  color: #666;
-}
-
-/* 动态内容样式 */
-.moment-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.moment-user {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.moment-time {
-  color: #999;
-  font-size: 13px;
-}
-
-.moment-body {
-  padding: 10px;
-  background-color: #fff;
-  border-radius: 4px;
-  border: 1px solid #ebeef5;
-}
-
-.moment-text {
-  margin-top: 0;
-  margin-bottom: 10px;
-  white-space: pre-wrap;
-}
-
-.moment-media {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-
-.moment-image {
-  width: 120px;
-  height: 120px;
-  object-fit: cover;
-  border-radius: 4px;
-}
-
-.moment-stats {
-  display: flex;
-  gap: 15px;
-  color: #666;
-  font-size: 14px;
-}
-
-/* 其他内容样式 */
-.raw-content {
-  margin-top: 10px;
-  max-height: 200px;
-  overflow-y: auto;
-  background-color: #f2f2f2;
-  padding: 10px;
-  border-radius: 4px;
-  font-family: monospace;
-}
-
-.raw-content pre {
-  margin: 0;
-  white-space: pre-wrap;
+  color: #606266;
+  line-height: 1.6;
 }
 </style> 

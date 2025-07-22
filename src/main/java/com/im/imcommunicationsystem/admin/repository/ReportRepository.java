@@ -64,6 +64,15 @@ public interface ReportRepository extends JpaRepository<Report, Long> {
     Page<Report> findByReportedContentType(String reportedContentType, Pageable pageable);
     
     /**
+     * 根据举报内容类型和内容ID查找举报
+     * 
+     * @param reportedContentType 举报内容类型
+     * @param reportedContentId 举报内容ID
+     * @return 举报列表
+     */
+    List<Report> findByReportedContentTypeAndReportedContentId(String reportedContentType, Long reportedContentId);
+    
+    /**
      * 统计指定状态的举报数量
      * 
      * @param status 举报状态

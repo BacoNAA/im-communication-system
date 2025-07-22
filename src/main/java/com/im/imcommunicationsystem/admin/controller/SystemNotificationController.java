@@ -161,8 +161,8 @@ public class SystemNotificationController {
                     log.error("记录创建通知日志失败: {}", e.getMessage(), e);
                     // 不抛出异常，继续流程
                 }
-                
-                return ResponseEntity.ok(ResponseUtils.success("通知创建成功", notification));
+        
+        return ResponseEntity.ok(ResponseUtils.success("通知创建成功", notification));
             } else {
                 // 创建返回null的异常情况
                 log.error("创建通知返回null");
@@ -230,8 +230,8 @@ public class SystemNotificationController {
                     log.error("记录更新通知日志失败: {}", e.getMessage(), e);
                     // 不抛出异常，继续流程
                 }
-                
-                return ResponseEntity.ok(ResponseUtils.success("通知更新成功", notification));
+        
+        return ResponseEntity.ok(ResponseUtils.success("通知更新成功", notification));
             } else {
                 // 更新返回null的异常情况
                 log.error("更新通知返回null: notificationId={}", notificationId);

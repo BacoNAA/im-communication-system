@@ -154,6 +154,42 @@ function getUserId(): number | null {
     }
   }
   
+  // 尝试从localStorage的adminInfo获取（管理员ID）
+  const adminInfoStr = localStorage.getItem('adminInfo');
+  if (adminInfoStr) {
+    try {
+      const adminInfo = JSON.parse(adminInfoStr);
+      if (adminInfo && adminInfo.id) {
+        const parsedId = typeof adminInfo.id === 'number' ? adminInfo.id : parseInt(adminInfo.id);
+        if (!isNaN(parsedId) && parsedId > 0) {
+          console.log('从localStorage.adminInfo获取到管理员ID:', parsedId);
+          localStorage.setItem('userId', String(parsedId));
+          return parsedId;
+        }
+      }
+    } catch (e) {
+      console.error('解析localStorage.adminInfo失败:', e);
+    }
+  }
+  
+  // 尝试从sessionStorage的adminInfo获取（管理员ID）
+  const sessionAdminInfoStr = sessionStorage.getItem('adminInfo');
+  if (sessionAdminInfoStr) {
+    try {
+      const adminInfo = JSON.parse(sessionAdminInfoStr);
+      if (adminInfo && adminInfo.id) {
+        const parsedId = typeof adminInfo.id === 'number' ? adminInfo.id : parseInt(adminInfo.id);
+        if (!isNaN(parsedId) && parsedId > 0) {
+          console.log('从sessionStorage.adminInfo获取到管理员ID:', parsedId);
+          sessionStorage.setItem('userId', String(parsedId));
+          return parsedId;
+        }
+      }
+    } catch (e) {
+      console.error('解析sessionStorage.adminInfo失败:', e);
+    }
+  }
+  
   // 尝试从localStorage的userInfo获取
   const userInfoStr = localStorage.getItem('userInfo');
   if (userInfoStr) {

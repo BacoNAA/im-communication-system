@@ -1,5 +1,67 @@
-import { api } from '@/api/request';
-import type { ApiResponse } from '@/types';
+import { api, type ApiResponse } from './request';
+
+// 管理员认证
+const getAdminToken = (): string | null => {
+    console.log('尝试获取管理员令牌...');
+    
+    // 尝试从多个可能的位置获取管理员令牌
+    const locations = [
+      { source: 'localStorage', key: 'adminToken' },
+      { source: 'sessionStorage', key: 'adminToken' },
+      { source: 'localStorage', key: 'accessToken' }, 
+      { source: 'sessionStorage', key: 'accessToken' },
+      { source: 'localStorage', key: 'token' },
+      { source: 'sessionStorage', key: 'token' },
+      { source: 'localStorage', key: 'auth_token' },
+      { source: 'sessionStorage', key: 'auth_token' }
+    ];
+    
+    // 检查所有可能的位置并记录日志
+    console.log('所有可能的令牌位置状态:');
+    locations.forEach(location => {
+        const value = location.source === 'localStorage' 
+            ? localStorage.getItem(location.key) 
+            : sessionStorage.getItem(location.key);
+            
+        console.log(`- ${location.source}.${location.key}: ${value ? '存在' : '不存在'} ${value ? `(长度: ${value.length})` : ''}`);
+    });
+    
+    for (const location of locations) {
+      const token = location.source === 'localStorage' 
+        ? localStorage.getItem(location.key) 
+        : sessionStorage.getItem(location.key);
+      
+      if (token) {
+        console.log(`获取到管理员令牌: 来源=${location.source}, 键=${location.key}, 前10位=${token.substring(0, 10)}...`);
+        
+        // 检查令牌是否为有效JWT格式
+        if (token.split('.').length === 3) {
+          console.log('令牌看起来是有效的JWT格式');
+          return token;
+        } else {
+          console.warn('获取到的令牌不是有效的JWT格式，尝试下一个位置');
+        }
+      }
+    }
+    
+    // 检查localStorage中的adminInfo
+    const adminInfo = localStorage.getItem('adminInfo') || sessionStorage.getItem('adminInfo');
+    if (adminInfo) {
+      console.log('找到adminInfo, 尝试提取令牌');
+      try {
+        const parsedInfo = JSON.parse(adminInfo);
+        if (parsedInfo.token) {
+          console.log(`从adminInfo中提取到令牌, 前10位=${parsedInfo.token.substring(0, 10)}...`);
+          return parsedInfo.token;
+        }
+      } catch (e) {
+        console.error('解析adminInfo失败:', e);
+      }
+    }
+    
+    console.warn('未找到管理员令牌');
+    return null;
+};
 
 /**
  * 创建举报请求接口
@@ -104,43 +166,6 @@ export interface ReportResponse {
 }
 
 /**
- * 举报内容详情接口
- */
-export interface ReportContentDetails {
-    // 通用字段
-    id: number;
-    content?: string;
-    createdAt?: string;
-    
-    // 用户相关字段
-    username?: string;
-    nickname?: string;
-    email?: string;
-    avatar?: string;
-    
-    // 消息相关字段
-    senderId?: number;
-    senderName?: string;
-    conversationId?: number;
-    messageType?: string;
-    
-    // 群组相关字段
-    name?: string;
-    description?: string;
-    memberCount?: number;
-    
-    // 动态相关字段
-    userId?: number;
-    text?: string;
-    mediaUrls?: string[];
-    likeCount?: number;
-    commentCount?: number;
-    
-    // 其他可能的字段
-    [key: string]: any;
-}
-
-/**
  * 举报API模块
  */
 export const reportApi = {
@@ -207,8 +232,8 @@ export const reportApi = {
         try {
             const request: CreateReportRequest = {
                 reportedContentType: 'GROUP_MEMBER',
-                reportedContentId: memberId,
-                reportedUserId: memberId,
+                reportedContentId: groupId, // 修改为使用群组ID，而不是成员ID
+                reportedUserId: memberId,   // 被举报用户ID保持不变
                 reason: reason
             };
             
@@ -266,6 +291,16 @@ export const reportApi = {
      */
     async getReportList(page: number = 0, size: number = 10, status?: string, contentType?: string): Promise<ApiResponse<Page<ReportResponse>>> {
         try {
+            // 获取管理员令牌
+            const token = getAdminToken();
+            if (!token) {
+                console.error('获取举报列表失败: 未找到管理员令牌');
+                throw new Error('未登录或登录已过期');
+            }
+            
+            // 构建请求头
+            const headers = { 'Authorization': `Bearer ${token}` };
+            
             // 构建URL参数
             const params = new URLSearchParams();
             params.append('page', String(page));
@@ -280,7 +315,7 @@ export const reportApi = {
             }
             
             console.log('获取举报列表:', { page, size, status, contentType });
-            const response = await api.get<ApiResponse<Page<ReportResponse>>>(`/admin/reports?${params.toString()}`);
+            const response = await api.get<ApiResponse<Page<ReportResponse>>>(`/admin/reports?${params.toString()}`, { headers });
             console.log('获取举报列表成功:', response);
             return response;
         } catch (error) {
@@ -297,12 +332,51 @@ export const reportApi = {
      */
     async getReportDetails(reportId: number): Promise<ApiResponse<ReportResponse>> {
         try {
+            // 获取管理员令牌
+            const token = getAdminToken();
+            if (!token) {
+                console.error('获取举报详情失败: 未找到管理员令牌');
+                throw new Error('未登录或登录已过期');
+            }
+            
+            // 构建请求头
+            const headers = { 'Authorization': `Bearer ${token}` };
+            
             console.log('获取举报详情:', reportId);
-            const response = await api.get<ApiResponse<ReportResponse>>(`/admin/reports/${reportId}`);
+            const response = await api.get<ApiResponse<ReportResponse>>(`/admin/reports/${reportId}`, { headers });
             console.log('获取举报详情成功:', response);
             return response;
         } catch (error) {
             console.error('获取举报详情失败:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * 获取被举报内容详情（仅管理员使用）
+     *
+     * @param contentType 内容类型 (USER, MESSAGE, GROUP, GROUP_MEMBER, MOMENT等)
+     * @param contentId 内容ID
+     * @returns 被举报内容的详细信息
+     */
+    async getReportedContentDetails(contentType: string, contentId: number): Promise<ApiResponse<any>> {
+        try {
+            // 获取管理员令牌
+            const token = getAdminToken();
+            if (!token) {
+                console.error('获取被举报内容详情失败: 未找到管理员令牌');
+                throw new Error('未登录或登录已过期');
+            }
+            
+            // 构建请求头
+            const headers = { 'Authorization': `Bearer ${token}` };
+            
+            console.log('获取被举报内容详情:', { contentType, contentId });
+            const response = await api.get<ApiResponse<any>>(`/admin/reports/content/${contentType}/${contentId}`, { headers });
+            console.log('获取被举报内容详情成功:', response);
+            return response;
+        } catch (error) {
+            console.error('获取被举报内容详情失败:', error);
             throw error;
         }
     },
@@ -316,21 +390,73 @@ export const reportApi = {
      * @param note 处理备注
      * @param userAction 对用户的操作
      * @param contentAction 对内容的操作
+     * @param banDuration 封禁时长(小时)，仅在临时封禁操作时使用
      * @returns 处理结果
      */
-    async handleReport(reportId: number, action: string, result: string, note?: string, userAction?: string, contentAction?: string): Promise<ApiResponse<ReportResponse>> {
+    async handleReport(reportId: number, action: string, result: string, note?: string, userAction?: string, contentAction?: string, banDuration?: number): Promise<ApiResponse<ReportResponse>> {
         try {
+            // 获取管理员令牌
+            const token = getAdminToken();
+            if (!token) {
+                console.error('处理举报失败: 未找到管理员令牌');
+                throw new Error('未登录或登录已过期');
+            }
+            
+            // 获取管理员ID
+            const adminInfo = localStorage.getItem('adminInfo') || sessionStorage.getItem('adminInfo');
+            let adminId: number | null = null;
+            
+            if (adminInfo) {
+                try {
+                    const parsedInfo = JSON.parse(adminInfo);
+                    if (typeof parsedInfo.id === 'number') {
+                        adminId = parsedInfo.id;
+                    } else if (typeof parsedInfo.id === 'string') {
+                        adminId = parseInt(parsedInfo.id, 10);
+                        if (isNaN(adminId)) {
+                            adminId = null;
+                        }
+                    }
+                } catch (e) {
+                    console.error('解析管理员信息失败:', e);
+                }
+            }
+            
+            if (!adminId) {
+                // 尝试从其他地方获取
+                const userId = localStorage.getItem('userId') || sessionStorage.getItem('userId');
+                if (userId) {
+                    adminId = parseInt(userId, 10);
+                }
+            }
+            
+            if (!adminId) {
+                console.error('处理举报失败: 未找到管理员ID');
+                throw new Error('未能获取管理员ID');
+            }
+            
+            // 构建请求头和请求体
+            const headers = { 'Authorization': `Bearer ${token}` };
+            
             const request = {
-                reportId,
+                // 移除reportId，因为已经在URL路径中包含
                 action,
                 result,
                 note,
                 userAction,
-                contentAction
+                contentAction,
+                banDuration
+                // adminId已移除，让后端从认证上下文中获取
             };
             
             console.log('处理举报:', request);
-            const response = await api.post<ApiResponse<ReportResponse>>(`/admin/reports/${reportId}/handle`, request);
+            
+            // 直接使用正确的URL路径，不添加adminId查询参数
+            const url = `/admin/reports/${reportId}/handle`;
+            
+            // 发送请求
+            const response = await api.post<ApiResponse<ReportResponse>>(url, request, { headers });
+            
             console.log('处理举报成功:', response);
             return response;
         } catch (error) {
@@ -346,126 +472,23 @@ export const reportApi = {
      */
     async getReportStatistics(): Promise<ApiResponse<any>> {
         try {
+            // 获取管理员令牌
+            const token = getAdminToken();
+            if (!token) {
+                console.error('获取举报统计信息失败: 未找到管理员令牌');
+                throw new Error('未登录或登录已过期');
+            }
+            
+            // 构建请求头
+            const headers = { 'Authorization': `Bearer ${token}` };
+            
             console.log('获取举报统计信息');
-            const response = await api.get<ApiResponse<any>>('/admin/reports/statistics');
+            const response = await api.get<ApiResponse<any>>('/admin/reports/statistics', { headers });
             console.log('获取举报统计信息成功:', response);
             return response;
         } catch (error) {
             console.error('获取举报统计信息失败:', error);
             throw error;
-        }
-    },
-    
-    /**
-     * 获取举报内容详情
-     *
-     * @param contentType 内容类型(USER, MESSAGE, GROUP, GROUP_MEMBER, MOMENT等)
-     * @param contentId 内容ID
-     * @returns 内容详情
-     */
-    async getReportedContentDetails(contentType: string, contentId: number): Promise<ApiResponse<ReportContentDetails>> {
-        try {
-            console.log(`获取被举报内容详情: ${contentType} #${contentId}`);
-            const response = await api.get<ApiResponse<ReportContentDetails>>(`/admin/reports/content/${contentType}/${contentId}`);
-            console.log('获取举报内容详情成功:', response);
-            return response;
-        } catch (error) {
-            console.error('获取举报内容详情失败:', error);
-            
-            // 构造一个通用的错误响应
-            return {
-                success: false,
-                message: error instanceof Error ? error.message : '获取举报内容详情失败',
-                data: {} as ReportContentDetails
-            };
-        }
-    },
-    
-    /**
-     * 获取消息详情
-     * 
-     * @param messageId 消息ID
-     * @returns 消息详情
-     */
-    async getMessageDetails(messageId: number): Promise<ApiResponse<any>> {
-        try {
-            console.log(`获取消息详情: #${messageId}`);
-            const response = await api.get<ApiResponse<any>>(`/messages/${messageId}`);
-            console.log('获取消息详情成功:', response);
-            return response;
-        } catch (error) {
-            console.error('获取消息详情失败:', error);
-            return {
-                success: false,
-                message: error instanceof Error ? error.message : '获取消息详情失败',
-                data: null
-            };
-        }
-    },
-    
-    /**
-     * 获取用户详情
-     * 
-     * @param userId 用户ID
-     * @returns 用户详情
-     */
-    async getUserDetails(userId: number): Promise<ApiResponse<any>> {
-        try {
-            console.log(`获取用户详情: #${userId}`);
-            const response = await api.get<ApiResponse<any>>(`/admin/users/${userId}`);
-            console.log('获取用户详情成功:', response);
-            return response;
-        } catch (error) {
-            console.error('获取用户详情失败:', error);
-            return {
-                success: false,
-                message: error instanceof Error ? error.message : '获取用户详情失败',
-                data: null
-            };
-        }
-    },
-    
-    /**
-     * 获取群组详情
-     * 
-     * @param groupId 群组ID
-     * @returns 群组详情
-     */
-    async getGroupDetails(groupId: number): Promise<ApiResponse<any>> {
-        try {
-            console.log(`获取群组详情: #${groupId}`);
-            const response = await api.get<ApiResponse<any>>(`/admin/groups/${groupId}`);
-            console.log('获取群组详情成功:', response);
-            return response;
-        } catch (error) {
-            console.error('获取群组详情失败:', error);
-            return {
-                success: false,
-                message: error instanceof Error ? error.message : '获取群组详情失败',
-                data: null
-            };
-        }
-    },
-    
-    /**
-     * 获取动态详情
-     * 
-     * @param momentId 动态ID
-     * @returns 动态详情
-     */
-    async getMomentDetails(momentId: number): Promise<ApiResponse<any>> {
-        try {
-            console.log(`获取动态详情: #${momentId}`);
-            const response = await api.get<ApiResponse<any>>(`/moments/${momentId}`);
-            console.log('获取动态详情成功:', response);
-            return response;
-        } catch (error) {
-            console.error('获取动态详情失败:', error);
-            return {
-                success: false,
-                message: error instanceof Error ? error.message : '获取动态详情失败',
-                data: null
-            };
         }
     }
 };

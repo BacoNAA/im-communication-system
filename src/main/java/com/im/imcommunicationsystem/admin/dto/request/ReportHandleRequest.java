@@ -20,8 +20,7 @@ public class ReportHandleRequest {
     /**
      * 要处理的举报ID
      */
-    @NotNull(message = "举报ID不能为空")
-    @Positive(message = "举报ID必须为正数")
+    // 移除必填验证，因为reportId会从URL路径中获取
     private Long reportId;
     
     /**
@@ -42,12 +41,17 @@ public class ReportHandleRequest {
     private String note;
     
     /**
-     * 对用户的操作（warn:警告, temporary_ban:临时封禁, permanent_ban:永久封禁, none:无）
+     * 对用户的操作（warn:警告, temporary_ban:临时封禁, permanent_ban:永久封禁, none:无, remove_member:移除群成员, ban_user:封禁用户）
      */
     private String userAction;
     
     /**
-     * 对内容的操作（delete:删除, hide:隐藏, mark_as_sensitive:标记敏感, none:无）
+     * 对内容的操作（delete:删除, hide:隐藏, mark_as_sensitive:标记敏感, none:无, dissolve:解散群组, ban_group:封禁群组）
      */
     private String contentAction;
+    
+    /**
+     * 封禁时长（小时），仅在临时封禁操作时使用
+     */
+    private Integer banDuration;
 } 
