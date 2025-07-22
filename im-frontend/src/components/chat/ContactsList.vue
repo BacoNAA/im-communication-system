@@ -56,8 +56,50 @@
            @click="handleUnblockContact">
         解除拉黑
       </div>
+      <div class="menu-item report" @click="handleReportContact">
+        举报联系人
+      </div>
       <div class="menu-item delete" @click="handleDeleteContact">
         删除联系人
+      </div>
+    </div>
+
+    <!-- 举报对话框 -->
+    <div v-if="showReportDialog" class="report-dialog-overlay" @click.self="cancelReport">
+      <div class="report-dialog">
+        <div class="report-dialog-header">
+          <h3>举报联系人</h3>
+          <button class="close-btn" @click="cancelReport">×</button>
+        </div>
+        <div class="report-dialog-body">
+          <div class="report-form">
+            <div class="form-group">
+              <label>举报原因</label>
+              <select v-model="reportReason" class="report-reason-select">
+                <option value="">请选择举报原因</option>
+                <option value="垃圾信息">垃圾信息</option>
+                <option value="色情内容">色情内容</option>
+                <option value="暴力内容">暴力内容</option>
+                <option value="诈骗信息">诈骗信息</option>
+                <option value="政治敏感">政治敏感</option>
+                <option value="侮辱谩骂">侮辱谩骂</option>
+                <option value="其他">其他</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>详细描述（选填）</label>
+              <textarea 
+                v-model="reportDescription" 
+                class="report-description"
+                placeholder="请描述具体情况，有助于我们更好地处理..."
+              ></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="report-dialog-footer">
+          <button class="cancel-btn" @click="cancelReport">取消</button>
+          <button class="submit-btn" @click="submitReport" :disabled="!reportReason">提交</button>
+        </div>
       </div>
     </div>
   </div>
@@ -68,6 +110,8 @@ import { ref, computed, onMounted, nextTick } from 'vue';
 import ContactItem from './ContactItem.vue';
 import { messageApi } from '@/api/message';
 import { contactApi } from '@/api/contact';
+import { reportApi } from '@/api/report';
+import { ElMessage } from 'element-plus';
 
 // 定义props
 const props = defineProps({
@@ -99,6 +143,11 @@ const error = ref<string | null>(null);
 const showMenu = ref(false);
 const menuPos = ref({ x: 0, y: 0 });
 const selectedContact = ref<any>(null);
+
+// 举报对话框相关
+const showReportDialog = ref(false);
+const reportReason = ref('');
+const reportDescription = ref('');
 
 // 计算属性：筛选联系人
 const filteredContacts = computed(() => {
@@ -445,6 +494,60 @@ const handleUnblockContact = async () => {
   }
 };
 
+// 举报联系人
+const handleReportContact = () => {
+  if (!selectedContact.value) return;
+  
+  showMenu.value = false; // 关闭菜单
+  showReportDialog.value = true;
+  reportReason.value = '';
+  reportDescription.value = '';
+};
+
+// 取消举报
+const cancelReport = () => {
+  showReportDialog.value = false;
+  reportReason.value = '';
+  reportDescription.value = '';
+};
+
+// 提交举报
+const submitReport = async () => {
+  if (!selectedContact.value) {
+    ElMessage.warning('无法获取联系人信息');
+    return;
+  }
+  
+  const contactId = ensureValidContactId(selectedContact.value.id);
+  if (!contactId) {
+    console.error('无法获取有效的联系人ID');
+    ElMessage.warning('无法获取有效的联系人ID');
+    return;
+  }
+
+  if (!reportReason.value) {
+    ElMessage.warning('请选择举报原因');
+    return;
+  }
+
+  try {
+    const response = await reportApi.reportContact(contactId, props.currentUserId, reportReason.value, reportDescription.value);
+    if (response.success) {
+      ElMessage.success('举报已提交，我们将尽快处理');
+      console.log('联系人已举报');
+    } else {
+      throw new Error(response.message || '举报提交失败');
+    }
+  } catch (err: any) {
+    error.value = err.message || '举报提交失败';
+    ElMessage.error(error.value);
+  } finally {
+    showReportDialog.value = false;
+    reportReason.value = '';
+    reportDescription.value = '';
+  }
+};
+
 // 删除联系人
 const handleDeleteContact = () => {
   if (!selectedContact.value) return;
@@ -618,5 +721,154 @@ defineExpose({
 
 .menu-item.success:hover {
   background-color: #e8f5e9;
+}
+
+.menu-item.report {
+  color: #9b59b6;
+}
+
+.menu-item.report:hover {
+  background-color: #f8f0fc;
+}
+
+.report-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.report-dialog {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  width: 90%;
+  max-width: 450px;
+  max-height: 90%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.report-dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #eee;
+  background-color: #f9f9f9;
+}
+
+.report-dialog-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #333;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #888;
+  cursor: pointer;
+  padding: 5px;
+  line-height: 1;
+}
+
+.close-btn:hover {
+  color: #555;
+}
+
+.report-dialog-body {
+  padding: 20px;
+  overflow-y: auto;
+  flex-grow: 1;
+}
+
+.report-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: #555;
+}
+
+.report-reason-select,
+.report-description {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.report-reason-select:focus,
+.report-description:focus {
+  border-color: #3498db;
+}
+
+.report-description {
+  min-height: 80px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.report-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px 20px;
+  border-top: 1px solid #eee;
+  background-color: #f9f9f9;
+}
+
+.cancel-btn,
+.submit-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.cancel-btn {
+  background-color: #e0e0e0;
+  color: #333;
+  margin-right: 10px;
+}
+
+.cancel-btn:hover {
+  background-color: #d5d5d5;
+}
+
+.submit-btn {
+  background-color: #3498db;
+  color: white;
+}
+
+.submit-btn:hover {
+  background-color: #2980b9;
+}
+
+.submit-btn:disabled {
+  background-color: #a0c4ff;
+  cursor: not-allowed;
+  color: #888;
 }
 </style> 

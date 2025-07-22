@@ -8,7 +8,7 @@
             type="text" 
             v-model="searchQuery" 
             placeholder="搜索用户ID、邮箱或昵称..." 
-            @input="handleSearch"
+            @keyup.enter="handleSearch"
           />
           <i class="fas fa-search search-icon"></i>
         </div>
@@ -16,7 +16,6 @@
           <select v-model="statusFilter" @change="applyFilters">
             <option value="all">所有状态</option>
             <option value="active">正常</option>
-            <option value="frozen">已冻结</option>
             <option value="banned">已封禁</option>
           </select>
         </div>
@@ -34,54 +33,39 @@
             <th>用户名</th>
             <th>邮箱</th>
             <th>注册时间</th>
-            <th>最后登录</th>
             <th>状态</th>
             <th>操作</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="user in displayedUsers" :key="user.id" :class="{ 'frozen': user.status === 'frozen', 'banned': user.status === 'banned' }">
+          <tr v-for="user in displayedUsers" :key="user.userId" :class="{ 'banned': user.status === 'banned' }">
             <td>
-              <input type="checkbox" v-model="selectedUsers" :value="user.id" />
+              <input type="checkbox" v-model="selectedUsers" :value="user.userId" />
             </td>
-            <td>{{ user.id }}</td>
+            <td>{{ user.userId }}</td>
             <td class="user-info">
               <div class="user-avatar">
                 <img :src="user.avatarUrl || '/images/default-avatar.png'" alt="用户头像" />
               </div>
-              <div>{{ user.username }}</div>
+              <div>{{ user.username || '未设置' }}</div>
             </td>
             <td>{{ user.email }}</td>
             <td>{{ formatDate(user.registeredAt) }}</td>
-            <td>{{ formatDate(user.lastLoginAt) }}</td>
             <td>
               <span :class="['status-badge', user.status]">
                 {{ getStatusText(user.status) }}
               </span>
+              <span v-if="user.status === 'banned' && user.freezeEndDate" class="end-date">
+                (至 {{ formatDate(user.freezeEndDate) }})
+              </span>
             </td>
             <td>
               <div class="action-buttons">
-                <button class="action-btn view" @click="viewUserDetails(user.id)" title="查看详情">
+                <button class="action-btn view" @click="viewUserDetails(user.userId)" title="查看详情">
                   <i class="fas fa-eye"></i>
                 </button>
                 <button 
                   v-if="user.status === 'active'" 
-                  class="action-btn freeze" 
-                  @click="showFreezeDialog(user)" 
-                  title="冻结账户"
-                >
-                  <i class="fas fa-snowflake"></i>
-                </button>
-                <button 
-                  v-if="user.status === 'frozen'" 
-                  class="action-btn unfreeze" 
-                  @click="unfreezeUser(user.id)" 
-                  title="解冻账户"
-                >
-                  <i class="fas fa-sun"></i>
-                </button>
-                <button 
-                  v-if="user.status !== 'banned'" 
                   class="action-btn ban" 
                   @click="showBanDialog(user)" 
                   title="封禁账户"
@@ -91,7 +75,7 @@
                 <button 
                   v-if="user.status === 'banned'" 
                   class="action-btn unban" 
-                  @click="unbanUser(user.id)" 
+                  @click="unbanUser(user.userId)" 
                   title="解除封禁"
                 >
                   <i class="fas fa-unlock"></i>
@@ -99,9 +83,14 @@
               </div>
             </td>
           </tr>
-          <tr v-if="displayedUsers.length === 0">
+          <tr v-if="isLoading">
+            <td colspan="8" class="empty-table loading">
+              <div class="loading-spinner"></div> 加载中...
+            </td>
+          </tr>
+          <tr v-else-if="displayedUsers.length === 0">
             <td colspan="8" class="empty-table">
-              {{ isLoading ? '加载中...' : '没有找到匹配的用户' }}
+              没有找到匹配的用户
             </td>
           </tr>
         </tbody>
@@ -111,7 +100,6 @@
     <div class="table-footer">
       <div class="bulk-actions" v-if="selectedUsers.length > 0">
         <span>已选择 {{ selectedUsers.length }} 个用户</span>
-        <button class="bulk-action-btn" @click="showBulkFreezeDialog">批量冻结</button>
         <button class="bulk-action-btn danger" @click="showBulkBanDialog">批量封禁</button>
       </div>
       
@@ -124,10 +112,10 @@
           <i class="fas fa-chevron-left"></i>
         </button>
         
-        <span class="page-info">{{ currentPage }} / {{ totalPages }}</span>
+        <span class="page-info">{{ currentPage }} / {{ totalPages || 1 }}</span>
         
         <button 
-          :disabled="currentPage === totalPages" 
+          :disabled="currentPage === totalPages || totalPages === 0" 
           @click="changePage(currentPage + 1)" 
           class="page-btn"
         >
@@ -136,45 +124,11 @@
       </div>
     </div>
     
-    <!-- 冻结用户对话框 -->
-    <div v-if="showFreeze" class="modal-overlay" @click="cancelFreeze">
-      <div class="modal-content" @click.stop>
-        <h2>冻结用户账户</h2>
-        <p>您正在冻结用户 <strong>{{ targetUser?.username }}</strong> 的账户</p>
-        
-        <div class="form-group">
-          <label for="freezeReason">冻结原因</label>
-          <textarea 
-            id="freezeReason" 
-            v-model="freezeReason" 
-            placeholder="请输入冻结原因..."
-            rows="3"
-          ></textarea>
-        </div>
-        
-        <div class="form-group">
-          <label for="freezeDuration">冻结时长</label>
-          <select id="freezeDuration" v-model="freezeDuration">
-            <option value="1">1天</option>
-            <option value="3">3天</option>
-            <option value="7">7天</option>
-            <option value="30">30天</option>
-            <option value="permanent">永久</option>
-          </select>
-        </div>
-        
-        <div class="modal-actions">
-          <button class="btn cancel" @click="cancelFreeze">取消</button>
-          <button class="btn confirm" @click="confirmFreeze">确认冻结</button>
-        </div>
-      </div>
-    </div>
-    
     <!-- 封禁用户对话框 -->
     <div v-if="showBan" class="modal-overlay" @click="cancelBan">
       <div class="modal-content" @click.stop>
         <h2>封禁用户账户</h2>
-        <p>您正在封禁用户 <strong>{{ targetUser?.username }}</strong> 的账户</p>
+        <p>您正在封禁用户 <strong>{{ targetUser?.username || targetUser?.email }}</strong> 的账户</p>
         <p class="warning-text">封禁后，该用户将无法登录系统，且所有内容将被隐藏</p>
         
         <div class="form-group">
@@ -185,6 +139,17 @@
             placeholder="请输入封禁原因..."
             rows="3"
           ></textarea>
+        </div>
+        
+        <div class="form-group">
+          <label for="banDuration">封禁时长</label>
+          <select id="banDuration" v-model="banDuration">
+            <option value="1">1天 (24小时)</option>
+            <option value="3">3天 (72小时)</option>
+            <option value="7">7天 (1周)</option>
+            <option value="30">30天 (1个月)</option>
+            <option value="permanent">永久封禁</option>
+          </select>
         </div>
         
         <div class="modal-actions">
@@ -199,117 +164,61 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import adminApi from '@/api/admin'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const router = useRouter()
 const searchQuery = ref('')
 const statusFilter = ref('all')
-const currentPage = ref(1)
+const currentPage = ref(0)
 const pageSize = ref(10)
+const totalPages = ref(0)
+const totalElements = ref(0)
 const isLoading = ref(false)
 
-// 模拟用户数据
-const users = ref([
-  {
-    id: 1001,
-    username: '张三',
-    email: 'zhangsan@example.com',
-    avatarUrl: null,
-    registeredAt: new Date('2025-01-15'),
-    lastLoginAt: new Date('2025-07-20'),
-    status: 'active'
-  },
-  {
-    id: 1002,
-    username: '李四',
-    email: 'lisi@example.com',
-    avatarUrl: null,
-    registeredAt: new Date('2025-02-20'),
-    lastLoginAt: new Date('2025-07-18'),
-    status: 'frozen'
-  },
-  {
-    id: 1003,
-    username: '王五',
-    email: 'wangwu@example.com',
-    avatarUrl: null,
-    registeredAt: new Date('2025-03-10'),
-    lastLoginAt: new Date('2025-07-15'),
-    status: 'banned'
-  },
-  {
-    id: 1004,
-    username: '赵六',
-    email: 'zhaoliu@example.com',
-    avatarUrl: null,
-    registeredAt: new Date('2025-04-05'),
-    lastLoginAt: new Date('2025-07-21'),
-    status: 'active'
-  }
-])
+// 用户数据
+const users = ref([])
 
 // 选择相关
 const selectedUsers = ref([])
 const selectAll = ref(false)
 
 // 对话框相关
-const showFreeze = ref(false)
 const showBan = ref(false)
 const targetUser = ref(null)
-const freezeReason = ref('')
-const freezeDuration = ref('7')
 const banReason = ref('')
-
-// 过滤后的用户列表
-const filteredUsers = computed(() => {
-  let result = [...users.value]
-  
-  // 应用搜索过滤
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase()
-    result = result.filter(user => 
-      user.id.toString().includes(query) || 
-      user.username.toLowerCase().includes(query) || 
-      user.email.toLowerCase().includes(query)
-    )
-  }
-  
-  // 应用状态过滤
-  if (statusFilter.value !== 'all') {
-    result = result.filter(user => user.status === statusFilter.value)
-  }
-  
-  return result
-})
+const banDuration = ref('7')
 
 // 当前页显示的用户
 const displayedUsers = computed(() => {
-  const startIndex = (currentPage.value - 1) * pageSize.value
-  const endIndex = startIndex + pageSize.value
-  return filteredUsers.value.slice(startIndex, endIndex)
-})
-
-// 总页数
-const totalPages = computed(() => {
-  return Math.max(1, Math.ceil(filteredUsers.value.length / pageSize.value))
+  return users.value;
 })
 
 // 格式化日期
-const formatDate = (date) => {
-  if (!date) return '未知'
+const formatDate = (dateString) => {
+  if (!dateString) return '未知';
+  
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '无效日期';
+    
   return new Intl.DateTimeFormat('zh-CN', {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
     hour: '2-digit',
     minute: '2-digit'
-  }).format(date)
+    }).format(date);
+  } catch (e) {
+    console.error('日期格式化错误:', e);
+    return '无效日期';
+  }
 }
 
 // 获取状态文本
 const getStatusText = (status) => {
   switch (status) {
     case 'active': return '正常'
-    case 'frozen': return '已冻结'
     case 'banned': return '已封禁'
     default: return '未知'
   }
@@ -317,18 +226,20 @@ const getStatusText = (status) => {
 
 // 处理搜索
 const handleSearch = () => {
-  currentPage.value = 1
+  currentPage.value = 0;
+  fetchUsers();
 }
 
 // 应用过滤器
 const applyFilters = () => {
-  currentPage.value = 1
+  currentPage.value = 0;
+  fetchUsers();
 }
 
 // 切换全选
 const toggleSelectAll = () => {
   if (selectAll.value) {
-    selectedUsers.value = displayedUsers.value.map(user => user.id)
+    selectedUsers.value = displayedUsers.value.map(user => user.userId)
   } else {
     selectedUsers.value = []
   }
@@ -336,8 +247,9 @@ const toggleSelectAll = () => {
 
 // 翻页
 const changePage = (page) => {
-  if (page >= 1 && page <= totalPages.value) {
-    currentPage.value = page
+  if (page >= 0 && (page < totalPages.value || totalPages.value === 0)) {
+    currentPage.value = page;
+    fetchUsers();
   }
 }
 
@@ -346,115 +258,139 @@ const viewUserDetails = (userId) => {
   router.push(`/admin/users/${userId}`)
 }
 
-// 显示冻结对话框
-const showFreezeDialog = (user) => {
-  targetUser.value = user
-  showFreeze.value = true
-}
-
-// 取消冻结
-const cancelFreeze = () => {
-  showFreeze.value = false
-  targetUser.value = null
-  freezeReason.value = ''
-  freezeDuration.value = '7'
-}
-
-// 确认冻结
-const confirmFreeze = () => {
-  if (!freezeReason.value.trim()) {
-    alert('请输入冻结原因')
-    return
-  }
-  
-  // 这里应该调用API冻结用户
-  console.log('冻结用户:', targetUser.value.id, '原因:', freezeReason.value, '时长:', freezeDuration.value)
-  
-  // 模拟API调用成功
-  const userIndex = users.value.findIndex(u => u.id === targetUser.value.id)
-  if (userIndex !== -1) {
-    users.value[userIndex].status = 'frozen'
-  }
-  
-  cancelFreeze()
-}
-
-// 解冻用户
-const unfreezeUser = (userId) => {
-  if (!confirm('确定要解冻此用户吗？')) return
-  
-  // 这里应该调用API解冻用户
-  console.log('解冻用户:', userId)
-  
-  // 模拟API调用成功
-  const userIndex = users.value.findIndex(u => u.id === userId)
-  if (userIndex !== -1) {
-    users.value[userIndex].status = 'active'
-  }
-}
-
 // 显示封禁对话框
 const showBanDialog = (user) => {
-  targetUser.value = user
-  showBan.value = true
+  targetUser.value = user;
+  showBan.value = true;
+  banReason.value = '';
+  banDuration.value = '7';
 }
 
 // 取消封禁
 const cancelBan = () => {
-  showBan.value = false
-  targetUser.value = null
-  banReason.value = ''
+  showBan.value = false;
+  targetUser.value = null;
+  banReason.value = '';
 }
 
 // 确认封禁
-const confirmBan = () => {
+const confirmBan = async () => {
   if (!banReason.value.trim()) {
-    alert('请输入封禁原因')
-    return
+    ElMessage.warning('请输入封禁原因');
+    return;
   }
   
-  // 这里应该调用API封禁用户
-  console.log('封禁用户:', targetUser.value.id, '原因:', banReason.value)
-  
-  // 模拟API调用成功
-  const userIndex = users.value.findIndex(u => u.id === targetUser.value.id)
-  if (userIndex !== -1) {
-    users.value[userIndex].status = 'banned'
+  try {
+    isLoading.value = true;
+    
+    let duration = null;
+    if (banDuration.value !== 'permanent') {
+      duration = parseInt(banDuration.value) * 24; // 转换为小时
+    }
+    
+    const response = await adminApi.manageUser(
+      targetUser.value.userId, 
+      'ban', 
+      banReason.value, 
+      duration
+    );
+    
+    if (response.code === 200) {
+      ElMessage.success('用户已被封禁');
+      fetchUsers();
+      showBan.value = false;
+      targetUser.value = null;
+    } else {
+      ElMessage.error(response.message || '封禁用户失败');
+    }
+  } catch (error) {
+    console.error('封禁用户失败:', error);
+    ElMessage.error('封禁用户失败，请稍后重试');
+  } finally {
+    isLoading.value = false;
   }
-  
-  cancelBan()
 }
 
 // 解除封禁
-const unbanUser = (userId) => {
-  if (!confirm('确定要解除此用户的封禁吗？')) return
-  
-  // 这里应该调用API解除封禁
-  console.log('解除封禁:', userId)
-  
-  // 模拟API调用成功
-  const userIndex = users.value.findIndex(u => u.id === userId)
-  if (userIndex !== -1) {
-    users.value[userIndex].status = 'active'
+const unbanUser = async (userId) => {
+  try {
+    const result = await ElMessageBox.confirm('确定要解除此用户的封禁吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    });
+    
+    isLoading.value = true;
+    
+    const response = await adminApi.manageUser(
+      userId,
+      'unban',
+      '管理员手动解除封禁'
+    );
+    
+    if (response.code === 200) {
+      ElMessage.success('用户已解除封禁');
+      fetchUsers();
+    } else {
+      ElMessage.error(response.message || '解除封禁失败');
   }
-}
-
-// 显示批量冻结对话框
-const showBulkFreezeDialog = () => {
-  // 实现批量冻结逻辑
-  alert(`准备批量冻结 ${selectedUsers.value.length} 个用户`)
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('解除封禁失败:', error);
+      ElMessage.error('解除封禁失败，请稍后重试');
+    }
+  } finally {
+    isLoading.value = false;
+  }
 }
 
 // 显示批量封禁对话框
 const showBulkBanDialog = () => {
-  // 实现批量封禁逻辑
-  alert(`准备批量封禁 ${selectedUsers.value.length} 个用户`)
+  ElMessage.info(`功能开发中：批量封禁 ${selectedUsers.value.length} 个用户`);
+}
+
+// 获取用户数据
+const fetchUsers = async () => {
+  isLoading.value = true;
+  selectedUsers.value = [];
+  selectAll.value = false;
+  
+  try {
+    const response = await adminApi.getUserList({
+      page: currentPage.value,
+      size: pageSize.value,
+      keyword: searchQuery.value || undefined,
+      status: statusFilter.value === 'all' ? undefined : statusFilter.value
+    });
+    
+    if (response.code === 200 && response.data) {
+      users.value = response.data.content || [];
+      totalElements.value = response.data.totalElements || 0;
+      totalPages.value = response.data.totalPages || 0;
+      
+      // 打印调试信息
+      console.log('用户数据:', users.value);
+      console.log('分页信息:', {
+        currentPage: currentPage.value,
+        totalPages: totalPages.value,
+        totalElements: totalElements.value
+      });
+    } else {
+      ElMessage.error(response.message || '获取用户列表失败');
+      users.value = [];
+    }
+  } catch (error) {
+    console.error('获取用户列表失败:', error);
+    ElMessage.error('获取用户列表失败，请稍后重试');
+    users.value = [];
+  } finally {
+    isLoading.value = false;
+  }
 }
 
 // 组件挂载时获取用户数据
 onMounted(() => {
-  // 这里应该调用API获取用户列表
-  // fetchUsers()
+  fetchUsers();
 })
 </script>
 
@@ -557,10 +493,6 @@ onMounted(() => {
   background-color: #f7fafc;
 }
 
-.user-table tr.frozen td {
-  background-color: #ebf8ff;
-}
-
 .user-table tr.banned td {
   background-color: #fff5f5;
 }
@@ -598,14 +530,15 @@ onMounted(() => {
   color: #2f855a;
 }
 
-.status-badge.frozen {
-  background-color: #bee3f8;
-  color: #2b6cb0;
-}
-
 .status-badge.banned {
   background-color: #fed7d7;
   color: #c53030;
+}
+
+.end-date {
+  font-size: 12px;
+  color: #718096;
+  margin-left: 6px;
 }
 
 .action-buttons {
@@ -636,16 +569,6 @@ onMounted(() => {
   color: white;
 }
 
-.action-btn.freeze:hover {
-  background-color: #3182ce;
-  color: white;
-}
-
-.action-btn.unfreeze:hover {
-  background-color: #ed8936;
-  color: white;
-}
-
 .action-btn.ban:hover {
   background-color: #e53e3e;
   color: white;
@@ -660,6 +583,26 @@ onMounted(() => {
   text-align: center;
   color: #a0aec0;
   padding: 40px;
+}
+
+.empty-table.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.loading-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #4299e1;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .table-footer {

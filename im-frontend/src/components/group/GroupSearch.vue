@@ -30,6 +30,7 @@
         v-for="group in searchResults"
         :key="group.id"
         class="group-item"
+        :class="{ 'banned': group.isBanned }"
         @click="viewGroupDetail(group)"
       >
         <el-avatar :size="50" :src="group.avatarUrl">
@@ -41,9 +42,14 @@
             <span>{{ group.memberCount }}人</span>
             <span v-if="group.isMember" class="group-status">已加入</span>
             <span v-else-if="group.hasPendingRequest" class="group-status pending">待审批</span>
+            <span v-else-if="group.isBanned" class="group-status banned">已封禁</span>
           </div>
           <div v-if="group.description" class="group-description">
             {{ truncateText(group.description, 50) }}
+          </div>
+          <div v-if="group.isBanned" class="banned-reason">
+            <span class="banned-icon">🚫</span>
+            <span class="banned-text">该群组已被封禁{{group.bannedReason ? '，原因：' + group.bannedReason : ''}}</span>
           </div>
         </div>
       </div>
@@ -66,6 +72,11 @@
       width="500px"
     >
       <div class="group-detail" v-if="selectedGroup">
+        <div v-if="selectedGroup.isBanned" class="banned-banner">
+          <span class="banned-icon">🚫</span>
+          <span class="banned-text">该群组已被封禁</span>
+        </div>
+
         <div class="group-header">
           <el-avatar :size="80" :src="selectedGroup.avatarUrl">
             {{ selectedGroup.name.substring(0, 1) }}
@@ -76,7 +87,13 @@
               <div><strong>群ID：</strong> {{ selectedGroup.id }}</div>
               <div><strong>成员数：</strong> {{ selectedGroup.memberCount }}人</div>
               <div><strong>群主：</strong> {{ selectedGroup.ownerName }}</div>
-              <div><strong>创建时间：</strong> {{ formatDate(selectedGroup.createdAt) }}</div>
+              <div><strong>创建时间：</strong> {{ safeFormatDate(selectedGroup.createdAt) }}</div>
+              <div v-if="selectedGroup.isBanned" class="banned-info">
+                <strong>封禁原因：</strong> {{ selectedGroup.bannedReason || '未提供' }}
+              </div>
+              <div v-if="selectedGroup.isBanned && selectedGroup.bannedUntil" class="banned-info">
+                <strong>封禁截止时间：</strong> {{ safeFormatDate(selectedGroup.bannedUntil) }}
+              </div>
             </div>
           </div>
         </div>
@@ -89,7 +106,7 @@
         <div class="group-actions">
           <el-button 
             type="primary" 
-            :disabled="selectedGroup.isMember || selectedGroup.hasPendingRequest"
+            :disabled="selectedGroup.isMember || selectedGroup.hasPendingRequest || selectedGroup.isBanned"
             @click="handleJoinGroup"
           >
             {{ joinButtonText }}
@@ -134,6 +151,23 @@ import { ElMessage } from 'element-plus';
 import { searchGroups, getSearchableGroupById, applyToJoinGroup } from '@/api/group';
 import { formatDate } from '@/utils/helpers';
 
+// 安全地格式化日期
+const safeFormatDate = (dateStr: string | number | Date | null | undefined): string => {
+  if (!dateStr) return '未知';
+  
+  try {
+    const date = new Date(dateStr);
+    // 检查是否是有效的日期对象
+    if (isNaN(date.getTime())) {
+      return '无效日期';
+    }
+    return formatDate(date, 'yyyy-MM-dd HH:mm');
+  } catch (e) {
+    console.error('日期格式化错误:', e, dateStr);
+    return '无效日期';
+  }
+};
+
 // 搜索状态
 const searchKeyword = ref('');
 const isSearching = ref(false);
@@ -161,6 +195,7 @@ const joinButtonText = computed(() => {
   if (!selectedGroup.value) return '加入群组';
   if (selectedGroup.value.isMember) return '已加入';
   if (selectedGroup.value.hasPendingRequest) return '已申请加入';
+  if (selectedGroup.value.isBanned) return '群组已封禁';
   return selectedGroup.value.requiresApproval ? '申请加入' : '加入群组';
 });
 
@@ -336,6 +371,12 @@ watch(() => searchKeyword.value, (newValue) => {
   background-color: #f5f7fa;
 }
 
+.group-item.banned {
+  background-color: #fde2e2; /* 浅红色背景 */
+  border-left: 4px solid #f56c6c; /* 红色边框 */
+  padding-left: 12px; /* 调整内边距 */
+}
+
 .group-info {
   margin-left: 12px;
   flex: 1;
@@ -367,12 +408,33 @@ watch(() => searchKeyword.value, (newValue) => {
   color: #e6a23c;
 }
 
+.group-status.banned {
+  color: #f56c6c; /* 红色 */
+}
+
 .group-description {
   font-size: 13px;
   color: #606266;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.banned-reason {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #f56c6c; /* 红色 */
+  display: flex;
+  align-items: center;
+}
+
+.banned-icon {
+  margin-right: 4px;
+}
+
+.banned-text {
+  display: inline-block;
+  word-break: break-all;
 }
 
 .pagination {
@@ -406,6 +468,25 @@ watch(() => searchKeyword.value, (newValue) => {
 
 .group-header .group-meta div {
   margin-bottom: 4px;
+}
+
+.banned-banner {
+  background-color: #fde2e2; /* 浅红色背景 */
+  color: #f56c6c; /* 红色文字 */
+  padding: 8px 12px;
+  margin-bottom: 20px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.banned-info {
+  font-size: 13px;
+  color: #909399;
+  margin-top: 8px;
 }
 
 .group-actions {

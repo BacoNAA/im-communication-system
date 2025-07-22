@@ -47,7 +47,7 @@
           </div>
           
           <div class="dropdown-footer">
-            <router-link to="/admin/notifications">查看全部</router-link>
+            <a href="#" @click.prevent="viewAllNotifications">查看全部</a>
           </div>
         </div>
       </div>
@@ -59,10 +59,10 @@
         </div>
         
         <div v-if="showProfileMenu" class="dropdown-menu profile-menu">
-          <router-link to="/admin/profile" class="dropdown-item">
+          <a href="#" @click.prevent="viewProfile" class="dropdown-item">
             <i class="fas fa-user"></i>
             <span>个人资料</span>
-          </router-link>
+          </a>
           <div class="dropdown-divider"></div>
           <button class="dropdown-item" @click="handleLogout">
             <i class="fas fa-sign-out-alt"></i>
@@ -74,9 +74,10 @@
   </header>
 </template>
 
-<script setup>
-import { ref } from 'vue'
+<script setup lang="ts">
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAdminAuth } from '@/composables/useAdminAuth'
 
 // 接收父组件传递的页面标题
 const props = defineProps({
@@ -87,12 +88,16 @@ const props = defineProps({
 })
 
 const router = useRouter()
+const { adminLogout, getAdminInfo } = useAdminAuth()
 const searchQuery = ref('')
 const showNotifications = ref(false)
 const showProfileMenu = ref(false)
 
-// 模拟数据
+// 管理员信息
 const adminName = ref('管理员')
+const adminInfo = ref<any>(null)
+
+// 模拟数据
 const unreadCount = ref(2)
 const notifications = ref([
   { 
@@ -114,6 +119,15 @@ const notifications = ref([
     read: true 
   }
 ])
+
+// 获取管理员信息
+onMounted(() => {
+  const info = getAdminInfo()
+  if (info) {
+    adminInfo.value = info
+    adminName.value = info.username || '管理员'
+  }
+})
 
 // 处理搜索
 const handleSearch = () => {
@@ -147,10 +161,22 @@ const markAllAsRead = () => {
   unreadCount.value = 0
 }
 
+// 查看所有通知
+const viewAllNotifications = () => {
+  showNotifications.value = false
+  // 这里可以实现跳转到通知页面的逻辑
+}
+
+// 查看个人资料
+const viewProfile = () => {
+  showProfileMenu.value = false
+  // 这里可以实现跳转到个人资料页面的逻辑
+}
+
 // 格式化时间
-const formatTime = (time) => {
+const formatTime = (time: Date) => {
   const now = new Date()
-  const diff = now - time
+  const diff = now.getTime() - time.getTime()
   
   if (diff < 3600000) { // 小于1小时
     return '刚刚'
@@ -162,18 +188,23 @@ const formatTime = (time) => {
 }
 
 // 处理退出登录
-const handleLogout = () => {
-  localStorage.removeItem('adminToken')
-  router.push('/admin/login')
+const handleLogout = async () => {
+  try {
+    await adminLogout()
+    router.push('/admin/login')
+  } catch (error) {
+    console.error('退出登录失败:', error)
+  }
 }
 
 // 点击外部关闭下拉菜单
-const handleClickOutside = (event) => {
-  if (showNotifications.value && !event.target.closest('.notification-dropdown')) {
+const handleClickOutside = (event: MouseEvent) => {
+  const target = event.target as HTMLElement
+  if (showNotifications.value && !target.closest('.notification-dropdown')) {
     showNotifications.value = false
   }
   
-  if (showProfileMenu.value && !event.target.closest('.admin-profile')) {
+  if (showProfileMenu.value && !target.closest('.admin-profile')) {
     showProfileMenu.value = false
   }
 }

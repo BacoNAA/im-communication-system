@@ -70,4 +70,19 @@ public class GroupSearchResponse {
      * 当前用户是否有待处理的加入请求
      */
     private Boolean hasPendingRequest;
+    
+    /**
+     * 群组是否被封禁
+     */
+    private Boolean isBanned;
+    
+    /**
+     * 封禁原因
+     */
+    private String bannedReason;
+    
+    /**
+     * 封禁截止时间
+     */
+    private LocalDateTime bannedUntil;
 } 

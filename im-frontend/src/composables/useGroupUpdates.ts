@@ -16,7 +16,8 @@ export type GroupUpdateType =
   | 'ANNOUNCEMENT_UPDATE'
   | 'ANNOUNCEMENT_DELETE'
   | 'ANNOUNCEMENT_PINNED'
-  | 'ANNOUNCEMENT_UNPINNED';
+  | 'ANNOUNCEMENT_UNPINNED'
+  | 'GROUP_DISSOLVED';
 
 // 群组更新事件
 export interface GroupUpdateEvent {

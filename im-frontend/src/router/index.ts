@@ -84,7 +84,27 @@ router.beforeEach((to, from, next) => {
   }
   
   const hasToken = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
-  const hasAdminToken = localStorage.getItem('adminToken');
+  
+  // 检查是否是管理员用户
+  const isAdmin = () => {
+    const adminInfoStr = localStorage.getItem('adminInfo') || sessionStorage.getItem('adminInfo');
+    if (adminInfoStr) {
+      try {
+        const adminInfo = JSON.parse(adminInfoStr);
+        if (!adminInfo || !adminInfo.role) return false;
+        
+        const role = adminInfo.role.toLowerCase();
+        return role.includes('admin') || role.includes('super_admin') || role.includes('moderator');
+      } catch (e) {
+        console.error('解析管理员信息失败:', e);
+        return false;
+      }
+    }
+    return false;
+  };
+  
+  // 使用函数检查是否有管理员权限
+  const hasAdminToken = hasToken && isAdmin();
   
   // 处理根路径访问
   if (to.path === '/') {

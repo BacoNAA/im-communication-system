@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 
 /**
@@ -191,6 +192,16 @@ public class AuthServiceImpl implements AuthService {
         return jwtUtils.generateRefreshToken(user.getId(), user.getEmail());
     }
 
+    /**
+     * 格式化封禁截止时间为可读字符串
+     * @param bannedUntil 封禁截止时间
+     * @return 格式化后的时间字符串
+     */
+    private String formatBannedUntilTime(LocalDateTime bannedUntil) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy年MM月dd日 HH:mm");
+        return bannedUntil.format(formatter);
+    }
+
     @Override
     @Transactional
     public AuthResponse loginByPassword(PasswordLoginRequest request) {
@@ -224,6 +235,34 @@ public class AuthServiceImpl implements AuthService {
             log.warn("用户 {} 尝试登录但账户已被锁定，剩余时间: {}", user.getEmail(), timeMessage);
             throw new AuthenticationException("ACCOUNT_LOCKED", 
                 String.format("账户已被锁定，请在 %s 后重试。如需立即解锁，请联系管理员。", timeMessage));
+        }
+
+        // 检查账户是否被封禁
+        if (Boolean.TRUE.equals(user.getIsBanned())) {
+            String reason = user.getBannedReason() != null ? user.getBannedReason() : "违反用户协议";
+            LocalDateTime bannedUntil = user.getBannedUntil();
+            
+            log.warn("用户 {} 尝试登录但账户已被封禁，原因: {}", user.getEmail(), reason);
+            
+            if (bannedUntil != null) {
+                // 临时封禁
+                if (bannedUntil.isAfter(LocalDateTime.now())) {
+                    String timeMessage = formatBannedUntilTime(bannedUntil);
+                    throw new AuthenticationException("ACCOUNT_BANNED_TEMP", 
+                        String.format("您的账户已被临时封禁，原因：%s。解封时间：%s", reason, timeMessage));
+                } else {
+                    // 封禁已过期，自动解除封禁
+                    user.setIsBanned(false);
+                    user.setBannedReason(null);
+                    user.setBannedUntil(null);
+                    userRepository.save(user);
+                    log.info("用户 {} 的封禁已过期，自动解除封禁", user.getEmail());
+                }
+            } else {
+                // 永久封禁
+                throw new AuthenticationException("ACCOUNT_BANNED_PERM", 
+                    String.format("您的账户已被永久封禁，原因：%s。如有疑问，请联系客服。", reason));
+            }
         }
 
         if (!passwordUtils.verifyPassword(request.getPassword(), user.getPasswordHash())) {
@@ -306,6 +345,34 @@ public class AuthServiceImpl implements AuthService {
         
         User user = userOptional.get();
         log.info("验证码验证成功: userId={}, email={}", user.getId(), user.getEmail());
+        
+        // 检查账户是否被封禁
+        if (Boolean.TRUE.equals(user.getIsBanned())) {
+            String reason = user.getBannedReason() != null ? user.getBannedReason() : "违反用户协议";
+            LocalDateTime bannedUntil = user.getBannedUntil();
+            
+            log.warn("用户 {} 尝试通过验证码登录但账户已被封禁，原因: {}", user.getEmail(), reason);
+            
+            if (bannedUntil != null) {
+                // 临时封禁
+                if (bannedUntil.isAfter(LocalDateTime.now())) {
+                    String timeMessage = formatBannedUntilTime(bannedUntil);
+                    throw new AuthenticationException("ACCOUNT_BANNED_TEMP", 
+                        String.format("您的账户已被临时封禁，原因：%s。解封时间：%s", reason, timeMessage));
+                } else {
+                    // 封禁已过期，自动解除封禁
+                    user.setIsBanned(false);
+                    user.setBannedReason(null);
+                    user.setBannedUntil(null);
+                    userRepository.save(user);
+                    log.info("用户 {} 的封禁已过期，自动解除封禁", user.getEmail());
+                }
+            } else {
+                // 永久封禁
+                throw new AuthenticationException("ACCOUNT_BANNED_PERM", 
+                    String.format("您的账户已被永久封禁，原因：%s。如有疑问，请联系客服。", reason));
+            }
+        }
         
         // 3. 记录登录设备
         if (StringUtils.hasText(request.getDeviceType())) {

@@ -9,18 +9,9 @@
         <!-- 使用组件切换替代router-view -->
         <admin-home-view v-if="activeMenu === 'dashboard'" />
         <user-management-view v-else-if="activeMenu === 'users'" />
-        <div v-else-if="activeMenu === 'groups'" class="placeholder-view">
-          <h2>群组管理</h2>
-          <p>群组管理功能正在开发中...</p>
-        </div>
-        <div v-else-if="activeMenu === 'reports'" class="placeholder-view">
-          <h2>举报处理</h2>
-          <p>举报处理功能正在开发中...</p>
-        </div>
-        <div v-else-if="activeMenu === 'notifications'" class="placeholder-view">
-          <h2>系统通知</h2>
-          <p>系统通知功能正在开发中...</p>
-        </div>
+        <group-management-view v-else-if="activeMenu === 'groups'" />
+        <report-management-view v-else-if="activeMenu === 'reports'" />
+        <system-notification-view v-else-if="activeMenu === 'notifications'" />
         <div v-else-if="activeMenu === 'settings'" class="placeholder-view">
           <h2>系统设置</h2>
           <p>系统设置功能正在开发中...</p>
@@ -36,6 +27,9 @@ import AdminSidebar from '@/components/admin/AdminSidebar.vue'
 import AdminHeader from '@/components/admin/AdminHeader.vue'
 import AdminHomeView from '@/views/admin/AdminHomeView.vue'
 import UserManagementView from '@/views/admin/UserManagementView.vue'
+import GroupManagementView from '@/views/admin/GroupManagementView.vue'
+import ReportManagementView from '@/views/admin/ReportManagementView.vue'
+import SystemNotificationView from '@/views/admin/SystemNotificationView.vue'
 
 const activeMenu = ref('dashboard')
 

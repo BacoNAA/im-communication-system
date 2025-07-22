@@ -1,6 +1,7 @@
 package com.im.imcommunicationsystem.admin.repository;
 
 import com.im.imcommunicationsystem.admin.entity.AdminUser;
+import com.im.imcommunicationsystem.admin.enums.AdminRole;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -34,7 +35,7 @@ public interface AdminUserRepository extends JpaRepository<AdminUser, Long> {
      * @param role 角色
      * @return 管理员用户列表
      */
-    java.util.List<AdminUser> findByRole(AdminUser.AdminRole role);
+    java.util.List<AdminUser> findByRole(AdminRole role);
     
     /**
      * 检查用户名是否已存在

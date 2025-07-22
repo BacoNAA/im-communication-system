@@ -122,6 +122,7 @@ import { messageApi } from '@/api/message';
 import ConversationItem from './ConversationItem.vue';
 import { getCurrentUserId } from '@/utils/helpers';
 import { useSharedWebSocket } from '@/composables/useWebSocket';
+import { ElMessage } from 'element-plus'; // Added ElMessage import
 
 // 定义props和事件
 const props = defineProps({
@@ -217,6 +218,10 @@ function handleWebSocketMessage(data: any) {
       case 'READ_STATUS_UPDATE':
         // 阅读状态更新
         handleReadStatusUpdate(data);
+        break;
+      case 'GROUP_UPDATE':
+        // 群组更新
+        handleGroupUpdate(data);
         break;
       default:
         // 其他消息类型，不处理
@@ -593,6 +598,15 @@ function handleMessageRecallForConversation(data: any) {
     }
   } catch (error) {
     console.error('处理消息撤回对会话列表的影响时出错:', error);
+  }
+}
+
+// 处理群组更新
+function handleGroupUpdate(data: any) {
+  if (data && data.data && data.data.updateType === 'GROUP_DISSOLVED') {
+    console.log('群组已解散，刷新会话列表');
+    loadConversations(); // 刷新会话列表
+    ElMessage.warning(`群组"${data.data.data?.groupName || ''}"已被解散`);
   }
 }
 

@@ -176,12 +176,20 @@ public class GroupController {
         }
         
         log.info("解散群组，用户ID: {}, 群组ID: {}", userId, groupId);
+        
+        try {
         boolean success = groupService.dissolveGroup(groupId, userId);
         
         if (success) {
+                log.info("成功解散群组: groupId={}", groupId);
             return ApiResponse.success();
         } else {
+                log.warn("解散群组失败，返回false: groupId={}", groupId);
             return ApiResponse.error(400, "解散群组失败");
+            }
+        } catch (Exception e) {
+            log.error("解散群组过程中发生异常: groupId={}, 错误信息: {}", groupId, e.getMessage(), e);
+            return ApiResponse.error(500, "解散群组失败: " + e.getMessage());
         }
     }
 

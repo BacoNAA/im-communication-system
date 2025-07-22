@@ -35,8 +35,15 @@ public class GroupAnnouncementServiceImpl implements GroupAnnouncementService {
     @Transactional
     public GroupAnnouncementResponse publishAnnouncement(Long groupId, PublishAnnouncementRequest request, Long authorId) {
         // 检查群组是否存在
-        if (groupService.getGroupEntityById(groupId) == null) {
+        com.im.imcommunicationsystem.group.entity.Group group = groupService.getGroupEntityById(groupId);
+        if (group == null) {
             throw new IllegalArgumentException("群组不存在");
+        }
+        
+        // 检查群组是否被封禁
+        if (Boolean.TRUE.equals(group.getIsBanned())) {
+            String reason = group.getBannedReason() != null ? "，原因：" + group.getBannedReason() : "";
+            throw new IllegalArgumentException("该群组已被封禁，无法发布公告" + reason);
         }
 
         // 创建公告实体
@@ -89,6 +96,13 @@ public class GroupAnnouncementServiceImpl implements GroupAnnouncementService {
     @Override
     @Transactional
     public GroupAnnouncementResponse updateAnnouncement(Long groupId, Long announcementId, PublishAnnouncementRequest request, Long operatorId) {
+        // 检查群组是否被封禁
+        com.im.imcommunicationsystem.group.entity.Group group = groupService.getGroupEntityById(groupId);
+        if (Boolean.TRUE.equals(group.getIsBanned())) {
+            String reason = group.getBannedReason() != null ? "，原因：" + group.getBannedReason() : "";
+            throw new IllegalArgumentException("该群组已被封禁，无法更新公告" + reason);
+        }
+        
         // 查找公告
         Optional<GroupAnnouncement> announcementOptional = announcementRepository.findById(announcementId);
         if (announcementOptional.isEmpty() || !announcementOptional.get().getGroupId().equals(groupId)) {
@@ -157,6 +171,13 @@ public class GroupAnnouncementServiceImpl implements GroupAnnouncementService {
     @Override
     @Transactional
     public boolean deleteAnnouncement(Long groupId, Long announcementId, Long operatorId) {
+        // 检查群组是否被封禁
+        com.im.imcommunicationsystem.group.entity.Group group = groupService.getGroupEntityById(groupId);
+        if (Boolean.TRUE.equals(group.getIsBanned())) {
+            String reason = group.getBannedReason() != null ? "，原因：" + group.getBannedReason() : "";
+            throw new IllegalArgumentException("该群组已被封禁，无法删除公告" + reason);
+        }
+        
         // 查找公告
         Optional<GroupAnnouncement> announcementOptional = announcementRepository.findById(announcementId);
         if (announcementOptional.isEmpty() || !announcementOptional.get().getGroupId().equals(groupId)) {

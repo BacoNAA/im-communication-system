@@ -116,15 +116,39 @@ public class GroupSearchController {
             return ApiResponse.error(401, "未能获取用户ID，请确保已登录");
         }
         
-        log.info("申请加入群组: groupId={}, userId={}", request.getGroupId(), userId);
+        log.info("申请加入群组: userId={}, groupId={}", userId, request.getGroupId());
         
         try {
+            // 获取群组信息
+            GroupSearchResponse groupInfo = groupSearchService.getGroupById(request.getGroupId(), userId);
+            
+            if (groupInfo == null) {
+                return ApiResponse.error(404, "群组不存在");
+            }
+            
+            // 检查群组是否被封禁
+            if (Boolean.TRUE.equals(groupInfo.getIsBanned())) {
+                String reason = groupInfo.getBannedReason() != null ? "，原因：" + groupInfo.getBannedReason() : "";
+                log.warn("用户 {} 尝试加入已封禁群组 {}{}", userId, groupInfo.getId(), reason);
+                return ApiResponse.error(403, "该群组已被封禁，无法加入" + reason);
+            }
+            
+            // 检查用户是否已经在群组中
+            if (Boolean.TRUE.equals(groupInfo.getIsMember())) {
+                return ApiResponse.error(409, "您已经是该群组成员");
+            }
+            
+            // 检查是否已有待处理的请求
+            if (Boolean.TRUE.equals(groupInfo.getHasPendingRequest())) {
+                return ApiResponse.error(409, "您已提交加入申请，请等待审批");
+            }
+            
             boolean success = groupJoinRequestService.applyToJoinGroup(request, userId);
             
             if (success) {
-                return ApiResponse.success("申请已发送，请等待管理员审批");
+                return ApiResponse.success("已成功提交加入申请");
             } else {
-                return ApiResponse.error(400, "申请加入群组失败");
+                return ApiResponse.error(500, "提交申请失败");
             }
         } catch (Exception e) {
             log.error("申请加入群组失败: {}", e.getMessage(), e);

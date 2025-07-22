@@ -128,6 +128,9 @@ public class GroupSearchServiceImpl implements GroupSearchService {
                 .createdAt(group.getCreatedAt())
                 .isMember(isMember)
                 .hasPendingRequest(hasPendingRequest)
+                .isBanned(group.getIsBanned())
+                .bannedReason(group.getBannedReason())
+                .bannedUntil(group.getBannedUntil())
                 .build();
     }
 } 

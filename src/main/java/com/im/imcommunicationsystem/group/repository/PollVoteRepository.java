@@ -2,9 +2,11 @@ package com.im.imcommunicationsystem.group.repository;
 
 import com.im.imcommunicationsystem.group.entity.PollVote;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -57,6 +59,22 @@ public interface PollVoteRepository extends JpaRepository<PollVote, Long> {
      * 删除投票的所有投票记录
      */
     void deleteByPollId(Long pollId);
+    
+    /**
+     * 使用原生SQL删除投票的所有投票记录(避免乐观锁冲突)
+     */
+    @Modifying
+    @Transactional
+    @Query(value = "DELETE FROM poll_votes WHERE poll_id = :pollId", nativeQuery = true)
+    int deleteByPollIdNative(@Param("pollId") Long pollId);
+    
+    /**
+     * 使用原生SQL删除指定群组的所有投票记录
+     */
+    @Modifying
+    @Transactional
+    @Query(value = "DELETE FROM poll_votes WHERE poll_id IN (SELECT id FROM polls WHERE group_id = :groupId)", nativeQuery = true)
+    int deleteAllByGroupId(@Param("groupId") Long groupId);
     
     /**
      * 查询用户对特定选项的投票

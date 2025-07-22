@@ -5,7 +5,11 @@ import com.im.imcommunicationsystem.group.enums.PollStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -45,4 +49,26 @@ public interface PollRepository extends JpaRepository<Poll, Long> {
      * 根据ID查找投票，并包含创建者ID和群组ID限制
      */
     Optional<Poll> findByIdAndGroupIdAndCreatorId(Long id, Long groupId, Long creatorId);
+    
+    /**
+     * 删除群组的所有投票
+     */
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM Poll p WHERE p.groupId = ?1")
+    void deleteByGroupId(Long groupId);
+    
+    /**
+     * 使用原生SQL删除群组的所有投票(避免乐观锁冲突)
+     */
+    @Modifying
+    @Transactional
+    @Query(value = "DELETE FROM polls WHERE group_id = :groupId", nativeQuery = true)
+    int deleteByGroupIdNative(@Param("groupId") Long groupId);
+    
+    /**
+     * 获取指定群组的所有投票ID
+     */
+    @Query("SELECT p.id FROM Poll p WHERE p.groupId = :groupId")
+    List<Long> findIdsByGroupId(@Param("groupId") Long groupId);
 } 

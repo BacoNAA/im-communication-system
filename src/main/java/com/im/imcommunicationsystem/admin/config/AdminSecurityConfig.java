@@ -1,5 +1,6 @@
 package com.im.imcommunicationsystem.admin.config;
 
+import com.im.imcommunicationsystem.common.filter.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,6 +19,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class AdminSecurityConfig {
 
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
     /**
      * 配置管理API端点的安全
      *
@@ -31,12 +34,15 @@ public class AdminSecurityConfig {
         http
             .securityMatcher("/api/admin/**")
             .authorizeHttpRequests(authorize -> authorize
-                .anyRequest().hasRole("ADMIN")
+                .requestMatchers("/api/admin/auth/login").permitAll() // 允许管理员登录接口的公开访问
+                .requestMatchers("/api/admin/auth/reset-password").permitAll() // 允许重置密码接口的公开访问（仅用于测试）
+                .anyRequest().hasAnyRole("ADMIN", "admin", "SUPER_ADMIN", "super_admin")
             )
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
-            .csrf(csrf -> csrf.disable());
+            .csrf(csrf -> csrf.disable())
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class); // 添加JWT过滤器
 
         return http.build();
     }

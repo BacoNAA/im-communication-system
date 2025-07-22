@@ -34,6 +34,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.Map;
 import java.util.HashMap;
+import com.im.imcommunicationsystem.group.entity.Group;
 
 /**
  * 群成员服务实现类
@@ -59,8 +60,12 @@ public class GroupMemberServiceImpl implements GroupMemberService {
             throw new BusinessException("没有权限添加成员");
         }
 
-        // 验证群组是否存在
-        groupService.getGroupEntityById(groupId);
+        // 验证群组是否存在并检查是否被封禁
+        Group group = groupService.getGroupEntityById(groupId);
+        if (Boolean.TRUE.equals(group.getIsBanned())) {
+            String reason = group.getBannedReason() != null ? "，原因：" + group.getBannedReason() : "";
+            throw new BusinessException("该群组已被封禁，无法添加成员" + reason);
+        }
 
         // 验证用户是否存在
         List<User> users = userRepository.findAllById(userIds);
@@ -140,10 +145,14 @@ public class GroupMemberServiceImpl implements GroupMemberService {
     @Override
     @Transactional
     public boolean removeMember(Long groupId, Long userId, Long operatorId) {
-        // 验证群组是否存在
-        groupService.getGroupEntityById(groupId);
+        // 获取群组实体并检查封禁状态
+        Group group = groupService.getGroupEntityById(groupId);
+        if (Boolean.TRUE.equals(group.getIsBanned())) {
+            String reason = group.getBannedReason() != null ? "，原因：" + group.getBannedReason() : "";
+            throw new BusinessException("该群组已被封禁，无法移除成员" + reason);
+        }
 
-        // 验证操作权限
+        // 验证操作者权限
         if (operatorId.equals(userId)) {
             // 自己退出群组
             if (groupService.isGroupOwner(groupId, userId)) {
@@ -224,12 +233,16 @@ public class GroupMemberServiceImpl implements GroupMemberService {
     @Override
     @Transactional
     public boolean setAdmin(Long groupId, Long userId, boolean isAdmin, Long operatorId) {
-        log.info("开始设置管理员: groupId={}, userId={}, isAdmin={}, operatorId={}", 
+        log.info("设置管理员: groupId={}, userId={}, isAdmin={}, operatorId={}", 
                 groupId, userId, isAdmin, operatorId);
         
         try {
-        // 验证群组是否存在
-        groupService.getGroupEntityById(groupId);
+            // 获取群组实体并检查封禁状态
+            Group group = groupService.getGroupEntityById(groupId);
+            if (Boolean.TRUE.equals(group.getIsBanned())) {
+                String reason = group.getBannedReason() != null ? "，原因：" + group.getBannedReason() : "";
+                throw new BusinessException("该群组已被封禁，无法设置管理员" + reason);
+            }
 
         // 验证操作者是否为群主
         if (!groupService.isGroupOwner(groupId, operatorId)) {
@@ -283,8 +296,12 @@ public class GroupMemberServiceImpl implements GroupMemberService {
                 groupId, userId, isMuted, minutes, operatorId);
         
         try {
-        // 验证群组是否存在
-        groupService.getGroupEntityById(groupId);
+            // 验证群组是否存在并检查封禁状态
+            Group group = groupService.getGroupEntityById(groupId);
+            if (Boolean.TRUE.equals(group.getIsBanned())) {
+                String reason = group.getBannedReason() != null ? "，原因：" + group.getBannedReason() : "";
+                throw new BusinessException("该群组已被封禁，无法设置禁言" + reason);
+            }
 
         // 验证操作权限
         if (!groupService.isGroupAdmin(groupId, operatorId)) {

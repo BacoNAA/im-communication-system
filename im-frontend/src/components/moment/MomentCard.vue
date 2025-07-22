@@ -12,12 +12,20 @@
         </div>
       </div>
       <el-dropdown v-if="canManage" trigger="click" @command="handleCommand">
-        <i class="el-icon-more" />
+        <div class="more-options-button">
+          <i class="more-icon">⋮</i>
+        </div>
         <template #dropdown>
           <el-dropdown-menu>
-            <el-dropdown-item command="edit" v-if="isOwner">编辑</el-dropdown-item>
-            <el-dropdown-item command="delete" v-if="isOwner">删除</el-dropdown-item>
-            <el-dropdown-item command="report" v-else>举报</el-dropdown-item>
+            <el-dropdown-item command="edit" v-if="isOwner">
+              <i class="menu-icon edit-icon">✏️</i> 编辑
+            </el-dropdown-item>
+            <el-dropdown-item command="delete" v-if="isOwner">
+              <i class="menu-icon delete-icon">🗑️</i> 删除
+            </el-dropdown-item>
+            <el-dropdown-item command="report" v-else>
+              <i class="menu-icon report-icon">🚩</i> 举报
+            </el-dropdown-item>
           </el-dropdown-menu>
         </template>
       </el-dropdown>
@@ -86,13 +94,51 @@
         <span class="action-text">评论 ({{ moment.commentCount || 0 }})</span>
       </el-button>
     </div>
+
+    <!-- 举报对话框 -->
+    <el-dialog
+      v-model="showReportDialog"
+      title="举报动态"
+      width="400px"
+      :close-on-click-modal="false"
+      append-to-body
+    >
+      <el-form>
+        <el-form-item label="举报原因" required>
+          <el-select v-model="reportReason" placeholder="请选择举报原因" style="width: 100%">
+            <el-option label="垃圾信息" value="SPAM"></el-option>
+            <el-option label="色情内容" value="PORNOGRAPHY"></el-option>
+            <el-option label="暴力或恐怖内容" value="VIOLENCE"></el-option>
+            <el-option label="诈骗信息" value="SCAM"></el-option>
+            <el-option label="侵犯隐私" value="PRIVACY"></el-option>
+            <el-option label="侮辱他人" value="INSULT"></el-option>
+            <el-option label="其他" value="OTHER"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="详细描述">
+          <el-input
+            v-model="reportDescription"
+            type="textarea"
+            rows="4"
+            placeholder="请描述具体情况（选填）"
+            maxlength="500"
+            show-word-limit
+          ></el-input>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="cancelReport">取消</el-button>
+        <el-button type="primary" @click="submitReport" :loading="reportSubmitting">提交</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, inject } from 'vue';
-import { ElAvatar, ElDropdown, ElDropdownMenu, ElDropdownItem, ElImage, ElButton } from 'element-plus';
+import { ElAvatar, ElDropdown, ElDropdownMenu, ElDropdownItem, ElImage, ElButton, ElDialog, ElForm, ElFormItem, ElSelect, ElOption, ElInput, ElMessage } from 'element-plus';
 import { userApi } from '@/api/user';
+import { reportApi } from '@/api/report';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/zh-cn';
@@ -120,6 +166,12 @@ const isOwner = computed(() => {
 const canManage = computed(() => {
   return true; // 所有用户都可以操作下拉菜单，只是选项不同
 });
+
+// 举报相关状态
+const showReportDialog = ref(false);
+const reportReason = ref('');
+const reportDescription = ref('');
+const reportSubmitting = ref(false);
 
 // 获取用户名首字母作为头像备用显示
 const getInitials = (name) => {
@@ -169,7 +221,50 @@ const handleCommand = (command) => {
       break;
     case 'report':
       // 举报动态
+      showReportDialog.value = true;
       break;
+  }
+};
+
+// 取消举报
+const cancelReport = () => {
+  showReportDialog.value = false;
+  reportReason.value = '';
+  reportDescription.value = '';
+};
+
+// 提交举报
+const submitReport = async () => {
+  if (!reportReason.value) {
+    ElMessage.warning('请选择举报原因');
+    return;
+  }
+  
+  try {
+    reportSubmitting.value = true;
+    console.log('提交举报动态，动态ID:', props.moment.id);
+    
+    const reportRequest = {
+      reportedContentType: 'MOMENT',
+      reportedContentId: props.moment.id,
+      reportedUserId: props.moment.userId,
+      reason: reportReason.value,
+      description: reportDescription.value || ''
+    };
+    
+    const response = await reportApi.submitReport(reportRequest);
+    
+    if (response.success) {
+      ElMessage.success('举报已提交，我们将尽快处理');
+      cancelReport();
+    } else {
+      ElMessage.error(response.message || '举报提交失败');
+    }
+  } catch (error) {
+    console.error('举报动态失败:', error);
+    ElMessage.error('举报提交失败，请稍后重试');
+  } finally {
+    reportSubmitting.value = false;
   }
 };
 </script>
@@ -310,5 +405,47 @@ const handleCommand = (command) => {
 
 .action-text {
   font-size: 14px;
+}
+
+/* 更多选项按钮样式 */
+.more-options-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  background-color: #f5f5f5;
+}
+
+.more-options-button:hover {
+  background-color: #e8e8e8;
+}
+
+.more-icon {
+  font-size: 20px;
+  font-weight: bold;
+  color: #666;
+  line-height: 1;
+}
+
+.menu-icon {
+  display: inline-block;
+  margin-right: 8px;
+  font-size: 16px;
+}
+
+.report-icon {
+  color: #ff4d4f;
+}
+
+.edit-icon {
+  color: #1890ff;
+}
+
+.delete-icon {
+  color: #ff7875;
 }
 </style> 

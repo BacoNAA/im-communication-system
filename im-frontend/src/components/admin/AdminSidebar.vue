@@ -94,9 +94,13 @@ const changeMenu = (menu) => {
 
 // 处理退出登录
 const handleLogout = () => {
-  // 这里应该调用登出API，清除登录状态
-  // 然后跳转到登录页面
-  localStorage.removeItem('adminToken') // 假设使用localStorage存储token
+  // 清除登录状态
+  localStorage.removeItem('accessToken')
+  sessionStorage.removeItem('accessToken')
+  localStorage.removeItem('adminInfo')
+  sessionStorage.removeItem('adminInfo')
+  
+  // 跳转到登录页面
   router.push('/admin/login')
 }
 </script>

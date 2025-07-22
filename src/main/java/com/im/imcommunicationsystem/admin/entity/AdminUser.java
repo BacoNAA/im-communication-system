@@ -1,5 +1,6 @@
 package com.im.imcommunicationsystem.admin.entity;
 
+import com.im.imcommunicationsystem.admin.enums.AdminRole;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -32,6 +33,9 @@ public class AdminUser {
     @Column(nullable = false, unique = true)
     private String email;
     
+    /**
+     * 管理员角色
+     */
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private AdminRole role;
@@ -46,16 +50,6 @@ public class AdminUser {
     
     @Column(name = "is_active", nullable = false)
     private Boolean isActive;
-    
-    /**
-     * 管理员角色枚举
-     */
-    public enum AdminRole {
-        SUPER_ADMIN,   // 超级管理员
-        ADMIN,         // 普通管理员
-        CONTENT_MODERATOR,  // 内容审核员
-        SUPPORT        // 客服支持
-    }
     
     @PrePersist
     protected void onCreate() {

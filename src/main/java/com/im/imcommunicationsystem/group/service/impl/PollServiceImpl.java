@@ -63,11 +63,16 @@ public class PollServiceImpl implements PollService {
     @Override
     @Transactional
     public PollResponse createPoll(Long groupId, Long userId, CreatePollRequest request) {
-        log.info("创建投票: groupId={}, userId={}, title={}", groupId, userId, request.getTitle());
+        log.info("创建群投票: groupId={}, userId={}, title={}", groupId, userId, request.getTitle());
         
-        // 验证群组是否存在
-        if (!groupRepository.existsById(groupId)) {
-            throw new BusinessException("群组不存在");
+        // 检查群组是否存在
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new BusinessException("群组不存在"));
+        
+        // 检查群组是否被封禁
+        if (Boolean.TRUE.equals(group.getIsBanned())) {
+            String reason = group.getBannedReason() != null ? "，原因：" + group.getBannedReason() : "";
+            throw new BusinessException("该群组已被封禁，无法创建投票" + reason);
         }
         
         // 验证用户是否为群组成员
@@ -357,6 +362,14 @@ public class PollServiceImpl implements PollService {
                 throw new BusinessException("投票不存在或已被删除");
             }
             
+            // 检查群组是否被封禁
+            Group group = groupRepository.findById(poll.getGroupId())
+                    .orElseThrow(() -> new BusinessException("群组不存在"));
+            if (Boolean.TRUE.equals(group.getIsBanned())) {
+                String reason = group.getBannedReason() != null ? "，原因：" + group.getBannedReason() : "";
+                throw new BusinessException("该群组已被封禁，无法参与投票" + reason);
+            }
+            
             // 检查是否过期，如果过期则自动更新状态
             if (checkAndUpdateExpiredPollStatus(poll)) {
                 throw new BusinessException("该投票已过期，无法参与");
@@ -496,6 +509,14 @@ public class PollServiceImpl implements PollService {
         // 验证用户权限
         if (!isCreatorOrAdmin(poll.getGroupId(), userId, poll.getCreatorId())) {
             throw new BusinessException("您没有权限结束此投票");
+        }
+        
+        // 检查群组是否被封禁
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new BusinessException("群组不存在"));
+        if (Boolean.TRUE.equals(group.getIsBanned())) {
+            String reason = group.getBannedReason() != null ? "，原因：" + group.getBannedReason() : "";
+            throw new BusinessException("该群组已被封禁，无法结束投票" + reason);
         }
         
         // 更新投票状态

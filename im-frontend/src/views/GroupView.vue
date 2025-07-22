@@ -33,6 +33,12 @@
               <el-button type="danger" @click="handleLeaveGroup" v-if="!isCurrentUserOwner">
                 退出群聊
               </el-button>
+              <el-button type="danger" @click="handleDissolveGroup" v-if="isCurrentUserOwner">
+                解散群聊
+              </el-button>
+              <el-button type="warning" @click="handleReportGroup" v-if="!isCurrentUserOwner">
+                举报群组
+              </el-button>
             </div>
           </div>
 
@@ -50,6 +56,56 @@
               @update:success="handleUpdateSuccess"
               @cancel="showEditForm = false"
             />
+          </el-dialog>
+          
+          <!-- 举报群组对话框 -->
+          <el-dialog
+            v-model="showReportGroupDialog"
+            title="举报群组"
+            width="500px"
+            destroy-on-close
+          >
+            <div class="report-form">
+              <div class="report-group-info" v-if="currentGroup">
+                <div class="report-group-avatar">
+                  <el-avatar :size="50">G</el-avatar>
+                </div>
+                <div class="report-group-details">
+                  <h3>{{ currentGroup.name }}</h3>
+                  <p>群ID: {{ activeGroupId }}</p>
+                </div>
+              </div>
+              
+              <el-form :model="reportGroupForm" label-width="80px">
+                <el-form-item label="举报原因" required>
+                  <el-select v-model="reportGroupForm.reason" placeholder="请选择举报原因" style="width: 100%">
+                    <el-option label="垃圾信息" value="垃圾信息"></el-option>
+                    <el-option label="色情内容" value="色情内容"></el-option>
+                    <el-option label="暴力内容" value="暴力内容"></el-option>
+                    <el-option label="诈骗信息" value="诈骗信息"></el-option>
+                    <el-option label="政治敏感" value="政治敏感"></el-option>
+                    <el-option label="侮辱谩骂" value="侮辱谩骂"></el-option>
+                    <el-option label="其他" value="其他"></el-option>
+                  </el-select>
+                </el-form-item>
+                <el-form-item label="详细描述">
+                  <el-input
+                    v-model="reportGroupForm.description"
+                    type="textarea"
+                    :rows="4"
+                    placeholder="请描述具体情况，有助于我们更好地处理..."
+                  ></el-input>
+                </el-form-item>
+              </el-form>
+            </div>
+            <template #footer>
+              <div class="dialog-footer">
+                <el-button @click="showReportGroupDialog = false">取消</el-button>
+                <el-button type="primary" @click="submitReportGroup" :disabled="!reportGroupForm.reason" :loading="submittingReport">
+                  提交
+                </el-button>
+              </div>
+            </template>
           </el-dialog>
 
           <el-tabs v-model="activeTab" class="group-tabs">
@@ -201,6 +257,16 @@
                             </el-dropdown-menu>
                           </template>
                         </el-dropdown>
+                        
+                        <!-- 添加举报成员按钮 -->
+                        <el-button
+                          v-if="scope.row.userId !== currentUserId"
+                          type="warning"
+                          size="small"
+                          @click="handleReportMember(scope.row)"
+                        >
+                          举报
+                        </el-button>
                       </div>
                     </template>
                   </el-table-column>
@@ -369,8 +435,8 @@
               <div class="group-polls-container">
                 <GroupPolls 
                   :groupId="activeGroupId ? Number(activeGroupId) : 0"
-                  :isGroupOwner="currentUserRole === 'owner'"
-                  :isGroupAdmin="currentUserRole === 'admin'"
+                  :isGroupOwner="isCurrentUserOwner"
+                  :isGroupAdmin="isCurrentUserAdmin"
                 />
               </div>
             </el-tab-pane>
@@ -544,6 +610,58 @@
         </div>
       </template>
     </el-dialog>
+    
+    <!-- 举报成员对话框 -->
+    <el-dialog
+      v-model="showReportMemberDialog"
+      title="举报群成员"
+      width="500px"
+      destroy-on-close
+    >
+      <div class="report-form">
+        <div class="report-member-info" v-if="memberToReport">
+          <div class="report-member-avatar">
+            <el-avatar :size="50" :src="memberToReport.avatarUrl">
+              {{ memberToReport.nickname?.substring(0, 1) || memberToReport.username?.substring(0, 1) }}
+            </el-avatar>
+          </div>
+          <div class="report-member-details">
+            <h3>{{ memberToReport.nickname || memberToReport.username }}</h3>
+            <p>用户ID: {{ memberToReport.userId }}</p>
+          </div>
+        </div>
+        
+        <el-form :model="reportMemberForm" label-width="80px">
+          <el-form-item label="举报原因" required>
+            <el-select v-model="reportMemberForm.reason" placeholder="请选择举报原因" style="width: 100%">
+              <el-option label="垃圾信息" value="垃圾信息"></el-option>
+              <el-option label="色情内容" value="色情内容"></el-option>
+              <el-option label="暴力内容" value="暴力内容"></el-option>
+              <el-option label="诈骗信息" value="诈骗信息"></el-option>
+              <el-option label="政治敏感" value="政治敏感"></el-option>
+              <el-option label="侮辱谩骂" value="侮辱谩骂"></el-option>
+              <el-option label="其他" value="其他"></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item label="详细描述">
+            <el-input
+              v-model="reportMemberForm.description"
+              type="textarea"
+              :rows="4"
+              placeholder="请描述具体情况，有助于我们更好地处理..."
+            ></el-input>
+          </el-form-item>
+        </el-form>
+      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="showReportMemberDialog = false">取消</el-button>
+          <el-button type="primary" @click="submitReportMember" :disabled="!reportMemberForm.reason" :loading="submittingReport">
+            提交
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -557,6 +675,7 @@ import GroupEditForm from '@/components/group/GroupEditForm.vue';
 import GroupSearch from '@/components/group/GroupSearch.vue'; // 导入群组搜索组件
 import GroupJoinRequests from '@/components/group/GroupJoinRequests.vue'; // 导入群组加入请求组件
 import GroupPolls from '@/components/group/GroupPolls.vue'; // 导入群组投票组件
+import { reportApi } from '@/api/report'; // 导入举报API
 import { 
   getGroupById, 
   getGroupMembers, 
@@ -660,6 +779,22 @@ export default {
       pendingRequestCount.value = count;
     };
 
+    // 举报群组相关变量
+    const showReportGroupDialog = ref(false);
+    const reportGroupForm = ref({
+      reason: '',
+      description: ''
+    });
+    const submittingReport = ref(false);
+    
+    // 举报成员相关变量
+    const showReportMemberDialog = ref(false);
+    const memberToReport = ref<GroupMember | null>(null);
+    const reportMemberForm = ref({
+      reason: '',
+      description: ''
+    });
+
     // 计算属性：成员头像URL（确保不为undefined）
     const memberAvatarUrl = computed(() => {
       return memberToMute.value?.avatarUrl || '';
@@ -684,8 +819,8 @@ export default {
           
           // 刷新成员列表
           loadMembers();
-        } else if (event.updateType === 'DELETE') {
-          ElMessage.warning('该群组已被解散');
+        } else if (event.updateType === 'DELETE' || event.updateType === 'GROUP_DISSOLVED') {
+          ElMessage.warning(event.updateType === 'GROUP_DISSOLVED' ? '该群组已被群主解散' : '该群组已被删除');
           router.push('/groups');
         } else if (event.updateType === 'MEMBER_JOIN' || event.updateType === 'MEMBER_LEAVE' || event.updateType === 'MEMBER_REMOVED') {
           // 刷新成员列表
@@ -916,20 +1051,25 @@ export default {
           type: 'warning'
         });
         
-        // const response = await dissolveGroup(activeGroupId.value); // 此函数已移除
-        // if (response.code === 200) {
-        //   ElMessage.success('群组已解散');
-        //   activeGroupId.value = null;
-        //   members.value = [];
-        // } else {
-        //   ElMessage.error(response.message || '解散群组失败');
-        // }
-        ElMessage.warning('解散群组功能待实现'); // 暂时禁用
+        loading.value = true;
+        const response = await dissolveGroup(activeGroupId.value);
+        if (response.code === 200) {
+          ElMessage.success('群组已解散');
+          // 重置状态
+          activeGroupId.value = null;
+          members.value = [];
+          // 返回群组列表
+          router.push('/groups');
+        } else {
+          ElMessage.error(response.message || '解散群组失败');
+        }
       } catch (error) {
         if (error !== 'cancel') {
           console.error('解散群组失败:', error);
           ElMessage.error('解散群组失败，请稍后重试');
         }
+      } finally {
+        loading.value = false;
       }
     };
 
@@ -1120,6 +1260,11 @@ export default {
       if (currentMember.role === 'OWNER' || currentMember.role === 'owner') return 'owner';
       if (currentMember.role === 'ADMIN' || currentMember.role === 'admin') return 'admin';
       return 'member';
+    });
+
+    // 检查当前用户是否为管理员
+    const isCurrentUserAdmin = computed(() => {
+      return currentUserRole.value === 'admin';
     });
 
     // 检查当前用户是否为群主
@@ -1604,6 +1749,100 @@ export default {
       }
     };
 
+    // 处理举报群组
+    const handleReportGroup = () => {
+      if (!activeGroupId.value) return;
+      reportGroupForm.value = { reason: '', description: '' };
+      showReportGroupDialog.value = true;
+    };
+
+    // 提交举报群组
+    const submitReportGroup = async () => {
+      if (!activeGroupId.value) {
+        ElMessage.warning('无法获取群组信息');
+        return;
+      }
+      
+      if (!reportGroupForm.value.reason) {
+        ElMessage.warning('请选择举报原因');
+        return;
+      }
+
+      submittingReport.value = true;
+      try {
+        const response = await reportApi.reportGroup(
+          Number(activeGroupId.value), 
+          Number(currentUserId.value),
+          reportGroupForm.value.reason,
+          reportGroupForm.value.description || undefined
+        );
+        
+        if (response.success) {
+          ElMessage.success('群组举报成功，感谢您的反馈！');
+          showReportGroupDialog.value = false;
+          reportGroupForm.value = { reason: '', description: '' };
+        } else {
+          ElMessage.error(response.message || '群组举报失败');
+        }
+      } catch (error: any) {
+        let errorMessage = '群组举报失败，请稍后重试';
+        if (error && error.message) {
+          errorMessage = error.message;
+        }
+        ElMessage.error(errorMessage);
+      } finally {
+        submittingReport.value = false;
+      }
+    };
+    
+    // 处理举报成员
+    const handleReportMember = (member: GroupMember) => {
+      memberToReport.value = member;
+      reportMemberForm.value = { reason: '', description: '' };
+      showReportMemberDialog.value = true;
+    };
+    
+    // 提交举报成员
+    const submitReportMember = async () => {
+      if (!activeGroupId.value || !memberToReport.value) {
+        ElMessage.warning('无法获取成员信息');
+        return;
+      }
+      
+      if (!reportMemberForm.value.reason) {
+        ElMessage.warning('请选择举报原因');
+        return;
+      }
+
+      submittingReport.value = true;
+      try {
+        const response = await reportApi.reportGroupMember(
+          memberToReport.value.userId, 
+          Number(activeGroupId.value),
+          Number(currentUserId.value),
+          reportMemberForm.value.reason,
+          reportMemberForm.value.description || undefined
+        );
+        
+        if (response.success) {
+          ElMessage.success('成员举报成功，感谢您的反馈！');
+          showReportMemberDialog.value = false;
+          memberToReport.value = null;
+          reportMemberForm.value = { reason: '', description: '' };
+        } else {
+          ElMessage.error(response.message || '成员举报失败');
+        }
+      } catch (error: any) {
+        let errorMessage = '成员举报失败，请稍后重试';
+        if (error && error.message) {
+          errorMessage = error.message;
+        }
+        ElMessage.error(errorMessage);
+      } finally {
+        submittingReport.value = false;
+      }
+    };
+
     return {
       activeGroupId,
       members,
@@ -1614,6 +1853,7 @@ export default {
       searchKeyword,
       currentUserId,
       isCurrentUserOwnerOrAdmin,
+      isCurrentUserAdmin,
       activeTab,
       currentGroup,
       handlePageChange,
@@ -1674,7 +1914,17 @@ export default {
       loadAnnouncements,
       pendingRequestCount,
       updateRequestCount,
-      handleLeaveGroup
+      handleLeaveGroup,
+      showReportGroupDialog,
+      reportGroupForm,
+      submittingReport,
+      handleReportGroup,
+      submitReportGroup,
+      showReportMemberDialog,
+      memberToReport,
+      reportMemberForm,
+      handleReportMember,
+      submitReportMember
     };
   }
 };
@@ -1967,5 +2217,74 @@ export default {
 
 .group-polls-container {
   height: 100%;
+}
+
+/* 举报群组对话框样式 */
+.report-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+}
+
+.report-group-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px;
+  border-radius: 8px;
+  background-color: #f5f7fa;
+}
+
+.report-group-avatar {
+  flex-shrink: 0;
+}
+
+.report-group-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.report-group-details h3 {
+  margin: 0 0 5px 0;
+  font-size: 16px;
+  color: #303133;
+}
+
+.report-group-details p {
+  margin: 0;
+  font-size: 14px;
+  color: #909399;
+}
+
+/* 举报成员样式 */
+.report-member-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px;
+  border-radius: 8px;
+  background-color: #f5f7fa;
+}
+
+.report-member-avatar {
+  flex-shrink: 0;
+}
+
+.report-member-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.report-member-details h3 {
+  margin: 0 0 5px 0;
+  font-size: 16px;
+  color: #303133;
+}
+
+.report-member-details p {
+  margin: 0;
+  font-size: 14px;
+  color: #909399;
 }
 </style> 

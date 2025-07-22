@@ -135,9 +135,18 @@
     <!-- 消息输入框 -->
     <message-input
       :conversation-id="conversationId"
-      :disabled="inputDisabled || isSelectionMode"
+      :disabled="inputDisabled || isSelectionMode || groupBanned"
       @send-message="handleSendMessage"
     />
+    
+    <!-- 封禁提示 -->
+    <div v-if="groupBanned" class="ban-notice">
+      <div class="ban-icon">🚫</div>
+      <div class="ban-message">
+        该群组已被封禁，无法发送消息
+        <span v-if="banReason" class="ban-reason">原因: {{ banReason }}</span>
+      </div>
+    </div>
     
     <!-- 转发消息对话框 -->
     <forward-message-dialog 
@@ -179,6 +188,10 @@ const messageContainerRef = ref<HTMLElement | null>(null);
 const inputDisabled = ref(false);
 const isSearchActive = ref(false);
 const highlightedMessageId = ref<number | null>(null);
+
+// 群组封禁状态
+const groupBanned = ref(false);
+const banReason = ref<string | null>(null);
 
 // 消息选择模式
 const isSelectionMode = ref(false);
@@ -1082,6 +1095,36 @@ const markConversationAsRead = async () => {
     }
 };
 
+// 检查群组封禁状态
+const checkGroupBanStatus = async (groupId: number) => {
+  if (!props.isGroupChat) {
+    // 如果不是群聊，不需要检查封禁状态
+    groupBanned.value = false;
+    banReason.value = null;
+    return;
+  }
+  
+  try {
+    // 获取群组信息
+    const response = await groupApi.getSearchableGroupById(groupId);
+    
+    if (response.code === 200 && response.data) {
+      // 检查是否被封禁
+      if (response.data.isBanned) {
+        console.log('群组已被封禁:', response.data.bannedReason);
+        groupBanned.value = true;
+        banReason.value = response.data.bannedReason || null;
+        inputDisabled.value = true; // 禁用输入框
+      } else {
+        groupBanned.value = false;
+        banReason.value = null;
+      }
+    }
+  } catch (error) {
+    console.error('检查群组封禁状态失败:', error);
+    }
+};
+
 // 加载消息
 const loadMessages = async (conversationId: string) => {
   if (!conversationId) {
@@ -1094,6 +1137,11 @@ const loadMessages = async (conversationId: string) => {
     error.value = null;
     
     console.log('正在加载会话消息，conversationId:', conversationId);
+    
+    // 如果是群聊，先检查群组状态
+    if (props.isGroupChat) {
+      await checkGroupBanStatus(Number(conversationId));
+    }
     
     // 获取当前用户ID
     let currentUserId = currentUser.value?.id ? Number(currentUser.value.id) : null;
@@ -1192,6 +1240,21 @@ watch(() => props.conversationId, (newId, oldId) => {
   if (newId && newId !== oldId) {
     console.log('会话ID变化，加载新会话:', newId);
     loadMessages(newId);
+    
+    // 重置状态
+    selectedMessages.value = [];
+    isSelectionMode.value = false;
+    showForwardDialog.value = false;
+    inputDisabled.value = false;
+    
+    // 如果是群聊，检查群组封禁状态
+    if (props.isGroupChat) {
+      checkGroupBanStatus(Number(newId));
+    } else {
+      // 不是群聊，重置封禁状态
+      groupBanned.value = false;
+      banReason.value = null;
+    }
   }
 }, { immediate: true });
 
@@ -1229,9 +1292,16 @@ const handleSendMessage = async (messageData: { content: string, type: string, m
   }
   
   try {
-    // 检查是否为群聊会话，如果是，则需要验证用户是否仍在群组中
+    // 检查是否为群聊会话，如果是，则需要验证用户是否仍在群组中，以及群组是否被封禁
     if (props.isGroupChat && props.conversationId) {
       const groupId = Number(props.conversationId);
+      
+      // 检查群组是否被封禁
+      await checkGroupBanStatus(groupId);
+      if (groupBanned.value) {
+        ElMessage.warning(`该群组已被封禁，无法发送消息${banReason.value ? '，原因：' + banReason.value : ''}`);
+        return;
+      }
       
       // 检查用户是否在群组中
       const isInGroup = await checkUserInGroup(groupId);
@@ -2222,5 +2292,33 @@ const openSearchPanel = () => {
 .selection-mode-hint span {
   font-size: 12px;
   font-weight: bold;
+}
+
+/* 封禁提示样式 */
+.ban-notice {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  background-color: #ffcccc;
+  border: 1px solid #ff9999;
+  border-radius: 4px;
+  margin-top: 10px;
+}
+
+.ban-icon {
+  font-size: 24px;
+  color: #ff3333;
+  margin-right: 10px;
+}
+
+.ban-message {
+  font-size: 14px;
+  color: #333;
+}
+
+.ban-reason {
+  font-size: 12px;
+  color: #666;
+  margin-left: 10px;
 }
 </style> 

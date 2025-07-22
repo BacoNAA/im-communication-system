@@ -134,6 +134,12 @@ public class GroupJoinRequestServiceImpl implements GroupJoinRequestService {
         Group group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new BusinessException("群组不存在"));
         
+        // 检查群组是否被封禁
+        if (Boolean.TRUE.equals(group.getIsBanned())) {
+            String reason = group.getBannedReason() != null ? "，原因：" + group.getBannedReason() : "";
+            throw new BusinessException("该群组已被封禁，无法处理加入请求" + reason);
+        }
+        
         boolean isAdmin = false;
         if (group.getOwnerId().equals(handlerId)) {
             isAdmin = true; // 群主

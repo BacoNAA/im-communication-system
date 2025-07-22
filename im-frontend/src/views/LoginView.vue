@@ -364,7 +364,8 @@ const verificationForm = reactive({
 const alertMessage = reactive({
   show: false,
   text: '',
-  type: 'error' as 'success' | 'error' | 'warning' | 'info'
+  type: 'error' as 'success' | 'error' | 'warning' | 'info',
+  timer: null as number | null
 })
 
 // 重置密码模态框
@@ -383,16 +384,26 @@ const resetPasswordModal = reactive({
 let resetCountdownTimer: number | null = null
 
 // 显示全局提示
-function showAlert(message: string, type: 'success' | 'error' | 'warning' | 'info' = 'error') {
-  alertMessage.text = message
-  alertMessage.type = type
-  alertMessage.show = true
+function showAlert(message: string, type: 'success' | 'error' | 'warning' | 'info' = 'error', duration: number = 5000) {
+  alertMessage.text = message;
+  alertMessage.type = type;
+  alertMessage.show = true;
+  
+  // 清除任何现有的超时
+  if (alertMessage.timer) {
+    clearTimeout(alertMessage.timer);
+  }
+  
+  // 设置新的超时
+  alertMessage.timer = setTimeout(() => {
+    clearAlert();
+  }, duration);
 }
 
-// 清除全局提示
+// 清除提示
 function clearAlert() {
-  alertMessage.show = false
-  alertMessage.text = ''
+  alertMessage.show = false;
+  alertMessage.text = '';
 }
 
 // 显示错误信息
@@ -713,7 +724,22 @@ async function handlePasswordLogin() {
     } else {
       // 登录失败
       const errorMessage = result.message || '登录失败，请重试';
-      showAlert(errorMessage, 'error');
+      
+      // 特殊处理封禁账号错误
+      if (result.code) {
+        switch (result.code) {
+          case 'ACCOUNT_BANNED_TEMP':
+            showAlert(`您的账号已被临时封禁：${errorMessage}`, 'error', 10000);
+            break;
+          case 'ACCOUNT_BANNED_PERM':
+            showAlert(`您的账号已被永久封禁：${errorMessage}`, 'error', 10000);
+            break;
+          default:
+            showAlert(errorMessage, 'error');
+        }
+      } else {
+        showAlert(errorMessage, 'error');
+      }
       
       // 恢复表单显示
       isLoading.value = false;
@@ -826,8 +852,23 @@ async function handleVerificationLogin() {
       
     } else {
       // 登录失败
-      const errorMessage = result.message || '登录失败，请重试';
-      showAlert(errorMessage, 'error');
+      const errorMessage = result.message || '验证码登录失败，请重试';
+      
+      // 特殊处理封禁账号错误
+      if (result.code) {
+        switch (result.code) {
+          case 'ACCOUNT_BANNED_TEMP':
+            showAlert(`您的账号已被临时封禁：${errorMessage}`, 'error', 10000);
+            break;
+          case 'ACCOUNT_BANNED_PERM':
+            showAlert(`您的账号已被永久封禁：${errorMessage}`, 'error', 10000);
+            break;
+          default:
+            showAlert(errorMessage, 'error');
+        }
+      } else {
+        showAlert(errorMessage, 'error');
+      }
       
       // 恢复表单显示
       isLoading.value = false;

@@ -70,6 +70,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         // 解析角色
                         List<SimpleGrantedAuthority> authorities = parseRoles(roles);
                         
+                        // 详细打印角色信息，方便调试
+                        log.info("用户角色信息 - 原始角色字符串: {}", roles);
+                        log.info("解析后的权限列表: {}", authorities);
+                        
                         // 创建认证对象
                         UsernamePasswordAuthenticationToken authToken = 
                             new UsernamePasswordAuthenticationToken(username, null, authorities);
@@ -146,7 +150,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         return Arrays.stream(roles.split(","))
                 .map(String::trim)
                 .filter(role -> !role.isEmpty())
-                .map(role -> role.startsWith("ROLE_") ? role : "ROLE_" + role)
+                .map(role -> {
+                    // 保留原始角色名的大小写，只添加前缀
+                    if (role.startsWith("ROLE_")) {
+                        return role;
+                    } else {
+                        return "ROLE_" + role;
+                    }
+                })
                 .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toList());
     }
@@ -170,6 +181,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                path.startsWith("/api/public/") ||
                path.startsWith("/api/media/public/") || // 允许公开访问媒体文件
                path.startsWith("/api/test/") ||
+               path.equals("/api/admin/auth/login") || // 允许管理员登录接口的公开访问
+               path.equals("/api/admin/auth/reset-password") || // 允许管理员重置密码接口的公开访问（测试用）
                path.startsWith("/ws/") ||
                path.startsWith("/ws-native/") ||
                path.startsWith("/actuator/") ||

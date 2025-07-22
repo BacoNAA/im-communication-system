@@ -40,6 +40,12 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.Objects;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.im.imcommunicationsystem.group.repository.GroupAnnouncementRepository;
+import com.im.imcommunicationsystem.group.repository.GroupJoinRequestRepository;
+import com.im.imcommunicationsystem.group.repository.PollRepository;
+import com.im.imcommunicationsystem.group.repository.PollOptionRepository;
+import com.im.imcommunicationsystem.group.repository.PollVoteRepository;
+import com.im.imcommunicationsystem.group.entity.Poll;
 
 /**
  * 群组服务实现类
@@ -57,6 +63,11 @@ public class GroupServiceImpl implements GroupService {
     private final GroupUtils groupUtils;
     private final WebSocketService webSocketService;
     private final ObjectMapper objectMapper;
+    private final GroupAnnouncementRepository groupAnnouncementRepository;
+    private final GroupJoinRequestRepository groupJoinRequestRepository;
+    private final PollRepository pollRepository;
+    private final PollOptionRepository pollOptionRepository;
+    private final PollVoteRepository pollVoteRepository;
 
     @Override
     @Transactional
@@ -243,16 +254,136 @@ public class GroupServiceImpl implements GroupService {
     @Override
     @Transactional
     public boolean dissolveGroup(Long groupId, Long userId) {
+        log.info("开始解散群组: groupId={}, userId={}", groupId, userId);
+        
         Group group = getGroupEntityById(groupId);
         
         // 验证操作者是否为群主
         if (!isGroupOwner(groupId, userId)) {
-            throw new BusinessException("只有群主才能解散群组");
+            log.warn("用户无权解散群组，非群主: userId={}, groupId={}", userId, groupId);
+            throw new com.im.imcommunicationsystem.common.exception.BusinessException("只有群主才能解散群组");
         }
         
-        // 删除群组及相关数据
-        groupRepository.delete(group);
+        try {
+            // 0. 先发送解散通知，因为后面删除成员后就无法通知了
+            try {
+                log.debug("步骤0: 预先发送群组解散通知");
+                Map<String, Object> notificationData = new HashMap<>();
+                notificationData.put("type", "GROUP_DISSOLVED");
+                notificationData.put("groupId", groupId);
+                notificationData.put("groupName", group.getName());
+                notificationData.put("operatorId", userId);
+                
+                // 发送WebSocket通知给所有群成员
+                webSocketService.sendGroupUpdate(groupId, notificationData, "GROUP_DISSOLVED", null);
+                log.debug("群组解散通知发送完成");
+            } catch (Exception e) {
+                log.warn("发送群组解散通知失败: {}", e.getMessage(), e);
+                // 通知发送失败不影响解散流程，继续执行
+            }
+
+            // 1. 查找与该群组关联的会话
+            log.debug("步骤1: 查找与群组关联的会话, groupId={}", groupId);
+            Conversation conversation = null;
+            try {
+                conversation = conversationRepository.findByRelatedGroupId(groupId);
+                log.debug("关联会话查询结果: {}", conversation != null ? "找到,ID=" + conversation.getId() : "未找到");
+            } catch (Exception e) {
+                log.warn("查询关联会话时出错: {}", e.getMessage());
+            }
+            
+            if (conversation != null) {
+                Long conversationId = conversation.getId();
+                log.info("处理群组关联会话: groupId={}, conversationId={}", groupId, conversationId);
+                
+                // 2. 删除会话成员
+                try {
+                    log.debug("步骤2: 删除会话成员, conversationId={}", conversationId);
+                    int deletedCount = conversationMemberRepository.deleteByConversationId(conversationId);
+                    log.debug("会话成员删除完成, 删除数量: {}", deletedCount);
+                } catch (Exception e) {
+                    log.error("删除会话成员失败: {}", e.getMessage(), e);
+                }
+                
+                // 3. 删除会话
+                try {
+                    log.debug("步骤3: 删除会话, conversationId={}", conversationId);
+                    conversationRepository.deleteById(conversationId);
+                    log.debug("会话删除完成");
+                } catch (Exception e) {
+                    log.error("删除会话失败: {}", e.getMessage(), e);
+                }
+            }
+            
+            // 4. 使用原生SQL一次性删除投票相关数据，避免乐观锁冲突
+            try {
+                log.debug("步骤4: 一次性删除群组所有投票相关数据");
+                
+                // 4.1. 删除所有投票记录
+                log.debug("步骤4.1: 使用原生SQL删除所有投票记录");
+                int deletedVotesCount = pollVoteRepository.deleteAllByGroupId(groupId);
+                log.debug("投票记录删除完成, 删除数量: {}", deletedVotesCount);
+                
+                // 4.2. 删除所有投票选项
+                log.debug("步骤4.2: 使用原生SQL删除所有投票选项");
+                int deletedOptionsCount = pollOptionRepository.deleteAllByGroupId(groupId);
+                log.debug("投票选项删除完成, 删除数量: {}", deletedOptionsCount);
+                
+                // 4.3. 删除所有投票
+                log.debug("步骤4.3: 使用原生SQL删除所有投票");
+                int deletedPollsCount = pollRepository.deleteByGroupIdNative(groupId);
+                log.debug("投票删除完成, 删除数量: {}", deletedPollsCount);
+            } catch (Exception e) {
+                log.warn("删除投票数据过程中出错: {}", e.getMessage(), e);
+                // 继续执行下一步骤
+            }
+            
+            // 5. 删除群公告
+            try {
+                log.debug("步骤5: 删除群组公告");
+                groupAnnouncementRepository.deleteByGroupId(groupId);
+                log.debug("群组公告删除完成");
+            } catch (Exception e) {
+                log.warn("删除群组公告出错: {}", e.getMessage());
+                // 继续执行下一步骤
+            }
+            
+            // 6. 删除群加入请求
+            try {
+                log.debug("步骤6: 删除群组加入请求");
+                groupJoinRequestRepository.deleteByGroupId(groupId);
+                log.debug("群组加入请求删除完成");
+            } catch (Exception e) {
+                log.warn("删除群组加入请求出错: {}", e.getMessage());
+                // 继续执行下一步骤
+            }
+            
+            // 7. 删除群组成员 - 使用直接的SQL删除，避免内存中加载所有成员
+            try {
+                log.debug("步骤7: 使用SQL直接删除所有群组成员");
+                int deletedMembersCount = groupMemberRepository.deleteByGroupId(groupId);
+                log.debug("群组成员删除完成, 删除数量: {}", deletedMembersCount);
+            } catch (Exception e) {
+                log.error("删除群组成员失败: {}", e.getMessage(), e);
+                // 尝试继续下一步
+            }
+            
+            // 8. 删除群组实体
+            try {
+                log.debug("步骤8: 删除群组实体");
+                groupRepository.deleteById(groupId);
+                log.debug("群组实体删除完成");
+            } catch (Exception e) {
+                log.error("删除群组实体失败: {}", e.getMessage(), e);
+                throw new com.im.imcommunicationsystem.common.exception.BusinessException("删除群组实体失败: " + e.getMessage());
+            }
+            
+            log.info("群组解散成功: groupId={}", groupId);
         return true;
+        } catch (Exception e) {
+            log.error("解散群组失败: {}", e.getMessage(), e);
+            throw new com.im.imcommunicationsystem.common.exception.BusinessException("解散群组失败: " + e.getMessage());
+        }
     }
 
     @Override
@@ -286,6 +417,9 @@ public class GroupServiceImpl implements GroupService {
         
         // 获取群组实体
         Group group = getGroupEntityById(groupId);
+        
+        // 检查群组是否被封禁
+        checkGroupNotBanned(groupId);
         
         // 验证操作者是否有权限修改群组信息
         if (!isGroupAdmin(groupId, userId) && !isGroupOwner(groupId, userId)) {
@@ -454,5 +588,19 @@ public class GroupServiceImpl implements GroupService {
                 .userRole(userRole)
                 .createdAt(group.getCreatedAt())
                 .build();
+    }
+
+    /**
+     * 检查群组是否被封禁，如果被封禁则抛出异常
+     *
+     * @param groupId 群组ID
+     * @throws BusinessException 如果群组被封禁
+     */
+    private void checkGroupNotBanned(Long groupId) {
+        Group group = getGroupEntityById(groupId);
+        if (Boolean.TRUE.equals(group.getIsBanned())) {
+            String reason = group.getBannedReason() != null ? "，原因：" + group.getBannedReason() : "";
+            throw new BusinessException("该群组已被封禁" + reason);
+        }
     }
 } 

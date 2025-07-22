@@ -5,7 +5,10 @@ import com.im.imcommunicationsystem.group.enums.GroupJoinRequestStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -59,4 +62,12 @@ public interface GroupJoinRequestRepository extends JpaRepository<GroupJoinReque
      * 统计群组的待处理请求数量
      */
     long countByGroupIdAndStatus(Long groupId, GroupJoinRequestStatus status);
+    
+    /**
+     * 删除群组的所有加入请求
+     */
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM GroupJoinRequest r WHERE r.groupId = ?1")
+    void deleteByGroupId(Long groupId);
 } 

@@ -142,10 +142,21 @@ export default {
             groups.value.unshift(newGroup);
           }
         }
-      } else if (event.updateType === 'DELETE') {
+      } else if (event.updateType === 'DELETE' || event.updateType === 'GROUP_DISSOLVED') {
         // 删除群组
         const index = groups.value.findIndex(g => g.id === event.groupId);
         if (index !== -1) {
+          // 如果是GROUP_DISSOLVED类型，显示特定消息
+          if (event.updateType === 'GROUP_DISSOLVED') {
+            const group = groups.value[index];
+            if (group) {
+              const groupName = group.name || '未命名群组';
+              ElMessage.warning(`群组"${groupName}"已被群主解散`);
+            } else {
+              ElMessage.warning("一个群组已被解散");
+            }
+          }
+          
           groups.value.splice(index, 1);
           
           // 如果当前选中的是被删除的群组，清除选择

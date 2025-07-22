@@ -38,6 +38,7 @@ import com.im.imcommunicationsystem.message.repository.ConversationMemberReposit
 import com.im.imcommunicationsystem.message.entity.ConversationMember;
 import java.util.Optional;
 import com.im.imcommunicationsystem.message.service.ReadStatusService;
+import com.im.imcommunicationsystem.group.service.GroupService;
 
 /**
  * 消息服务实现类
@@ -62,6 +63,8 @@ public class MessageServiceImpl implements MessageService {
     private final @Lazy ConversationMemberRepository conversationMemberRepository;
     // 添加 ReadStatusService 依赖
     private final ReadStatusService readStatusService;
+    // 添加 GroupService 依赖
+    private final @Lazy com.im.imcommunicationsystem.group.service.GroupService groupService;
 
     @Override
     public MessageResponse sendMessage(SendMessageRequest request, Long senderId) {
@@ -90,6 +93,20 @@ public class MessageServiceImpl implements MessageService {
                     Long groupId = conversation.getRelatedGroupId();
                     if (groupId != null) {
                         try {
+                            // 检查群组是否被封禁
+                            com.im.imcommunicationsystem.group.entity.Group group = 
+                                groupService.getGroupEntityById(groupId);
+                            
+                            if (group != null && Boolean.TRUE.equals(group.getIsBanned())) {
+                                String reason = group.getBannedReason() != null ? 
+                                    "原因：" + group.getBannedReason() : "";
+                                
+                                log.warn("Group {} is banned, user {} cannot send message. Reason: {}", 
+                                    groupId, senderId, group.getBannedReason());
+                                    
+                                return MessageResponse.error("该群组已被封禁，无法发送消息。" + reason);
+                            }
+                            
                             // 尝试获取群成员信息，如果不是群成员会抛出异常
                             GroupMember groupMember = groupMemberService.getGroupMember(groupId, senderId);
                             

@@ -6,9 +6,11 @@ import com.im.imcommunicationsystem.group.enums.GroupMemberRole;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -69,4 +71,27 @@ public interface GroupMemberRepository extends JpaRepository<GroupMember, GroupM
      * 查询用户参与的所有群组成员记录
      */
     List<GroupMember> findByIdUserId(Long userId);
+    
+    /**
+     * 通过群组ID删除所有群成员
+     */
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM GroupMember gm WHERE gm.id.groupId = :groupId")
+    int deleteByGroupId(@Param("groupId") Long groupId);
+    
+    /**
+     * 批量统计多个群组的成员数量
+     * 返回格式：[groupId, count]
+     */
+    @Query("SELECT gm.id.groupId, COUNT(gm) FROM GroupMember gm WHERE gm.id.groupId IN :groupIds GROUP BY gm.id.groupId")
+    List<Object[]> countMembersByGroupIds(@Param("groupIds") List<Long> groupIds);
+    
+    /**
+     * 通过群组ID删除所有成员
+     */
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM GroupMember gm WHERE gm.id.groupId = :groupId")
+    int deleteAllByIdGroupId(@Param("groupId") Long groupId);
 } 

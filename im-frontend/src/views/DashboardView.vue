@@ -334,6 +334,12 @@
           </div>
           
           <div class="profile-functions">
+            <div class="function-item" @click="openSystemNotifications">
+              <div class="function-icon">🔔</div>
+              <div class="function-text">系统消息</div>
+              <div v-if="notificationUnreadCount > 0" class="function-badge">{{ notificationUnreadCount }}</div>
+              <div class="function-arrow">›</div>
+            </div>
             <div class="function-item" @click="openFileManager">
               <div class="function-icon">📁</div>
               <div class="function-text">文件管理</div>
@@ -361,6 +367,18 @@
             </div>
           </div>
         </div>
+      </div>
+      
+      <!-- 系统消息页面 -->
+      <div :class="['tab-content', 'system-notifications-page', { active: activeTab === 'systemNotifications' }]">
+        <div class="page-header">
+          <button class="back-btn" @click="backToProfile">‹</button>
+          <div class="page-title">系统消息</div>
+          <button class="refresh-btn" @click="refreshNotifications" title="刷新数据">🔄</button>
+        </div>
+        
+        <!-- 使用SystemNotifications组件 -->
+        <SystemNotifications />
       </div>
       
       <!-- 账户与安全页面 -->
@@ -552,6 +570,8 @@
       <div :class="['tab-content', { active: activeTab === 'groups' }]">
         <group-view />
       </div>
+      
+
     </div>
     
     <!-- 底部标签栏 -->
@@ -1772,6 +1792,7 @@ import GlobalSearch from '@/components/search/GlobalSearch.vue';
 import SettingsDialog from '@/components/settings/SettingsDialog.vue';
 import MomentView from '@/components/moment/MomentView.vue';
 import { getUserSettings } from '@/composables/useUserSettings';
+import SystemNotifications from '@/components/SystemNotifications.vue';
 
 interface User {
   id: string
@@ -1844,6 +1865,7 @@ const touchTimer = ref<number | null>(null)
 const conversationsPanel = ref<InstanceType<typeof ConversationsPanel> | null>(null)
 const contactsList = ref<InstanceType<typeof ContactsList> | null>(null)
 const activeChatId = ref<string | null>(null)
+const notificationUnreadCount = ref(0)
 
 // 聊天相关数据
 const messages = ref<any[]>([])
@@ -4688,6 +4710,14 @@ const uploadCancelled = ref(false)
 const currentUploadController = ref<AbortController | null>(null)
 const isDragOver = ref(false)
 
+const openSystemNotifications = () => {
+  activeTab.value = 'systemNotifications'
+}
+
+const refreshNotifications = () => {
+  // 可以添加特定的刷新逻辑，如果需要
+}
+
 const openFileManager = () => {
   activeTab.value = 'fileManager'
   activeFileTab.value = 'upload'
@@ -7031,6 +7061,19 @@ onMounted(async () => {
   const { connect: connectWs } = useSharedWebSocket();
   connectWs();
   
+  // 创建全局变量用于通知未读数量
+  window.notificationUnreadCount = 0;
+  
+  // 监听全局通知未读数变化
+  const checkNotificationCount = () => {
+    if (window.notificationUnreadCount !== undefined) {
+      notificationUnreadCount.value = window.notificationUnreadCount;
+    }
+  };
+  
+  // 定时检查通知未读数
+  setInterval(checkNotificationCount, 2000);
+  
   // 应用用户个性化设置
   const { applySettingsToUI } = getUserSettings();
   applySettingsToUI();
@@ -8671,8 +8714,9 @@ onUnmounted(() => {
   padding: 32px;
 }
 
-/* 文件管理页面样式 */
-.file-manager-page {
+/* 文件管理和系统通知页面样式 */
+.file-manager-page,
+.system-notifications-page {
   position: absolute;
   top: 0;
   left: 0;
@@ -8684,7 +8728,8 @@ onUnmounted(() => {
   padding: 0;
 }
 
-.file-manager-page.active {
+.file-manager-page.active,
+.system-notifications-page.active {
   display: block;
 }
 
@@ -11362,6 +11407,14 @@ onUnmounted(() => {
   margin-left: 4px;
   min-width: 16px;
   text-align: center;
+}
+
+/* 个人页面功能项中的徽章 */
+.profile-functions .function-item .function-badge {
+  position: absolute;
+  right: 40px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 /* 响应式设计 - 联系人功能 */

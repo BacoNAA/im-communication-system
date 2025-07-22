@@ -6,6 +6,7 @@ import 'element-plus/dist/index.css';
 import './assets/main.css';
 import './assets/theme-variables.css'; // 导入主题变量CSS
 import './assets/custom-theme.css'; // 导入自定义主题样式，确保最高优先级
+import './assets/admin/admin-styles.css'; // 引入管理员界面样式
 
 import App from './App.vue';
 import router from './router';

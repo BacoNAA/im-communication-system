@@ -188,6 +188,10 @@
         <span class="menu-icon">🗑️</span>
         <span class="menu-text">撤回</span>
       </div>
+      <div class="menu-item" v-if="!message.isSelf" @click="reportMessage">
+        <span class="menu-icon">🚩</span>
+        <span class="menu-text">举报</span>
+      </div>
     </div>
 
     <!-- 编辑消息对话框 -->
@@ -212,6 +216,45 @@
       </div>
     </div>
 
+    <!-- 举报对话框 -->
+    <div v-if="showReportDialog" class="report-dialog-overlay" @click.self="cancelReport">
+      <div class="report-dialog">
+        <div class="report-dialog-header">
+          <h3>举报消息</h3>
+          <button class="close-btn" @click="cancelReport">×</button>
+        </div>
+        <div class="report-dialog-body">
+          <div class="report-form">
+            <div class="form-group">
+              <label>举报原因</label>
+              <select v-model="reportReason" class="report-reason-select">
+                <option value="">请选择举报原因</option>
+                <option value="垃圾信息">垃圾信息</option>
+                <option value="色情内容">色情内容</option>
+                <option value="暴力内容">暴力内容</option>
+                <option value="诈骗信息">诈骗信息</option>
+                <option value="政治敏感">政治敏感</option>
+                <option value="侮辱谩骂">侮辱谩骂</option>
+                <option value="其他">其他</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>详细描述（选填）</label>
+              <textarea 
+                v-model="reportDescription" 
+                class="report-description"
+                placeholder="请描述具体情况，有助于我们更好地处理..."
+              ></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="report-dialog-footer">
+          <button class="cancel-btn" @click="cancelReport">取消</button>
+          <button class="submit-btn" @click="submitReport" :disabled="!reportReason">提交</button>
+        </div>
+      </div>
+    </div>
+
     <!-- 转发消息对话框 -->
     <forward-message-dialog 
       :is-visible="showForwardDialog" 
@@ -228,6 +271,8 @@ import { api } from '@/api/request';
 import MessageReadStatus from './MessageReadStatus.vue';
 import ForwardMessageDialog from './ForwardMessageDialog.vue';
 import { messageApi, MessageStatus } from '@/api/message';
+import { reportApi } from '@/api/report';
+import { ElMessage } from 'element-plus';
 
 interface MessageProps {
   id: string | number;
@@ -1080,6 +1125,62 @@ const handleForwardSuccess = () => {
 const forwardMessage = () => {
   openForwardDialog();
 };
+
+// 举报相关状态
+const showReportDialog = ref(false);
+const reportReason = ref('');
+const reportDescription = ref('');
+
+// 打开举报对话框
+const reportMessage = () => {
+  console.log('举报消息:', props.message.id);
+  showReportDialog.value = true;
+  showActions.value = false; // 关闭上下文菜单
+};
+
+// 取消举报
+const cancelReport = () => {
+  showReportDialog.value = false;
+  reportReason.value = '';
+  reportDescription.value = '';
+};
+
+// 提交举报
+const submitReport = async () => {
+  if (!reportReason.value) {
+    ElMessage.warning('请选择举报原因');
+    return;
+  }
+  
+  try {
+    console.log('提交举报，消息ID:', props.message.id);
+    
+    // 使用类型断言
+    const reportRequest: any = {
+      reportedContentType: 'MESSAGE',
+      reportedContentId: Number(props.message.id),
+      reason: reportReason.value,
+      description: reportDescription.value
+    };
+    
+    // 只有当senderId存在时才添加reportedUserId字段
+    if (props.message.senderId) {
+      reportRequest.reportedUserId = Number(props.message.senderId);
+    }
+    
+    const response = await reportApi.submitReport(reportRequest);
+    
+    if (response.success) {
+      ElMessage.success('举报已提交，我们将尽快处理');
+      cancelReport(); // 关闭举报对话框并重置表单
+    } else {
+      ElMessage.error(response.message || '举报提交失败');
+    }
+  } catch (error) {
+    console.error('举报消息出错:', error);
+    ElMessage.error('举报提交失败，请稍后重试');
+  }
+};
 </script>
 
 <style scoped>
@@ -1605,5 +1706,116 @@ const forwardMessage = () => {
   color: #999;
   margin-left: 4px;
   font-style: italic;
+}
+
+/* 举报对话框样式 */
+.report-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.report-dialog {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.report-dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.report-dialog-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.report-dialog-body {
+  padding: 16px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.report-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 4px;
+}
+
+.report-reason-select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #333;
+  background-color: #f9f9f9;
+}
+
+.report-description {
+  width: 100%;
+  min-height: 80px;
+  padding: 8px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  resize: vertical;
+  font-size: 14px;
+  color: #333;
+  background-color: #f9f9f9;
+}
+
+.report-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 16px;
+  border-top: 1px solid #e0e0e0;
+  gap: 8px;
+}
+
+.submit-btn {
+  background-color: #ff4d4f;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 16px;
+  cursor: pointer;
+}
+
+.submit-btn:hover {
+  background-color: #ff7875;
+}
+
+.submit-btn:disabled {
+  background-color: #d9d9d9;
+  cursor: not-allowed;
+  color: #999;
 }
 </style> 
