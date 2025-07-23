@@ -287,7 +287,7 @@ export function useMessages() {
           unreadCount: 0,
           isDnd: false,
           isPinned: false
-        };
+        } as Conversation;
       }
       
       // 加载会话消息
@@ -320,21 +320,10 @@ export function useMessages() {
         
         console.log('会话消息已加载，共', validMessages.length, '条消息');
         
-        // 找到最新的消息ID来更新阅读光标
-        if (validMessages.length > 0) {
-          const lastMessageId = validMessages[validMessages.length - 1].id;
-          console.log('更新阅读光标到最新消息:', lastMessageId);
-          
-          // 更新阅读光标
-          if (lastMessageId) {
-            await updateReadCursor(conversationId, lastMessageId);
-            
-            // 立即标记所有消息为已读
-            await messageApi.markConversationAsRead(conversationId)
-              .then(() => console.log('会话已标记为已读:', conversationId))
-              .catch(err => console.error('标记会话已读失败:', err));
-          }
-        }
+        // 标记会话为已读
+        await messageApi.markConversationAsRead(conversationId)
+          .then(() => console.log('会话已标记为已读:', conversationId))
+          .catch(err => console.error('标记会话已读失败:', err));
         
         // 确保未读消息数量为0
         if (conversation) {
@@ -445,17 +434,9 @@ export function useMessages() {
           currentMessages.value = [...currentMessages.value, formattedMessage];
           console.log('消息已添加到当前会话，当前消息列表长度:', currentMessages.value.length);
           
-          // 如果是当前会话，自动标记为已读并更新阅读光标
-          if (formattedMessage.id) {
-            // 标记消息为已读
-            messageApi.markMessageAsRead(formattedMessage.id)
-              .then(() => console.log('消息已标记为已读:', formattedMessage.id))
-              .catch(err => console.error('标记消息已读失败:', err));
-            
-            // 更新阅读光标为当前最新消息
-            updateReadCursor(formattedMessage.conversationId, formattedMessage.id)
-              .catch(err => console.error('更新阅读光标失败:', err));
-          }
+          // 如果是当前会话，不增加未读计数，但不自动标记为已读
+          // 只有当用户点击会话或查看消息时才标记为已读
+          console.log('收到当前会话的新消息，不增加未读计数，等待用户查看后再标记为已读');
         } else {
           console.log('跳过重复消息:', formattedMessage.id);
         }
@@ -912,27 +893,27 @@ export function useMessages() {
     }
   };
 
-  // 添加更新阅读光标的方法
-  const updateReadCursor = async (conversationId: number, lastReadMessageId: number) => {
-    if (!conversationId || !lastReadMessageId) {
-      console.warn('无效的会话ID或最后读取的消息ID');
+  // 标记会话已读并重置未读计数
+  const markConversationAsReadAndResetCount = async (conversationId: number) => {
+    if (!conversationId) {
+      console.warn('无效的会话ID');
       return;
     }
     
     try {
-      console.log(`更新会话 ${conversationId} 的阅读光标，最后读取的消息ID: ${lastReadMessageId}`);
-      const response = await messageApi.updateReadCursor(conversationId, lastReadMessageId);
+      console.log(`标记会话 ${conversationId} 为已读`);
+      const response = await messageApi.markConversationAsRead(conversationId);
       
       if (response.success) {
-        console.log(`阅读光标更新成功`);
+        console.log(`会话已标记为已读`);
         
         // 重置未读消息计数
         updateUnreadCount(conversationId, 0);
       } else {
-        console.error(`阅读光标更新失败:`, response.message);
+        console.error(`标记会话已读失败:`, response.message);
       }
     } catch (error) {
-      console.error(`阅读光标更新出错:`, error);
+      console.error(`标记会话已读失败:`, error);
     }
   };
 
@@ -1241,6 +1222,6 @@ export function useMessages() {
     handleStatusUpdate,
     checkMessageStatus,
     updateMessageReadStatus,
-    updateReadCursor
+    markConversationAsReadAndResetCount
   };
 }

@@ -4,49 +4,30 @@
     <div class="chat-header">
       <h3 class="chat-title">{{ chatName }}</h3>
       <div class="chat-actions">
-        <!-- WebSocket连接状态指示器 -->
-        <div class="ws-status-indicator" :class="{ 'connected': isConnected }">
-          <span class="status-dot"></span>
-          <span class="status-text">{{ isConnected ? '已连接' : '未连接' }}</span>
-          <button v-if="!isConnected" class="reconnect-btn" @click="reconnectWebSocket" title="重新连接">
-            <i class="fas fa-redo-alt"></i>
-          </button>
-        </div>
-        <button class="action-btn" @click="refreshMessages" title="刷新消息">
+        <!-- 刷新消息按钮 -->
+        <button class="action-btn search-action-btn" @click="refreshMessages" title="刷新消息">
           <i class="fas fa-sync"></i>
+          <span class="search-text">刷新</span>
         </button>
+        <!-- 搜索消息按钮 -->
         <button class="action-btn search-action-btn" @click="toggleSearchPanel" title="搜索消息">
           <i class="fas fa-search"></i>
           <span class="search-text">搜索</span>
         </button>
         <!-- 媒体库按钮 -->
         <MediaLibraryButton :conversation-id="Number(conversationId)" />
-        <button class="action-btn" @click="toggleSelectionMode" title="选择消息">
+        <!-- 多选转发按钮 -->
+        <button 
+          class="action-btn search-action-btn" 
+          @click="toggleSelectionMode" 
+          :class="{ 'active': isSelectionMode }"
+          title="多选转发"
+        >
           <i class="fas fa-check-square"></i>
+          <span class="search-text">转发</span>
         </button>
         <button class="action-btn">
           <i class="fas fa-ellipsis-v"></i>
-        </button>
-      </div>
-    </div>
-    
-    <!-- 在消息操作区域（message-container前面）添加明显的多选按钮 -->
-    <div class="chat-controls">
-      <div class="control-buttons">
-        <button 
-          class="control-btn selection-mode-btn" 
-          @click="toggleSelectionMode" 
-          :class="{ 'active': isSelectionMode }"
-          title="多选模式"
-        >
-          <i class="fas fa-check-square"></i>
-          <span>多选</span>
-        </button>
-        
-        <!-- 其他控制按钮可以放在这里 -->
-        <button v-if="messages.length > 0" class="control-btn" @click="openSearchPanel" title="搜索消息">
-          <i class="fas fa-search"></i>
-          <span>搜索</span>
         </button>
       </div>
     </div>
@@ -173,11 +154,16 @@ import MediaLibraryButton from './MediaLibraryButton.vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import * as groupApi from '@/api/group';
 import { getUserSettings } from '@/composables/useUserSettings';
+import { getCurrentUserId } from '@/utils/helpers';
+import { useWebSocket } from '@/composables/useWebSocket';
+import { useUserSettings } from '@/composables/useUserSettings';
+import { getGroupMembers } from '@/api/group';
 
 const props = defineProps<{
   conversationId: string;
   chatName?: string;
   isGroupChat?: boolean;
+  groupId?: number | undefined;
 }>();
 
 // 状态
@@ -212,16 +198,16 @@ const {
   send: wsSend
 } = useSharedWebSocket(handleWebSocketMessage); // 使用共享WebSocket
 
-// 更新阅读光标
-const updateReadCursor = async (conversationId: number, lastMessageId: number) => {
-  if (!conversationId || !lastMessageId) return;
+// 标记指定会话为已读
+const markConversationAsReadById = async (conversationId: number) => {
+  if (!conversationId) return;
   
   try {
-    console.log(`更新会话 ${conversationId} 的阅读光标为消息 ${lastMessageId}`);
-    await messageApi.updateReadCursor(conversationId, lastMessageId);
-    console.log('阅读光标更新成功');
+    console.log(`标记会话 ${conversationId} 为已读`);
+    await messageApi.markConversationAsRead(conversationId);
+    console.log('会话已标记为已读');
   } catch (error) {
-    console.error('更新阅读光标失败:', error);
+    console.error('标记会话为已读失败:', error);
   }
 };
 
@@ -584,8 +570,8 @@ function handleRealTimeMessage(messageData: any) {
             .then(() => console.log('消息已标记为已读:', formattedMessage.id))
             .catch(err => console.error('标记消息已读失败:', err));
             
-          // 更新阅读光标
-          updateReadCursor(messageConversationId, formattedMessage.id);
+          // 标记会话为已读
+          markConversationAsReadById(messageConversationId);
         } catch (err) {
           console.error('标记消息已读过程中出错:', err);
         }
@@ -639,8 +625,42 @@ function formatWebSocketMessage(messageData: any): any {
     outputMessage.updatedAt = sourceData.updatedAt || outputMessage.createdAt;
     
     // 处理发送者信息
-    outputMessage.senderName = sourceData.senderName || sourceData.senderNickname || '未知用户';
-    outputMessage.senderAvatar = sourceData.senderAvatar;
+    console.log('处理发送者信息:', { 
+      senderName: sourceData.senderName, 
+      senderNickname: sourceData.senderNickname, 
+      sender: sourceData.sender,
+      user: sourceData.user
+    });
+    
+    // 尝试从多个可能的来源获取昵称
+    let senderName = '';
+    if (sourceData.senderName) {
+      senderName = sourceData.senderName;
+      console.log('使用senderName:', senderName);
+    } else if (sourceData.senderNickname) {
+      senderName = sourceData.senderNickname;
+      console.log('使用senderNickname:', senderName);
+    } else if (sourceData.sender && sourceData.sender.nickname) {
+      senderName = sourceData.sender.nickname;
+      console.log('使用sender.nickname:', senderName);
+    } else if (sourceData.user && sourceData.user.nickname) {
+      senderName = sourceData.user.nickname;
+      console.log('使用user.nickname:', senderName);
+    }
+    
+    // 如果没有昵称，尝试获取用户名
+    if (!senderName) {
+      if (sourceData.sender && sourceData.sender.username) {
+        senderName = sourceData.sender.username;
+        console.log('使用sender.username:', senderName);
+      } else if (sourceData.user && sourceData.user.username) {
+        senderName = sourceData.user.username;
+        console.log('使用user.username:', senderName);
+      }
+    }
+    
+    outputMessage.senderName = senderName;
+    outputMessage.senderAvatar = sourceData.senderAvatar || (sourceData.sender && sourceData.sender.avatarUrl) || (sourceData.user && sourceData.user.avatarUrl);
     outputMessage.mediaFileId = sourceData.mediaFileId;
     
     // 处理状态和已读信息
@@ -667,6 +687,32 @@ function formatWebSocketMessage(messageData: any): any {
     outputMessage.isSelf = isSentByCurrentUser; // 添加isSelf字段以兼容ChatMessage组件
     
     console.log(`[formatWebSocketMessage] 消息ID ${outputMessage.id} 的isSelf设置为: ${outputMessage.isSelf}, 判断结果: ${senderId} === ${currentUserId} = ${isSentByCurrentUser}`);
+    
+    // 添加成员角色信息
+    if (props.isGroupChat && senderId && props.groupId) {
+      const memberRole = getMemberRole(senderId, props.groupId);
+      if (memberRole) {
+        console.log(`[formatWebSocketMessage] 消息ID ${outputMessage.id} 发送者角色:`, memberRole);
+        outputMessage.memberRole = memberRole;
+      } else {
+        console.log(`[formatWebSocketMessage] 未找到消息ID ${outputMessage.id}, 发送者ID ${senderId} 的角色信息`);
+        
+        // 如果通过转换后的senderId找不到，尝试使用原始的sourceData.senderId
+        if (sourceData.senderId && sourceData.senderId !== senderId) {
+          const originalSenderRole = getMemberRole(sourceData.senderId, props.groupId);
+          if (originalSenderRole) {
+            console.log(`[formatWebSocketMessage] 通过原始senderId(${sourceData.senderId})获取角色:`, originalSenderRole);
+            outputMessage.memberRole = originalSenderRole;
+          }
+        }
+        
+        // 如果未找到角色，可能是因为群组成员尚未加载完成，尝试重新获取
+        if (!outputMessage.memberRole && props.groupId && groupMembers.value.length === 0) {
+          console.log(`[formatWebSocketMessage] 尝试加载群组成员信息, groupId: ${props.groupId}`);
+          loadGroupMembers(props.groupId);
+        }
+      }
+    }
     
     // 处理元数据
     if (sourceData.metadata) {
@@ -1084,8 +1130,8 @@ const markConversationAsRead = async () => {
           lastMessage.isRead = true;
           console.log(`已将最后一条消息 ${lastMessage.id} 标记为已读`);
           
-          // 更新阅读光标
-          updateReadCursor(Number(props.conversationId), lastMessage.id);
+          // 标记会话为已读
+          markConversationAsReadById(Number(props.conversationId));
         }
       } else {
         console.warn('标记会话已读失败:', response.message);
@@ -1138,9 +1184,10 @@ const loadMessages = async (conversationId: string) => {
     
     console.log('正在加载会话消息，conversationId:', conversationId);
     
-    // 如果是群聊，先检查群组状态
-    if (props.isGroupChat) {
+    // 如果是群聊，先检查群组状态并加载成员
+    if (props.isGroupChat && props.groupId) {
       await checkGroupBanStatus(Number(conversationId));
+      await loadGroupMembers(props.groupId);
     }
     
     // 获取当前用户ID
@@ -1173,6 +1220,54 @@ const loadMessages = async (conversationId: string) => {
           console.log(`消息ID ${msg.id} 发送者ID: ${senderId} (${typeof senderId}), 当前用户ID: ${currentUserId} (${typeof currentUserId}), isSelf: ${isSentByCurrentUser}`);
           console.log(`原始值 - 发送者ID: ${msg.senderId} (${typeof msg.senderId}), 当前用户ID: ${currentUser.value?.id} (${typeof currentUser.value?.id})`);
           
+          // 处理发送者昵称
+          let senderName = '';
+          if (msg.senderName) {
+            senderName = msg.senderName;
+            console.log(`消息ID ${msg.id} 使用senderName:`, senderName);
+          } else if (msg.senderNickname) {
+            senderName = msg.senderNickname;
+            console.log(`消息ID ${msg.id} 使用senderNickname:`, senderName);
+          } else if ((msg as any).sender && (msg as any).sender.nickname) {
+            senderName = (msg as any).sender.nickname;
+            console.log(`消息ID ${msg.id} 使用sender.nickname:`, senderName);
+          } else if ((msg as any).user && (msg as any).user.nickname) {
+            senderName = (msg as any).user.nickname;
+            console.log(`消息ID ${msg.id} 使用user.nickname:`, senderName);
+          } else if ((msg as any).sender && (msg as any).sender.username) {
+            senderName = (msg as any).sender.username;
+            console.log(`消息ID ${msg.id} 使用sender.username:`, senderName);
+          } else if ((msg as any).user && (msg as any).user.username) {
+            senderName = (msg as any).user.username;
+            console.log(`消息ID ${msg.id} 使用user.username:`, senderName);
+          } else {
+            // 如果都没有，使用发送者ID
+            console.log(`消息ID ${msg.id} 没有找到昵称，使用ID`);
+          }
+          
+          // 处理头像
+          const avatarUrl = msg.senderAvatar || 
+                           ((msg as any).sender && (msg as any).sender.avatarUrl) || 
+                           ((msg as any).user && (msg as any).user.avatarUrl) || 
+                           '';
+                           
+          // 获取用户在群组中的角色
+          let memberRole = undefined;
+          if (props.isGroupChat && senderId !== null && props.groupId) {
+            memberRole = getMemberRole(senderId, props.groupId);
+            if (memberRole) {
+              console.log(`消息ID ${msg.id} 获取到发送者角色:`, memberRole);
+            } else {
+              // 如果通过senderId找不到，尝试使用原始的msg.senderId
+              if (msg.senderId && msg.senderId !== senderId) {
+                memberRole = getMemberRole(msg.senderId, props.groupId);
+                console.log(`消息ID ${msg.id} 通过原始senderId(${msg.senderId})获取角色:`, memberRole || '未找到');
+              } else {
+                console.log(`消息ID ${msg.id} 发送者(${senderId})角色未找到`);
+              }
+            }
+          }
+          
           const formattedMsg = {
             ...msg,
             id: msg.id || Date.now() + Math.random(),
@@ -1181,7 +1276,10 @@ const loadMessages = async (conversationId: string) => {
             type: msg.type || msg.messageType || 'TEXT',
             content: msg.content || '',
             isSentByCurrentUser: isSentByCurrentUser,
-            isSelf: isSentByCurrentUser // 添加isSelf属性以兼容ChatMessage组件
+            isSelf: isSentByCurrentUser, // 添加isSelf属性以兼容ChatMessage组件
+            senderName: senderName,
+            senderAvatar: avatarUrl,
+            memberRole: memberRole // 添加成员角色属性
           };
           
           // 确保消息有正确的isSelf属性
@@ -1247,9 +1345,13 @@ watch(() => props.conversationId, (newId, oldId) => {
     showForwardDialog.value = false;
     inputDisabled.value = false;
     
-    // 如果是群聊，检查群组封禁状态
+    // 如果是群聊，检查群组封禁状态和加载成员信息
     if (props.isGroupChat) {
       checkGroupBanStatus(Number(newId));
+      
+      if (props.groupId) {
+        loadGroupMembers(props.groupId);
+      }
     } else {
       // 不是群聊，重置封禁状态
       groupBanned.value = false;
@@ -1749,6 +1851,11 @@ onMounted(() => {
     loadMessages(props.conversationId);
   }
   
+  // 如果是群聊且有群组ID，加载群组成员信息
+  if (props.isGroupChat && props.groupId) {
+    loadGroupMembers(props.groupId);
+  }
+  
   // 在组件挂载后应用个性化设置
   const { settings } = getUserSettings();
   if (settings.value?.theme?.chatBackground) {
@@ -1814,10 +1921,34 @@ async function loadChatMessages() {
       messages.value = messagesData.map((msg: any) => {
         // 添加必要的字段
         const isSelf = msg.senderId === currentUser.value?.id;
+        
+        // 处理发送者昵称
+        let senderName = '';
+        if (msg.senderName) {
+          senderName = msg.senderName;
+          console.log('使用msg.senderName:', senderName);
+        } else if (msg.senderNickname) {
+          senderName = msg.senderNickname;
+          console.log('使用msg.senderNickname:', senderName);
+        } else if (msg.sender && msg.sender.nickname) {
+          senderName = msg.sender.nickname;
+          console.log('使用msg.sender.nickname:', senderName);
+        } else if (msg.user && msg.user.nickname) {
+          senderName = msg.user.nickname;
+          console.log('使用msg.user.nickname:', senderName);
+        } else if (msg.sender && msg.sender.username) {
+          senderName = msg.sender.username;
+          console.log('使用msg.sender.username:', senderName);
+        } else if (msg.user && msg.user.username) {
+          senderName = msg.user.username;
+          console.log('使用msg.user.username:', senderName);
+        }
+        
         return {
           ...msg,
           isSelf,
-          isSentByCurrentUser: isSelf
+          isSentByCurrentUser: isSelf,
+          senderName: senderName
         };
       });
       
@@ -1826,10 +1957,9 @@ async function loadChatMessages() {
         return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
       });
       
-      // 所有消息加载完成后，如果有消息，更新阅读光标
+      // 所有消息加载完成后，如果有消息，标记会话为已读
       if (messages.value.length > 0) {
-        const lastMessage = messages.value[messages.value.length - 1];
-        updateReadCursor(Number(props.conversationId), lastMessage.id);
+        markConversationAsReadById(Number(props.conversationId));
       }
     } else {
       throw new Error(response.message || '加载消息失败');
@@ -1862,9 +1992,121 @@ const checkUserInGroup = async (groupId: number): Promise<boolean> => {
   }
 };
 
-const openSearchPanel = () => {
-  console.log('打开搜索面板');
-  isSearchActive.value = true;
+// 群组成员数据
+const groupMembers = ref<any[]>([]);
+
+// 更新现有消息的角色信息
+const updateMessagesRoles = () => {
+  if (!props.isGroupChat || groupMembers.value.length === 0 || !props.groupId) {
+    console.log('无法更新消息角色信息: isGroupChat=', props.isGroupChat, 
+      'groupMembers.length=', groupMembers.value.length, 
+      'groupId=', props.groupId);
+    return;
+  }
+  
+  console.log('开始更新现有消息的角色信息，当前消息数量:', messages.value.length);
+  let updatedCount = 0;
+  
+  messages.value = messages.value.map(msg => {
+    // 如果消息已经有角色信息，不需要更新
+    if (msg.memberRole) return msg;
+    
+    const senderId = msg.senderId ? Number(msg.senderId) : null;
+    if (senderId !== null) {
+      const role = getMemberRole(senderId, props.groupId);
+      if (role) {
+        console.log(`为消息ID ${msg.id} 更新角色信息: ${role}`);
+        updatedCount++;
+        return { ...msg, memberRole: role };
+      }
+    }
+    
+    return msg;
+  });
+  
+  console.log(`角色信息更新完成，更新了 ${updatedCount} 条消息的角色信息`);
+};
+
+// 修改loadGroupMembers函数，在成功加载后调用updateMessagesRoles
+const loadGroupMembers = async (groupId: number) => {
+  if (!props.isGroupChat || !groupId) {
+    console.warn('加载群组成员失败：不是群聊或无效的群组ID', { isGroupChat: props.isGroupChat, groupId });
+    return;
+  }
+  
+  try {
+    console.log('正在加载群组成员，参数详情:', { 
+      groupId, 
+      isGroupChat: props.isGroupChat,
+      conversationId: props.conversationId
+    });
+    const response = await groupApi.getGroupMembers(groupId);
+    
+    console.log('获取群组成员API响应:', response);
+    
+    if (response.success && response.data) {
+      // 标准化角色字段，确保都是小写
+      const members = response.data.map((member: any) => ({
+        ...member,
+        role: member.role?.toLowerCase() || 'member'
+      }));
+      
+      console.log(`获取到${members.length}个群组成员信息:`, members);
+      console.log('群组成员角色示例:', members.slice(0, 3).map((m: any) => ({ 
+        userId: m.userId, 
+        role: m.role, 
+        originalRole: m.originalRole || '未记录'
+      })));
+      
+      groupMembers.value = members;
+      
+      // 加载成功后，更新现有消息的角色信息
+      updateMessagesRoles();
+    } else {
+      console.error('加载群组成员失败:', response.message);
+    }
+  } catch (error) {
+    console.error('获取群组成员时发生错误:', error);
+  }
+};
+
+// 根据用户ID和群组ID获取角色
+const getMemberRole = (userId: number | string, groupId?: number): string | undefined => {
+  if (!groupMembers.value.length || !groupId || !props.groupId) {
+    console.log(`未能获取角色: 群组成员列表长度=${groupMembers.value.length}, 传入groupId=${groupId}, props.groupId=${props.groupId}`);
+    return undefined;
+  }
+  
+  // 确保当前群组成员是正确的群组的成员
+  if (props.groupId !== groupId) {
+    console.warn(`请求的groupId(${groupId})与当前活动的groupId(${props.groupId})不匹配`);
+  }
+  
+  // 将userId转换为字符串和数字两种形式进行匹配
+  const userIdStr = String(userId);
+  const userIdNum = typeof userId === 'string' ? parseInt(userId, 10) : userId;
+  
+  // 尝试用不同形式的ID查找成员，确保是当前群组的成员
+  const member = groupMembers.value.find(m => 
+    (m.userId === userIdNum || m.userId === userIdStr || String(m.userId) === userIdStr) &&
+    (m.groupId === groupId || m.groupId === String(groupId) || !m.groupId) // 考虑可能的groupId格式
+  );
+  
+  if (member) {
+    console.log(`找到用户ID=${userId}的角色:`, member.role);
+    return member.role;
+  }
+  
+  console.log(`未找到用户ID=${userId}在群组ID=${groupId}中的角色，群组成员列表:`, 
+    groupMembers.value.map(m => ({ 
+      userId: m.userId, 
+      idType: typeof m.userId,
+      groupId: m.groupId,
+      role: m.role
+    })).slice(0, 5)
+  );
+  
+  return undefined;
 };
 </script>
 
@@ -1884,30 +2126,51 @@ const openSearchPanel = () => {
   height: 100%;
   position: relative;
   background-color: transparent !important;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
 }
 
 .chat-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 16px;
-  border-bottom: 1px solid #e0e0e0;
+  padding: 16px 20px;
+  border-bottom: 2px solid #e8e8e8;
   background-color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  position: relative;
+  z-index: 2;
 }
 
 .chat-title {
   margin: 0;
-  font-size: 16px;
-  font-weight: 500;
+  font-size: 18px;
+  font-weight: 600;
   color: #333;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  position: relative;
+  padding-left: 8px;
+}
+
+.chat-title::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 18px;
+  background: var(--primary-color, #4a7bff);
+  border-radius: 2px;
 }
 
 .chat-actions {
   display: flex;
-  gap: 8px;
+  gap: 10px;
+  align-items: center;
 }
 
 .action-btn {
@@ -1915,41 +2178,197 @@ const openSearchPanel = () => {
   border: none;
   color: #666;
   cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 4px;
+  padding: 8px;
+  border-radius: 8px;
   transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
 }
 
 .action-btn:hover {
-  background-color: #f0f0f0;
-  color: var(--primary-color);
+  background-color: #f0f5ff;
+  color: var(--primary-color, #4a7bff);
+  transform: translateY(-2px);
+}
+
+/* 添加激活状态样式 */
+.action-btn.active {
+  background-color: var(--primary-color, #4a7bff);
+  color: white;
 }
 
 .search-action-btn {
-  background-color: #f0f0f0;
+  background-color: #f0f5ff;
   display: flex;
   align-items: center;
   gap: 5px;
-  padding: 4px 10px;
+  padding: 8px 12px;
+  border-radius: 20px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 .search-action-btn:hover {
-  background-color: #e0e0e0;
+  background-color: #e0ecff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .search-text {
-  font-size: 12px;
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .message-container {
   flex: 1;
   overflow-y: auto;
-  padding: 16px;
+  padding: 20px;
   background-color: var(--chat-background, #f9f9f9) !important;
   background-image: var(--chat-background-image, none) !important;
   background-size: cover !important;
   background-position: center !important;
   font-size: var(--font-size-base);
+  border-left: 1px solid #e8e8e8;
+  border-right: 1px solid #e8e8e8;
+}
+
+/* 重新设计消息项样式 */
+.message-item-wrapper {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  transition: all 0.25s;
+  position: relative;
+}
+
+.message-item-wrapper:hover {
+  background-color: rgba(0, 0, 0, 0.03);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.message-selected {
+  background-color: rgba(74, 123, 255, 0.08);
+  border: 1px solid rgba(74, 123, 255, 0.2);
+  box-shadow: 0 2px 12px rgba(74, 123, 255, 0.1);
+}
+
+.message-checkbox {
+  margin-right: 10px;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 2px solid #ddd;
+  transition: all 0.2s;
+}
+
+.message-checkbox:hover {
+  border-color: var(--primary-color, #4a7bff);
+  background-color: rgba(74, 123, 255, 0.1);
+}
+
+.checkbox-indicator.selected {
+  background-color: var(--primary-color, #4a7bff);
+  border-color: var(--primary-color, #4a7bff);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
+}
+
+/* 选择模式样式 */
+.selection-mode-banner {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 20px;
+  background-color: #f0f8ff;
+  border-bottom: 2px solid #cce0ff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.selection-info {
+  font-weight: 600;
+  color: #1976d2;
+  font-size: 15px;
+}
+
+.selection-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.selection-action-btn {
+  padding: 9px 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.25s;
+}
+
+.selection-action-btn.forward-btn {
+  background-color: #1976d2;
+  color: white;
+  font-size: 14px;
+  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.25);
+}
+
+.selection-action-btn.forward-btn:hover {
+  background-color: #1565c0;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+}
+
+.selection-action-btn.forward-btn:disabled {
+  background-color: #bbdefb;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.selection-action-btn.cancel-btn {
+  background-color: #f5f5f5;
+  color: #666;
+}
+
+.selection-action-btn.cancel-btn:hover {
+  background-color: #e0e0e0;
+  transform: translateY(-2px);
+}
+
+.selection-mode-hint {
+  padding: 10px 16px;
+  background-color: #fffde7;
+  border-left: 4px solid #ffd54f;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #795548;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.selection-mode-hint i {
+  color: #ff9800;
 }
 
 .loading-container,
@@ -1991,146 +2410,6 @@ const openSearchPanel = () => {
   font-size: 12px;
   color: #bbb;
   margin-top: 4px;
-}
-
-/* 选择模式样式 */
-.selection-mode-banner {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 15px;
-  background-color: #f0f8ff;
-  border-bottom: 1px solid #cce0ff;
-}
-
-.selection-info {
-  font-weight: bold;
-  color: #1976d2;
-}
-
-.selection-actions {
-  display: flex;
-  gap: 10px;
-}
-
-.selection-action-btn {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: all 0.2s;
-}
-
-.selection-action-btn.forward-btn {
-  background-color: #1976d2;
-  color: white;
-  font-size: 14px;
-}
-
-.selection-action-btn.forward-btn:hover {
-  background-color: #1565c0;
-}
-
-.selection-action-btn.forward-btn:disabled {
-  background-color: #bbdefb;
-  cursor: not-allowed;
-}
-
-.selection-action-btn.cancel-btn {
-  background-color: #f5f5f5;
-  color: #666;
-}
-
-.selection-action-btn.cancel-btn:hover {
-  background-color: #e0e0e0;
-}
-
-.message-item-wrapper {
-  display: flex;
-  align-items: flex-start;
-  margin-bottom: 10px;
-  padding: 4px 8px;
-  border-radius: 8px;
-  transition: background-color 0.2s;
-  position: relative;
-}
-
-.message-item-wrapper:hover {
-  background-color: rgba(0, 0, 0, 0.03);
-}
-
-.message-selected {
-  background-color: rgba(25, 118, 210, 0.08);
-  border: 1px solid rgba(25, 118, 210, 0.2);
-}
-
-.message-checkbox {
-  margin-right: 8px;
-  cursor: pointer;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  color: #ccc;
-  transition: color 0.2s;
-}
-
-.message-selected .message-checkbox {
-  color: #1976d2;
-}
-
-/* WebSocket连接状态指示器样式 */
-.ws-status-indicator {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 8px;
-  border-radius: 4px;
-  background-color: #ffebee;
-  color: #c62828;
-  font-size: 12px;
-  margin-right: 8px;
-}
-
-.ws-status-indicator.connected {
-  background-color: #e8f5e9;
-  color: #2e7d32;
-}
-
-.ws-status-indicator .status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: #c62828; /* 红色 */
-}
-
-.ws-status-indicator.connected .status-dot {
-  background-color: #2e7d32; /* 绿色 */
-}
-
-/* WebSocket重连按钮 */
-.reconnect-btn {
-  background: none;
-  border: none;
-  color: #c62828;
-  cursor: pointer;
-  padding: 2px 5px;
-  font-size: 10px;
-  border-radius: 2px;
-  transition: all 0.2s;
-}
-
-.reconnect-btn:hover {
-  background-color: rgba(198, 40, 40, 0.1);
 }
 
 /* 输入状态指示器样式 */
@@ -2178,97 +2457,6 @@ const openSearchPanel = () => {
   font-size: 14px;
   color: #666;
   font-style: italic;
-}
-
-/* 控制按钮样式 */
-.chat-controls {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 15px;
-  background-color: #f5f5f5;
-  border-top: 1px solid #e0e0e0;
-}
-
-.control-buttons {
-  display: flex;
-  gap: 10px;
-}
-
-.control-btn {
-  background: none;
-  border: none;
-  color: #666;
-  cursor: pointer;
-  padding: 6px 12px;
-  border-radius: 4px;
-  transition: all 0.2s;
-}
-
-.control-btn:hover {
-  background-color: #e0e0e0;
-}
-
-.selection-mode-btn {
-  background-color: #1976d2;
-  color: white;
-}
-
-.selection-mode-btn.active {
-  background-color: #1565c0;
-}
-
-.checkbox-indicator {
-  width: 24px;
-  height: 24px;
-  border: 2px solid #ccc;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.checkbox-indicator.selected {
-  background-color: #1976d2;
-  border-color: #1976d2;
-}
-
-.message-checkbox {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  cursor: pointer;
-  margin-right: 10px;
-}
-
-.checkbox-indicator {
-  width: 24px;
-  height: 24px;
-  border: 2px solid #1976d2;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-  background-color: #fff;
-}
-
-.checkbox-indicator:hover {
-  border-color: #1565c0;
-  background-color: #e3f2fd;
-}
-
-.checkbox-indicator.selected {
-  background-color: #1976d2;
-  border-color: #1976d2;
-  color: white;
-}
-
-.message-selected {
-  background-color: rgba(25, 118, 210, 0.05);
-  border-left: 3px solid #1976d2;
 }
 
 /* 选择模式提示 */
@@ -2320,5 +2508,20 @@ const openSearchPanel = () => {
   font-size: 12px;
   color: #666;
   margin-left: 10px;
+}
+
+.search-action-btn.active {
+  background-color: var(--primary-color, #4a7bff);
+  color: white;
+  box-shadow: 0 2px 8px rgba(74, 123, 255, 0.4);
+}
+
+.search-action-btn.active:hover {
+  background-color: var(--primary-color, #4a7bff);
+  box-shadow: 0 4px 10px rgba(74, 123, 255, 0.5);
+}
+
+.search-action-btn.active .search-text {
+  color: white;
 }
 </style> 

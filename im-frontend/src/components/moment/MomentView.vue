@@ -132,11 +132,25 @@ defineExpose({
 }
 
 .top-bar {
-  padding: 16px 20px;
+  padding: 18px 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid var(--el-border-color-lighter);
+  border: 2px solid #cbd5e1;
+  border-left: 6px solid #94a3b8;
+  border-radius: 12px;
+  margin: 12px 16px;
+  background-color: white;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s;
+}
+
+.top-bar:hover {
+  background-color: #f1f5f9;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  border-left: 6px solid #2563eb;
+  border-color: #60a5fa;
 }
 
 .view-title {
@@ -154,8 +168,27 @@ defineExpose({
   margin-right: 4px;
 }
 
+/* 发布动态按钮样式 */
+:deep(.el-button--primary) {
+  border: 2px solid #1e293b;
+  border-radius: 10px;
+  padding: 12px 20px;
+  font-weight: 600;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.2);
+  transition: all 0.3s;
+  background-color: #1e293b;
+  border-color: #1e293b;
+}
+
+:deep(.el-button--primary:hover) {
+  background-color: #0f172a;
+  border-color: #0f172a;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(15, 23, 42, 0.4);
+}
+
 /* 修改对话框样式，移除padding使CreateMoment组件可以占满 */
 :deep(.el-dialog__body) {
   padding: 0;
 }
-</style> 
+</style>

@@ -26,6 +26,7 @@
         v-for="request in joinRequests"
         :key="request.id"
         class="request-item"
+        :class="{ 'request-pending': request.status === 'PENDING' }"
       >
         <div class="request-header">
           <el-avatar :size="40" :src="request.avatarUrl">
@@ -34,7 +35,7 @@
           <div class="request-info">
             <div class="request-user">{{ request.nickname || request.username }}</div>
             <div class="request-time">
-              申请时间: {{ formatDate(request.createdAt) }}
+              申请时间: {{ formatRequestDate(request.createdAt) }}
             </div>
           </div>
           <div class="request-status" :class="getStatusClass(request.status)">
@@ -78,7 +79,7 @@
         
         <div class="request-result" v-if="request.status !== 'PENDING' && request.handlerUsername">
           由 <span class="handler-name">{{ request.handlerNickname || request.handlerUsername }}</span> 
-          于 {{ formatDate(request.handledAt) }} 处理
+          于 {{ formatRequestDate(request.handledAt) }} 处理
         </div>
       </div>
       
@@ -96,7 +97,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, defineProps, defineEmits, watch } from 'vue';
+import { ref, onMounted, onUnmounted, defineProps, defineEmits, watch } from 'vue';
 import { ElMessage } from 'element-plus';
 import { getGroupJoinRequests, handleJoinRequest, cancelJoinRequest } from '@/api/group';
 import { formatDate } from '@/utils/helpers';
@@ -110,6 +111,10 @@ const props = defineProps({
   autoReload: {
     type: Boolean,
     default: true
+  },
+  isAdmin: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -257,14 +262,33 @@ const getStatusClass = (status: string) => {
   }
 };
 
+// 格式化请求日期
+const formatRequestDate = (dateStr: string | null) => {
+  if (!dateStr) return '';
+  try {
+    const date = new Date(dateStr);
+    // 验证日期是否有效
+    if (isNaN(date.getTime())) {
+      console.error('无效的日期:', dateStr);
+      return '日期无效';
+    }
+    return formatDate(date, 'yyyy-MM-dd HH:mm:ss');
+  } catch (error) {
+    console.error('格式化日期出错:', error);
+    return '日期错误';
+  }
+};
+
 // 组件挂载时加载数据
 onMounted(() => {
+  if (props.isAdmin) {
   loadRequests();
+  }
   
   // 如果自动刷新，设置定时器
   let timer: number | null = null;
   
-  if (props.autoReload) {
+  if (props.autoReload && props.isAdmin) {
     timer = window.setInterval(() => {
       loadRequests();
     }, 30000); // 每30秒刷新一次
@@ -279,9 +303,11 @@ onMounted(() => {
 });
 
 // 监视groupId变化，重新加载数据
-watch(() => props.groupId, () => {
+watch(() => props.groupId, (_, __) => {
   currentPage.value = 1;
+  if (props.isAdmin) {
   loadRequests();
+  }
 });
 </script>
 

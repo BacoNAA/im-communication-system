@@ -3,17 +3,29 @@
   <div class="group-view">
     <el-container>
       <el-aside width="300px">
+        <div class="group-search-button">
+          <el-button type="primary" @click="openSearch">
+            <el-icon><Search /></el-icon>
+            搜索新群组
+          </el-button>
+        </div>
         <GroupList @select-group="handleGroupSelected" />
       </el-aside>
       <el-main>
-        <!-- 未选择群组时的搜索界面 -->
-        <div v-if="!activeGroupId && activeTab === 'search'" class="search-container">
+        <!-- 搜索界面 -->
+        <div v-if="activeTab === 'search'" class="search-container">
+          <div class="search-header">
+            <h2>搜索群组</h2>
+            <p>查找并加入你感兴趣的群组</p>
+          </div>
+          <div class="search-content">
           <GroupSearch />
+          </div>
         </div>
 
-        <!-- 选择了群组时的内容 -->
-        <div v-if="activeGroupId" class="group-content">
-          <!-- 修改群组头部，添加退出群聊按钮 -->
+        <!-- 群组内容 -->
+        <div v-if="activeGroupId && activeTab !== 'search'" class="group-content">
+          <!-- 群组头部 -->
           <div class="group-header">
             <div class="group-info">
               <el-avatar :size="60">
@@ -109,12 +121,6 @@
           </el-dialog>
 
           <el-tabs v-model="activeTab" class="group-tabs">
-            <el-tab-pane label="搜索群组" name="search" v-if="!activeGroupId">
-              <div class="group-search-tab">
-                <GroupSearch />
-              </div>
-            </el-tab-pane>
-
             <el-tab-pane label="群聊" name="chat">
               <div class="group-chat">
                 <el-button type="primary" @click="goToConversation">
@@ -165,56 +171,47 @@
                           {{ scope.row.joinedAt ? new Date(scope.row.joinedAt).toLocaleString() : '未知' }}
                     </template>
                   </el-table-column>
-                      <el-table-column label="操作" width="180">
+                      <el-table-column label="操作" width="280">
                     <template #default="scope">
                       <div class="member-actions">
+                        <!-- 群主移除成员按钮 -->
                         <el-button
-                          v-if="canManageMember(scope.row)"
+                          v-if="canOwnerManageMember(scope.row)"
                           type="danger"
                           size="small"
                           @click="handleRemoveMember(scope.row)"
+                          class="action-button owner-action"
                         >
+                          <el-icon><Delete /></el-icon>
                           移除
                         </el-button>
-                        <el-dropdown 
-                          v-if="canSetAdmin(scope.row) || canCancelAdmin(scope.row)"
-                          trigger="click"
-                          @command="(command: string) => handleAdminCommand(command, scope.row)"
-                        >
-                          <el-button type="primary" size="small">
-                            管理员操作
-                            <el-icon class="el-icon--right"><arrow-down /></el-icon>
-                          </el-button>
-                          <template #dropdown>
-                            <el-dropdown-menu>
-                              <el-dropdown-item 
-                                v-if="canSetAdmin(scope.row)" 
-                                command="set-admin"
-                              >
-                                设为管理员
-                              </el-dropdown-item>
-                              <el-dropdown-item 
-                                v-if="canCancelAdmin(scope.row)" 
-                                command="cancel-admin"
-                              >
-                                取消管理员
-                              </el-dropdown-item>
-                            </el-dropdown-menu>
-                          </template>
-                        </el-dropdown>
                         
-                        <!-- 添加禁言操作下拉菜单 -->
+                        <!-- 管理员移除成员按钮 -->
+                        <el-button
+                          v-if="canAdminManageMember(scope.row)"
+                          type="danger"
+                          size="small"
+                          @click="handleRemoveMember(scope.row)"
+                          class="action-button admin-action"
+                        >
+                          <el-icon><Delete /></el-icon>
+                          管理员移除
+                        </el-button>
+                        
+                        <!-- 群主禁言操作按钮 -->
                         <el-dropdown 
-                          v-if="canManageMute(scope.row)"
+                          v-if="canOwnerManageMute(scope.row)"
                           trigger="click"
                           @command="(command: string) => handleMuteCommand(command, scope.row)"
+                          class="action-dropdown"
                         >
                           <el-button
                             :type="scope.row.isMuted ? 'warning' : 'info'" 
                             size="small"
+                            class="action-button owner-action"
                           >
+                            <el-icon><Mute /></el-icon>
                             {{ scope.row.isMuted ? '已禁言' : '禁言' }}
-                            <el-icon class="el-icon--right"><arrow-down /></el-icon>
                           </el-button>
                           <template #dropdown>
                             <el-dropdown-menu>
@@ -258,13 +255,101 @@
                           </template>
                         </el-dropdown>
                         
-                        <!-- 添加举报成员按钮 -->
+                        <!-- 管理员禁言操作按钮 -->
+                        <el-dropdown 
+                          v-if="canAdminManageMute(scope.row)"
+                          trigger="click"
+                          @command="(command: string) => handleMuteCommand(command, scope.row)"
+                          class="action-dropdown"
+                        >
+                          <el-button
+                            :type="scope.row.isMuted ? 'warning' : 'info'" 
+                            size="small"
+                            class="action-button admin-action"
+                          >
+                            <el-icon><Mute /></el-icon>
+                            {{ scope.row.isMuted ? '已禁言' : '管理员禁言' }}
+                          </el-button>
+                          <template #dropdown>
+                            <el-dropdown-menu>
+                              <el-dropdown-item 
+                                v-if="!scope.row.isMuted" 
+                                command="mute-custom"
+                              >
+                                设置禁言
+                              </el-dropdown-item>
+                              <el-dropdown-item 
+                                v-if="!scope.row.isMuted" 
+                                command="mute-10"
+                              >
+                                禁言10分钟
+                              </el-dropdown-item>
+                              <el-dropdown-item 
+                                v-if="!scope.row.isMuted" 
+                                command="mute-30"
+                              >
+                                禁言30分钟
+                              </el-dropdown-item>
+                              <el-dropdown-item 
+                                v-if="!scope.row.isMuted" 
+                                command="mute-60"
+                              >
+                                禁言1小时
+                              </el-dropdown-item>
+                              <el-dropdown-item 
+                                v-if="!scope.row.isMuted" 
+                                command="mute-1440"
+                              >
+                                禁言24小时
+                              </el-dropdown-item>
+                              <el-dropdown-item 
+                                v-if="scope.row.isMuted" 
+                                command="unmute"
+                              >
+                                解除禁言
+                              </el-dropdown-item>
+                            </el-dropdown-menu>
+                          </template>
+                        </el-dropdown>
+                        
+                        <!-- 管理员角色操作 -->
+                        <el-dropdown 
+                          v-if="canSetAdmin(scope.row) || canCancelAdmin(scope.row)"
+                          trigger="click"
+                          @command="(command: string) => handleAdminCommand(command, scope.row)"
+                          class="action-dropdown"
+                        >
+                          <el-button type="primary" size="small" class="action-button">
+                            <el-icon><Setting /></el-icon>
+                            管理员
+                          </el-button>
+                          <template #dropdown>
+                            <el-dropdown-menu>
+                              <el-dropdown-item 
+                                v-if="canSetAdmin(scope.row)" 
+                                command="set-admin"
+                              >
+                                设为管理员
+                              </el-dropdown-item>
+                              <el-dropdown-item 
+                                v-if="canCancelAdmin(scope.row)" 
+                                command="cancel-admin"
+                              >
+                                取消管理员
+                              </el-dropdown-item>
+                            </el-dropdown-menu>
+                          </template>
+                        </el-dropdown>
+                        
+                        <!-- 举报成员按钮 -->
                         <el-button
                           v-if="scope.row.userId !== currentUserId"
                           type="warning"
                           size="small"
                           @click="handleReportMember(scope.row)"
+                          class="action-button"
                         >
+                          <el-icon><Warning /></el-icon>
                           举报
                         </el-button>
                       </div>
@@ -421,6 +506,7 @@
               <div class="group-requests">
                 <GroupJoinRequests 
                   :groupId="Number(activeGroupId)" 
+                  :isAdmin="isCurrentUserOwnerOrAdmin"
                   @update:count="updateRequestCount" 
                 />
               </div>
@@ -443,10 +529,10 @@
           </el-tabs>
         </div>
 
-        <!-- 未选择群组时的提示 -->
+        <!-- 未选择群组且非搜索标签页时的提示 -->
         <div v-if="!activeGroupId && activeTab !== 'search'" class="empty-group-container">
           <el-empty description="请选择一个群组">
-            <el-button type="primary" @click="activeTab = 'search'">搜索新群组</el-button>
+            <el-button type="primary" @click="openSearch">搜索新群组</el-button>
           </el-empty>
         </div>
       </el-main>
@@ -669,13 +755,14 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { ArrowDown, More, Edit, Top, Delete } from '@element-plus/icons-vue';
+import { ArrowDown, More, Edit, Top, Delete, Mute, Setting, Warning, Search } from '@element-plus/icons-vue';
 import GroupList from '@/components/group/GroupList.vue';
 import GroupEditForm from '@/components/group/GroupEditForm.vue';
 import GroupSearch from '@/components/group/GroupSearch.vue'; // 导入群组搜索组件
 import GroupJoinRequests from '@/components/group/GroupJoinRequests.vue'; // 导入群组加入请求组件
 import GroupPolls from '@/components/group/GroupPolls.vue'; // 导入群组投票组件
 import { reportApi } from '@/api/report'; // 导入举报API
+import { getCurrentUserId } from '@/utils/helpers'; // 导入获取当前用户ID的辅助函数
 import { 
   getGroupById, 
   getGroupMembers, 
@@ -735,7 +822,7 @@ export default {
     const showEditForm = ref(false);
     
     // 获取当前用户ID
-    const currentUserId = ref<number>(0);
+    const currentUserId = ref<number>(getCurrentUserId());
     
     // 移除成员相关变量
     const showRemoveMemberDialog = ref(false);
@@ -898,40 +985,36 @@ export default {
       if (newTab === 'announcements' && activeGroupId.value) {
         loadAnnouncements();
       }
-      if (newTab === 'requests' && activeGroupId.value) {
-        // 在请求标签页切换时，也更新请求数量
-        updateRequestCount(0); // 假设切换时请求数量为0，实际需要API调用
+      if (newTab === 'requests' && activeGroupId.value && (isCurrentUserOwner.value || isCurrentUserAdmin.value)) {
+        // 只有群主或管理员才更新请求数量
+        updateRequestCount(0);
       }
     });
     
     // 组件挂载时初始化
     onMounted(() => {
-      // 获取当前用户ID
-      const userInfoStr = localStorage.getItem('userInfo');
-      if (userInfoStr) {
-        try {
-          const userInfo = JSON.parse(userInfoStr);
-          if (userInfo && userInfo.id) {
-            currentUserId.value = userInfo.id;
-          }
-        } catch (e) {
-          console.error('解析userInfo失败:', e);
-        }
+      // 组件挂载时，获取当前用户ID
+      const userId = getCurrentUserId();
+      console.log('组件挂载时获取的用户ID:', userId);
+      
+      // 如果获取到了有效的用户ID，则更新currentUserId
+      if (userId > 0) {
+        currentUserId.value = userId;
       }
       
-      // 如果路由中有群组ID，则加载该群组
-      const routeId = router.currentRoute.value.params.id;
-      if (routeId && typeof routeId === 'string') {
-        activeGroupId.value = parseInt(routeId, 10);
-        loadMembers();
+      // 解析路由参数中的群组ID
+      const route = useRoute();
+      if (route.params.id) {
+        const groupId = parseInt(route.params.id as string, 10);
+        if (!isNaN(groupId)) {
+          activeGroupId.value = groupId;
         loadGroupDetail();
-      } else {
-        // 没有选中群组，默认显示搜索页
-        activeTab.value = 'search';
-      }
+          loadMembers();
       
       // 添加WebSocket监听
       addListener(handleGroupUpdate);
+        }
+      }
     });
     
     // 在组件卸载时移除监听器
@@ -953,10 +1036,12 @@ export default {
       if (activeTab.value === 'announcements') {
         loadAnnouncements();
       }
-      // 如果当前是请求标签页，则更新请求数量
-      if (activeTab.value === 'requests') {
-        updateRequestCount(0); // 切换群组时请求数量为0，实际需要API调用
+      // 如果当前是请求标签页且用户是群主或管理员，则更新请求数量
+      if (activeTab.value === 'requests' && (isCurrentUserOwner.value || isCurrentUserAdmin.value)) {
+        updateRequestCount(0);
       }
+      // 如果当前是投票标签页，无需额外操作，GroupPolls组件会通过watch监听groupId的变化自动刷新
+      console.log('群组切换，当前标签页:', activeTab.value);
     };
 
     // 加载群成员
@@ -980,6 +1065,42 @@ export default {
         if (response.code === 200) {
           members.value = response.data.content || [];
           total.value = response.data.totalElements || 0;
+          
+          // 打印当前用户的角色信息，用于调试
+          const currentMember = members.value.find(m => m.userId === currentUserId.value);
+          console.log('当前用户:', currentUserId.value);
+          console.log('当前用户成员信息:', currentMember);
+          
+          // 如果找不到当前用户，或当前用户ID为0，尝试重新获取用户ID
+          if (!currentMember || currentUserId.value === 0) {
+            console.log('找不到当前用户或用户ID为0，尝试重新获取用户ID');
+            const newUserId = getCurrentUserId();
+            console.log('重新获取的用户ID:', newUserId);
+            
+            if (newUserId > 0 && newUserId !== currentUserId.value) {
+              console.log('用户ID已更新，从', currentUserId.value, '到', newUserId);
+              currentUserId.value = newUserId;
+              
+              // 再次查找当前用户
+              const updatedCurrentMember = members.value.find(m => m.userId === currentUserId.value);
+              console.log('更新用户ID后的当前用户成员信息:', updatedCurrentMember);
+            }
+          }
+          
+          if (currentMember) {
+            console.log('当前用户角色 (原始):', currentMember.role);
+            // 统一角色格式为小写
+            currentMember.role = currentMember.role?.toLowerCase();
+            console.log('当前用户角色 (标准化):', currentMember.role);
+          }
+          
+          // 对所有成员的role进行标准化处理
+          members.value.forEach(member => {
+            // 统一角色格式为小写
+            if (member.role) {
+              member.role = member.role.toLowerCase();
+            }
+          });
         } else {
           ElMessage.error(response.message || '获取群成员失败');
         }
@@ -1257,19 +1378,32 @@ export default {
       const currentMember = members.value.find(member => member.userId === currentUserId.value);
       if (!currentMember) return null;
       
-      if (currentMember.role === 'OWNER' || currentMember.role === 'owner') return 'owner';
-      if (currentMember.role === 'ADMIN' || currentMember.role === 'admin') return 'admin';
+      const role = currentMember.role?.toLowerCase();
+      if (role === 'owner') return 'owner';
+      if (role === 'admin') return 'admin';
       return 'member';
     });
 
     // 检查当前用户是否为管理员
     const isCurrentUserAdmin = computed(() => {
-      return currentUserRole.value === 'admin';
+      if (!currentUserId.value) return false;
+      
+      const currentMember = members.value.find(member => member.userId === currentUserId.value);
+      if (!currentMember) return false;
+      
+      const role = currentMember.role?.toLowerCase();
+      return role === 'admin';
     });
 
     // 检查当前用户是否为群主
     const isCurrentUserOwner = computed(() => {
-      return currentUserRole.value === 'owner';
+      if (!currentUserId.value) return false;
+      
+      const currentMember = members.value.find(member => member.userId === currentUserId.value);
+      if (!currentMember) return false;
+      
+      const role = currentMember.role?.toLowerCase();
+      return role === 'owner';
     });
 
     // 检查是否可管理成员
@@ -1302,6 +1436,53 @@ export default {
       return false;
     };
 
+    // 群主是否可以移除成员
+    const canOwnerManageMember = (member: GroupMember) => {
+      // 不能移除自己
+      if (member.userId === currentUserId.value) {
+        return false;
+      }
+      
+      // 检查目标成员是否为群主
+      const isTargetOwner = member.role === 'OWNER' || member.role === 'owner';
+      
+      // 使用计算属性获取当前用户角色
+      const role = currentUserRole.value;
+      
+      // 群主可以移除任何人（除了自己）
+      return role === 'owner' && !isTargetOwner;
+    };
+
+    // 管理员是否可以移除成员
+    const canAdminManageMember = (member: GroupMember) => {
+      // 不能移除自己
+      if (member.userId === currentUserId.value) {
+        return false;
+      }
+      
+      // 检查目标成员是否为群主
+      const isTargetOwner = member.role?.toLowerCase() === 'owner';
+      
+      // 检查目标成员是否为管理员
+      const isTargetAdmin = member.role?.toLowerCase() === 'admin';
+      
+      // 显式检查当前用户是否是管理员，不使用currentUserRole计算属性
+      const currentMember = members.value.find(m => m.userId === currentUserId.value);
+      const isAdmin = currentMember && currentMember.role?.toLowerCase() === 'admin';
+      
+      console.log('管理员移除权限检查:', {
+        isAdmin,
+        currentUserRole: currentUserRole.value,
+        targetRole: member.role,
+        isTargetOwner,
+        isTargetAdmin,
+        result: isAdmin && !isTargetOwner && !isTargetAdmin
+      });
+      
+      // 管理员只能移除普通成员
+      return isAdmin && !isTargetOwner && !isTargetAdmin;
+    };
+
     // 检查是否可以管理禁言
     const canManageMute = (member: GroupMember) => {
       // 不能禁言自己
@@ -1330,6 +1511,53 @@ export default {
       
       // 普通成员不能禁言任何人
       return false;
+    };
+
+    // 群主是否可以禁言成员
+    const canOwnerManageMute = (member: GroupMember) => {
+      // 不能禁言自己
+      if (member.userId === currentUserId.value) {
+        return false;
+      }
+      
+      // 检查目标成员是否为群主
+      const isTargetOwner = member.role === 'OWNER' || member.role === 'owner';
+      
+      // 使用计算属性获取当前用户角色
+      const role = currentUserRole.value;
+      
+      // 群主可以禁言任何人（除了自己和其他群主）
+      return role === 'owner' && !isTargetOwner;
+    };
+
+    // 管理员是否可以禁言成员
+    const canAdminManageMute = (member: GroupMember) => {
+      // 不能禁言自己
+      if (member.userId === currentUserId.value) {
+        return false;
+      }
+      
+      // 检查目标成员是否为群主
+      const isTargetOwner = member.role?.toLowerCase() === 'owner';
+      
+      // 检查目标成员是否为管理员
+      const isTargetAdmin = member.role?.toLowerCase() === 'admin';
+      
+      // 显式检查当前用户是否是管理员，不使用currentUserRole计算属性
+      const currentMember = members.value.find(m => m.userId === currentUserId.value);
+      const isAdmin = currentMember && currentMember.role?.toLowerCase() === 'admin';
+      
+      console.log('管理员禁言权限检查:', {
+        isAdmin,
+        currentUserRole: currentUserRole.value,
+        targetRole: member.role,
+        isTargetOwner,
+        isTargetAdmin,
+        result: isAdmin && !isTargetOwner && !isTargetAdmin
+      });
+      
+      // 管理员只能禁言普通成员
+      return isAdmin && !isTargetOwner && !isTargetAdmin;
     };
 
     // 处理禁言命令
@@ -1843,6 +2071,12 @@ export default {
       }
     };
 
+    // 转到搜索页面
+    const openSearch = () => {
+      // 切换到搜索标签页
+      activeTab.value = 'search';
+    };
+
     return {
       activeGroupId,
       members,
@@ -1924,7 +2158,13 @@ export default {
       memberToReport,
       reportMemberForm,
       handleReportMember,
-      submitReportMember
+      submitReportMember,
+      // 新增的权限检查函数
+      canOwnerManageMember,
+      canAdminManageMember,
+      canOwnerManageMute,
+      canAdminManageMute,
+      openSearch,
     };
   }
 };
@@ -1933,6 +2173,8 @@ export default {
 <style scoped>
 .group-view {
   height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .el-container {
@@ -1940,42 +2182,70 @@ export default {
 }
 
 .el-aside {
-  border-right: 1px solid #ebeef5;
+  background-color: #f9f9f9;
+  border-right: 1px solid #e8e8e8;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
   overflow-y: auto;
 }
 
 .el-main {
-  padding: 20px;
+  padding: 0;
   overflow-y: auto;
+  background-color: #fff;
 }
 
 .group-content {
-  height: 100%;
   display: flex;
   flex-direction: column;
+  height: 100%;
 }
 
 .group-header {
-  padding: 20px;
-  border-bottom: 1px solid #ebeef5;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 16px 20px;
+  background-color: #fff;
+  border-bottom: 2px solid #e8e8e8;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .group-info {
   display: flex;
   align-items: center;
+  gap: 15px;
 }
 
 .group-details {
-  margin-left: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.group-details h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  position: relative;
+  padding-left: 10px;
+}
+
+.group-details h2::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 18px;
+  background: var(--primary-color, #4a7bff);
+  border-radius: 2px;
 }
 
 .group-meta {
-  color: #909399;
+  color: #666;
   font-size: 14px;
-  margin-top: 5px;
+  margin-top: 4px;
 }
 
 .group-actions {
@@ -1987,17 +2257,205 @@ export default {
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+}
+
+/* 修改Element Plus的标签页样式 */
+:deep(.el-tabs__header) {
+  margin: 0;
+  border-bottom: 1px solid #e8e8e8;
+  background-color: #f9f9f9;
+}
+
+:deep(.el-tabs__nav) {
+  border: none !important;
+}
+
+:deep(.el-tabs__item) {
+  height: 50px;
+  line-height: 50px;
+  font-size: 15px;
+  color: #666;
+  border: none !important;
+  position: relative;
+}
+
+:deep(.el-tabs__item.is-active) {
+  color: var(--primary-color, #4a7bff);
+  font-weight: 600;
+}
+
+:deep(.el-tabs__item.is-active)::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 50%;
+  height: 3px;
+  background-color: var(--primary-color, #4a7bff);
+  border-radius: 3px 3px 0 0;
+}
+
+:deep(.el-tabs__active-bar) {
+  display: none;
+}
+
+.group-chat {
+  padding: 24px;
+  text-align: center;
+  border: 1px dashed #e8e8e8;
+  margin: 24px;
+  border-radius: 12px;
+  background-color: #f9f9f9;
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.03);
+}
+
+.group-chat .el-button {
+  font-size: 16px;
+  padding: 12px 24px;
+  border-radius: 8px;
+  background-color: var(--primary-color, #4a7bff);
+  border: none;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.group-chat .el-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
 }
 
 .group-members {
-  padding: 20px 0;
+  padding: 20px;
+}
+
+/* 表格样式 */
+:deep(.el-table) {
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+:deep(.el-table__header-wrapper) {
+  background-color: #f9f9f9;
+}
+
+:deep(.el-table__header) th {
+  background-color: #f0f5ff !important;
+  color: #444;
+  font-weight: 600;
+  height: 50px;
+}
+
+:deep(.el-table__body) td {
+  padding: 12px 0;
+}
+
+:deep(.el-table__row:hover) td {
+  background-color: #f0f5ff !important;
 }
 
 .member-info {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
+}
+
+/* 搜索容器样式 */
+.search-container {
+  padding: 20px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  margin: 0 20px;
+}
+
+.search-header {
+  margin-bottom: 20px;
+  text-align: center;
+  padding: 20px 0;
+  background-color: #f5f7fa;
+  border-bottom: 1px solid #e8e8e8;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+}
+
+.search-header h2 {
+  font-size: 24px;
+  margin-bottom: 8px;
+  color: #409EFF;
+}
+
+.search-header p {
+  color: #606266;
+  font-size: 14px;
+}
+
+.group-search-button {
+  margin: 10px;
+  display: flex;
+  justify-content: center;
+}
+
+.group-search-button .el-button {
+  width: 100%;
+}
+
+/* 针对Element Plus的卡片样式 */
+:deep(.el-card) {
+  border-radius: 10px;
+  overflow: hidden;
+  transition: all 0.3s;
+  margin-bottom: 20px;
+  border: 1px solid #e8e8e8;
+}
+
+:deep(.el-card):hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1) !important;
+}
+
+:deep(.el-card__header) {
+  padding: 15px 20px;
+  border-bottom: 1px solid #e8e8e8;
+  background-color: #f9f9f9;
+}
+
+:deep(.el-card__body) {
+  padding: 20px;
+}
+
+/* 对话框样式 */
+:deep(.el-dialog) {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+:deep(.el-dialog__header) {
+  background-color: #f9f9f9;
+  padding: 16px 20px;
+  margin: 0;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+:deep(.el-dialog__title) {
+  font-weight: 600;
+  font-size: 18px;
+  color: #333;
+}
+
+:deep(.el-dialog__body) {
+  padding: 24px;
+}
+
+:deep(.el-dialog__footer) {
+  border-top: 1px solid #e8e8e8;
+  padding: 16px 20px;
+  background-color: #f9f9f9;
 }
 
 .member-name {
@@ -2015,22 +2473,30 @@ export default {
   justify-content: center;
 }
 
-.group-chat {
-  padding: 20px;
-  text-align: center;
-}
-
-.member-role .el-tag--danger {
-  color: #f56c6c;
-}
-
 .member-actions {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
-.el-dropdown-menu {
-  min-width: 120px;
+.action-button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 6px;
+  transition: all 0.2s;
+  padding: 5px 10px;
+  min-width: 70px;
+  justify-content: center;
+}
+
+.action-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.action-dropdown {
+  margin: 0;
 }
 
 /* 移除成员确认对话框样式 */
@@ -2196,10 +2662,6 @@ export default {
   margin: 5px 0;
 }
 
-.search-container {
-  height: 100%;
-}
-
 .empty-group-container {
   height: 100%;
   display: flex;
@@ -2286,5 +2748,54 @@ export default {
   margin: 0;
   font-size: 14px;
   color: #909399;
+}
+
+/* 响应式布局，在小屏幕上按钮垂直堆叠 */
+@media screen and (max-width: 1200px) {
+  .member-actions {
+    flex-direction: column;
+    gap: 5px;
+  }
+  
+  :deep(.el-table__row) {
+    height: auto;
+    padding: 10px 0;
+  }
+}
+
+/* 确保表格行足够高以容纳多个按钮 */
+:deep(.el-table__row) {
+  height: 80px !important;
+  padding: 12px 0;
+}
+
+.action-button.owner-action {
+  background-color: #f56c6c;
+  color: white;
+  border-color: #f56c6c;
+}
+
+.action-button.owner-action:hover {
+  background-color: #e74c3c;
+  border-color: #e74c3c;
+  color: white;
+}
+
+.action-button.admin-action {
+  background-color: #f39c12;
+  color: white;
+  border-color: #f39c12;
+}
+
+.action-button.admin-action:hover {
+  background-color: #e67e22;
+  border-color: #e67e22;
+  color: white;
+}
+
+.search-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 20px 20px;
 }
 </style> 

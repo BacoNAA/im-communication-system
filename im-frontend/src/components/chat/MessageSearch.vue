@@ -3,7 +3,7 @@
     <!-- 搜索头部 -->
     <div class="search-header">
       <button class="back-btn" @click="close">
-        <i class="fas fa-arrow-left"></i>
+        <i class="fas fa-arrow-right"></i>
         <span class="back-text">返回</span>
       </button>
       <div class="search-input-container">
@@ -611,10 +611,10 @@ const preloadUserInfo = async () => {
         if (participant.userId) {
           userCache.value[participant.userId] = {
             id: participant.userId,
+            alias: participant.alias, // 备注
             nickname: participant.nickname,
             username: participant.username,
-            avatarUrl: participant.avatarUrl,
-            alias: participant.alias
+            avatarUrl: participant.avatarUrl
           };
           console.log(`缓存参与者信息: ID=${participant.userId}, 昵称=${participant.nickname}, 头像=${participant.avatarUrl}`);
         }
@@ -928,6 +928,23 @@ const getSenderAvatarSync = (result: MessageSearchResult): string => {
     return result.message.senderAvatar;
   }
   
+  // 检查是否是当前用户
+  const currentUserId = getCurrentUserId();
+  if (senderId === currentUserId) {
+    // 尝试从localStorage或sessionStorage获取当前用户头像
+    try {
+      const userInfoStr = localStorage.getItem('userInfo') || sessionStorage.getItem('userInfo');
+      if (userInfoStr) {
+        const userInfo = JSON.parse(userInfoStr);
+        if (userInfo && (userInfo.avatarUrl || userInfo.avatar)) {
+          return userInfo.avatarUrl || userInfo.avatar;
+        }
+      }
+    } catch (e) {
+      console.error('解析用户信息失败:', e);
+    }
+  }
+  
   // 尝试从缓存获取
   if (userCache.value[senderId]?.avatarUrl) {
     return userCache.value[senderId].avatarUrl;
@@ -953,6 +970,26 @@ const getSenderNameSync = (result: MessageSearchResult): string => {
     return result.message.senderNickname;
   }
   
+  // 检查是否是当前用户
+  const currentUserId = getCurrentUserId();
+  if (senderId === currentUserId) {
+    // 尝试从localStorage或sessionStorage获取当前用户昵称
+    try {
+      const userInfoStr = localStorage.getItem('userInfo') || sessionStorage.getItem('userInfo');
+      if (userInfoStr) {
+        const userInfo = JSON.parse(userInfoStr);
+        if (userInfo) {
+          return userInfo.nickname || userInfo.name || userInfo.username || '我';
+        }
+      }
+      
+      // 如果没有找到，返回"我"
+      return '我';
+    } catch (e) {
+      console.error('解析用户信息失败:', e);
+    }
+  }
+  
   // 尝试从缓存获取，优先使用备注
   if (userCache.value[senderId]) {
     return userCache.value[senderId].alias || 
@@ -976,6 +1013,18 @@ const loadUserInfo = async (userId: number): Promise<void> => {
   loadingUsers.add(userId);
   
   try {
+    // 检查是否是当前用户
+    const currentUserId = getCurrentUserId();
+    if (userId === currentUserId) {
+      // 直接加载当前用户信息
+      const currentUserInfo = await userCacheService.loadCurrentUserInfo();
+      if (currentUserInfo) {
+        console.log('成功加载当前用户信息:', currentUserInfo);
+        loadingUsers.delete(userId);
+        return;
+      }
+    }
+    
     // 先尝试获取联系人信息
     const contactInfo = await userCacheService.getContactInfo(userId);
     if (contactInfo) {
@@ -1002,6 +1051,11 @@ const loadingUsers = new Set<number>();
 // 组件挂载时
 onMounted(() => {
   console.log('MessageSearch组件已挂载，初始激活状态:', props.isActive);
+  
+  // 优先加载当前用户信息
+  const currentUserId = getCurrentUserId();
+  userCacheService.loadCurrentUserInfo();
+  
   loadChatHistory(); // 组件挂载时加载聊天历史记录
   loadConversationUsers(); // 加载会话用户信息
   
@@ -1010,6 +1064,11 @@ onMounted(() => {
     const userIds = chatHistory.value
       .map(msg => msg.senderId)
       .filter((id): id is number => id !== undefined && id !== null);
+    
+    // 确保当前用户ID也被包含在内
+    if (!userIds.includes(currentUserId)) {
+      userIds.push(currentUserId);
+    }
     
     if (userIds.length > 0) {
       userCacheService.batchGetUserInfo(userIds);
@@ -1096,8 +1155,25 @@ const jumpToMessage = (message: any) => {
   close();
 };
 
+// 关闭搜索面板
 const close = () => {
+  // 先添加向右划出的动画类
+  const searchPanel = document.querySelector('.message-search');
+  if (searchPanel) {
+    // 先添加向右划出的类
+    searchPanel.classList.add('slide-out-right');
+    
+    // 等待动画完成后再关闭面板
+    setTimeout(() => {
+      // 移除划出类
+      searchPanel.classList.remove('slide-out-right');
+      // 发出关闭事件
   emit('close');
+    }, 300); // 动画持续时间
+  } else {
+    // 如果找不到面板元素，直接关闭
+    emit('close');
+  }
 };
 
 // 格式化时间
@@ -1157,34 +1233,48 @@ watch(() => searchResults.value, (results) => {
       .map(result => result.message.senderId)
       .filter((id): id is number => id !== undefined && id !== null);
     
+    // 确保当前用户ID也被包含在内
+    const currentUserId = getCurrentUserId();
+    if (!senderIds.includes(currentUserId)) {
+      senderIds.push(currentUserId);
+    }
+    
     // 批量获取用户信息
     if (senderIds.length > 0) {
       userCacheService.batchGetUserInfo(senderIds);
     }
+    
+    // 单独确保当前用户信息被加载
+    userCacheService.loadCurrentUserInfo();
   }
 });
 </script>
 
 <style scoped>
 .message-search {
-  position: absolute; /* 改回absolute，但调整位置 */
+  position: absolute;
   top: 0;
   right: 0;
-  bottom: 0; /* 确保高度与父元素一致 */
-  width: 100%; /* 宽度与父元素一致 */
+  bottom: 0;
+  width: 100%;
   background-color: #fff;
   z-index: 100;
   display: flex;
   flex-direction: column;
-  transform: translateX(100%); /* 初始位置在右侧屏幕外 */
+  transform: translateX(-100%); /* 初始位置在左侧屏幕外 */
   transition: transform 0.3s ease;
-  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
-  will-change: transform; /* 优化性能 */
-  backface-visibility: hidden; /* 防止闪烁 */
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 .message-search.is-active {
   transform: translateX(0); /* 激活时滑入视图 */
+}
+
+/* 添加向右划出的动画类 */
+.message-search.slide-out-right {
+  transform: translateX(100%) !important; /* 向右侧划出 */
 }
 
 .search-header {

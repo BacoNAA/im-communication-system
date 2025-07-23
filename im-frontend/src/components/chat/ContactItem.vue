@@ -24,14 +24,13 @@
       </div>
       <div class="contact-signature" v-if="contact.signature">{{ contact.signature }}</div>
       <!-- 添加标签显示 -->
-      <div v-if="contact.tags && contact.tags.length > 0" class="contact-tags">
-        <div 
-          v-for="tag in contact.tags" 
-          :key="typeof tag === 'object' ? tag.id : tag" 
-          class="contact-tag"
-          :style="{ backgroundColor: getTagColor(tag) }"
-        >
-          {{ getTagName(tag) }}
+      <div class="contact-tags" v-if="hasTags">
+        <div v-for="tag in displayTags" 
+             :key="tag.id" 
+            class="contact-tag"
+             :style="{ backgroundColor: tag.color || '#667eea' }"
+          >
+          {{ tag.name }}
         </div>
       </div>
     </div>
@@ -63,6 +62,10 @@ const props = defineProps({
   currentUserId: {
     type: Number,
     required: true
+  },
+  debug: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -79,33 +82,51 @@ const getInitials = (name: string): string => {
   return name.charAt(0).toUpperCase();
 };
 
-// 获取标签名称
-const getTagName = (tag: any): string => {
-  if (typeof tag === 'object') {
-    return tag.name || '未命名';
-  } else {
-    // 如果标签是ID，尝试从联系人的完整标签数据中查找
-    if (props.contact.fullTags && Array.isArray(props.contact.fullTags)) {
-      const tagObj = props.contact.fullTags.find((t: any) => t.id === tag || t.tagId === tag);
-      return tagObj ? tagObj.name : '未命名';
-    }
-    return '未命名';
-  }
+// 判断是否有标签
+const hasTags = computed(() => {
+  return props.contact && 
+         ((props.contact.tags && props.contact.tags.length > 0) || 
+          (props.contact.fullTags && props.contact.fullTags.length > 0));
+});
+
+// 获取要显示的标签
+const displayTags = computed(() => {
+  if (!props.contact) return [];
+  
+  // 优先使用fullTags（完整标签信息）
+  if (props.contact.fullTags && props.contact.fullTags.length > 0) {
+    // 确保每个标签对象都有id, name和color字段
+    return props.contact.fullTags.map((tag: any) => ({
+      id: tag.id || tag.tagId || 0,
+      name: tag.name || '未命名',
+      color: tag.color || '#667eea'
+    }));
 }
 
-// 获取标签颜色
-const getTagColor = (tag: any): string => {
-  if (typeof tag === 'object') {
-    return tag.color || '#667eea';
+  // 如果没有fullTags但有tags，尝试从tags中提取信息
+  if (props.contact.tags && props.contact.tags.length > 0) {
+    return props.contact.tags.map((tag: any) => {
+      // 如果tag是对象，尝试直接使用其属性
+      if (typeof tag === 'object' && tag !== null) {
+        return {
+          id: tag.id || tag.tagId || 0,
+          name: tag.name || '未命名',
+          color: tag.color || '#667eea'
+        };
   } else {
-    // 如果标签是ID，尝试从联系人的完整标签数据中查找
-    if (props.contact.fullTags && Array.isArray(props.contact.fullTags)) {
-      const tagObj = props.contact.fullTags.find((t: any) => t.id === tag || t.tagId === tag);
-      return tagObj ? tagObj.color : '#667eea';
-    }
-    return '#667eea';
+        // 如果标签是ID (数字或字符串)
+        const tagId = typeof tag === 'string' ? parseInt(tag, 10) : tag;
+        return {
+          id: tagId,
+          name: '标签' + tagId,
+          color: '#667eea'
+        };
+      }
+    });
   }
-}
+  
+  return [];
+});
 
 // 处理点击事件
 const handleClick = () => {

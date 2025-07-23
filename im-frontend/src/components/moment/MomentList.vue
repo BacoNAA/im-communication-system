@@ -196,13 +196,13 @@ defineExpose({
 .moment-list {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 8px;
 }
 
 .moment-item {
-  background: var(--el-bg-color);
-  border-radius: 8px;
-  overflow: hidden;
+  background: transparent;
+  border-radius: 12px;
+  overflow: visible;
 }
 
 .loading-more {
@@ -216,4 +216,4 @@ defineExpose({
   color: var(--el-text-color-secondary);
   font-size: 14px;
 }
-</style> 
+</style>

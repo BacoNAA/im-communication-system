@@ -271,10 +271,22 @@ const submitReport = async () => {
 
 <style scoped>
 .moment-card {
-  padding: 16px;
-  background-color: var(--el-bg-color);
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 18px 24px;
+  background-color: white;
+  border: 2px solid #cbd5e1;
+  border-left: 6px solid #94a3b8;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s;
+  margin: 12px 0;
+}
+
+.moment-card:hover {
+  background-color: #f1f5f9;
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  border-left: 6px solid #2563eb;
+  border-color: #60a5fa;
 }
 
 .moment-header {
@@ -328,21 +340,18 @@ const submitReport = async () => {
 /* 图片网格布局 */
 .image-grid-1 {
   width: 100%;
-  height: 240px;
 }
 
 .image-grid-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-gap: 4px;
-  height: 180px;
 }
 
 .image-grid-3 {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   grid-gap: 4px;
-  height: 180px;
 }
 
 .image-grid-4 {
@@ -350,13 +359,11 @@ const submitReport = async () => {
   grid-template-columns: 1fr 1fr;
   grid-template-rows: 1fr 1fr;
   grid-gap: 4px;
-  height: 240px;
 }
 
 .image-grid-multiple {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  grid-auto-rows: 120px;
   grid-gap: 4px;
 }
 
@@ -364,12 +371,17 @@ const submitReport = async () => {
   position: relative;
   overflow: hidden;
   cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.image-item:hover {
+  transform: scale(1.02);
 }
 
 .image-item .el-image {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .video-player {
@@ -382,16 +394,47 @@ const submitReport = async () => {
 .moment-actions {
   display: flex;
   justify-content: space-around;
-  padding: 12px 0;
-  border-top: 1px solid var(--el-border-color-lighter);
-  margin-top: 12px;
+  padding: 16px 20px;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  margin: 16px 0 8px 0;
+  background-color: #f8fafc;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s;
+}
+
+.moment-actions:hover {
+  border-color: #cbd5e1;
+  background-color: #f1f5f9;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .action-button {
   flex: 1;
   margin: 0 8px;
-  border-radius: 20px;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-weight: 500;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
   transition: all 0.3s;
+  background-color: white;
+}
+
+.action-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: #cbd5e1;
+}
+
+.action-button.is-plain {
+  background-color: white;
+  border-color: #e2e8f0;
+}
+
+.action-button.is-plain:hover {
+  background-color: #f8fafc;
+  border-color: #cbd5e1;
 }
 
 .action-icon {
@@ -412,16 +455,21 @@ const submitReport = async () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
   cursor: pointer;
-  transition: background-color 0.3s;
-  background-color: #f5f5f5;
+  transition: all 0.3s;
+  background-color: white;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 
 .more-options-button:hover {
-  background-color: #e8e8e8;
+  background-color: #f8fafc;
+  border-color: #cbd5e1;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .more-icon {
@@ -448,4 +496,4 @@ const submitReport = async () => {
 .delete-icon {
   color: #ff7875;
 }
-</style> 
+</style>

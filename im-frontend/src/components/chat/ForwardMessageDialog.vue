@@ -106,7 +106,12 @@
                 @click="toggleTarget(conv.id)"
               >
                 <div class="target-avatar">
-                  <img :src="conv.avatarUrl || '/favicon.ico'" alt="avatar" />
+                  <template v-if="conv.avatarUrl">
+                    <img :src="conv.avatarUrl" alt="avatar" />
+                  </template>
+                  <div v-else class="initial-avatar">
+                    {{ getInitialAvatar(conv.name) }}
+                  </div>
                 </div>
                 <div class="target-info">
                   <div class="target-name">{{ conv.name || '未命名会话' }}</div>
@@ -175,6 +180,15 @@ const filteredConversations = computed(() => {
     return name.toLowerCase().includes(keyword);
   });
 });
+
+// 获取默认头像（使用名称的首个字）
+const getInitialAvatar = (name: string): string => {
+  if (!name || name.trim().length === 0) return '';
+  
+  // 获取名称的第一个字符
+  const initial = name.trim().charAt(0).toUpperCase();
+  return initial;
+};
 
 // 加载会话列表
 const loadConversations = async () => {
@@ -336,7 +350,7 @@ const loadConversations = async () => {
         console.log('第一个会话示例:', JSON.stringify(conversationsData[0]).substring(0, 200) + '...');
         
         // 确保每个会话对象有必要的字段
-        conversations.value = conversationsData.map((conv, index) => {
+        conversations.value = conversationsData.map((conv: any, index) => {
           console.log(`处理会话 ${index + 1}:`, conv.id || '未知ID');
           
           // 获取会话ID
@@ -351,33 +365,185 @@ const loadConversations = async () => {
           
           // 获取会话名称
           let name = '';
-          if (conv.name) {
+          if (conv.name && conv.name.trim()) {
             name = conv.name;
-          } else if (type === 'GROUP') {
-            name = conv.groupName || '群聊';
+            console.log(`会话 ${index + 1} 使用name字段:`, name);
+          } else if (type === 'GROUP' && conv.groupName && conv.groupName.trim()) {
+            name = conv.groupName;
+            console.log(`会话 ${index + 1} 使用groupName字段:`, name);
           } else if (type === 'PRIVATE') {
             // 尝试从参与者中获取名称
             if (conv.participants && Array.isArray(conv.participants) && conv.participants.length > 0) {
               const otherParticipant = conv.participants.find((p: any) => p.userId !== userId);
               if (otherParticipant) {
-                name = otherParticipant.alias || otherParticipant.nickname || otherParticipant.username || '联系人';
+                // 详细调试otherParticipant的结构
+                console.log(`会话 ${index + 1} otherParticipant完整结构:`, JSON.stringify(otherParticipant));
+                console.log(`会话 ${index + 1} otherParticipant类型:`, typeof otherParticipant);
+                console.log(`会话 ${index + 1} otherParticipant属性:`, Object.keys(otherParticipant));
+                
+                // 检查是否有user或userData字段，可能包含真正的用户信息
+                if (otherParticipant.user) {
+                  console.log(`会话 ${index + 1} 找到user字段:`, otherParticipant.user);
+                }
+                if (otherParticipant.userData) {
+                  console.log(`会话 ${index + 1} 找到userData字段:`, otherParticipant.userData);
+                }
+                
+                // 常规字段检查
+                console.log(`会话 ${index + 1} otherParticipant.alias:`, otherParticipant.alias);
+                console.log(`会话 ${index + 1} otherParticipant.nickname:`, otherParticipant.nickname);
+                console.log(`会话 ${index + 1} otherParticipant.username:`, otherParticipant.username);
+                console.log(`会话 ${index + 1} otherParticipant.email:`, otherParticipant.email);
+                
+                // 从用户对象中提取信息（可能嵌套在user或userData中）
+                const userObject = otherParticipant.user || otherParticipant.userData || otherParticipant;
+                
+                // 尝试获取别名
+                if (otherParticipant.alias && otherParticipant.alias.trim()) {
+                  name = otherParticipant.alias;
+                  console.log(`会话 ${index + 1} 使用参与者别名:`, name);
+                } 
+                // 尝试从userObject获取昵称
+                else if (userObject.nickname && userObject.nickname.trim()) {
+                  name = userObject.nickname;
+                  console.log(`会话 ${index + 1} 使用user.nickname:`, name);
+                }
+                // 尝试从userObject获取用户名
+                else if (userObject.username && userObject.username.trim()) {
+                  name = userObject.username;
+                  console.log(`会话 ${index + 1} 使用user.username:`, name);
+                }
+                // 尝试从userObject获取邮箱
+                else if (userObject.email && userObject.email.trim()) {
+                  name = userObject.email.split('@')[0];
+                  console.log(`会话 ${index + 1} 使用user.email:`, name);
+                }
+                // 直接尝试参与者的原始字段
+                else if (otherParticipant.nickname && otherParticipant.nickname.trim()) {
+                  name = otherParticipant.nickname;
+                  console.log(`会话 ${index + 1} 使用参与者昵称:`, name);
+                }
+                else if (otherParticipant.username && otherParticipant.username.trim()) {
+                  name = otherParticipant.username;
+                  console.log(`会话 ${index + 1} 使用参与者用户名:`, name);
+                }
+                else if (otherParticipant.email && otherParticipant.email.trim()) {
+                  name = otherParticipant.email.split('@')[0];
+                  console.log(`会话 ${index + 1} 使用参与者邮箱:`, name);
+                }
               }
-            } else if (conv.contactName) {
+            } else if (conv.contactName && conv.contactName.trim()) {
               name = conv.contactName;
+              console.log(`会话 ${index + 1} 使用contactName字段:`, name);
             } else if (conv.otherParticipant) {
-              name = conv.otherParticipant.nickname || conv.otherParticipant.username || '联系人';
+              const other = conv.otherParticipant;
+              // 详细调试conv.otherParticipant的结构
+              console.log(`会话 ${index + 1} conv.otherParticipant完整结构:`, JSON.stringify(other));
+              console.log(`会话 ${index + 1} conv.otherParticipant类型:`, typeof other);
+              console.log(`会话 ${index + 1} conv.otherParticipant属性:`, Object.keys(other));
+              
+              // 检查是否有user或userData字段
+              if (other.user) {
+                console.log(`会话 ${index + 1} 找到otherParticipant.user字段:`, other.user);
+              }
+              if (other.userData) {
+                console.log(`会话 ${index + 1} 找到otherParticipant.userData字段:`, other.userData);
+              }
+              
+              console.log(`会话 ${index + 1} other.nickname:`, other.nickname);
+              console.log(`会话 ${index + 1} other.username:`, other.username);
+              console.log(`会话 ${index + 1} other.email:`, other.email);
+              
+              // 从用户对象中提取信息（可能嵌套在user或userData中）
+              const userObject = other.user || other.userData || other;
+              
+              // 优先使用userObject中的信息
+              if (userObject.nickname && userObject.nickname.trim()) {
+                name = userObject.nickname;
+                console.log(`会话 ${index + 1} 使用otherParticipant.user.nickname:`, name);
+              } 
+              else if (userObject.username && userObject.username.trim()) {
+                name = userObject.username;
+                console.log(`会话 ${index + 1} 使用otherParticipant.user.username:`, name);
+              }
+              else if (userObject.email && userObject.email.trim()) {
+                name = userObject.email.split('@')[0];
+                console.log(`会话 ${index + 1} 使用otherParticipant.user.email:`, name);
+              }
+              // 直接尝试otherParticipant的原始字段
+              else if (other.nickname && other.nickname.trim()) {
+                name = other.nickname;
+                console.log(`会话 ${index + 1} 使用otherParticipant.nickname:`, name);
+              } 
+              else if (other.username && other.username.trim()) {
+                name = other.username;
+                console.log(`会话 ${index + 1} 使用otherParticipant.username:`, name);
+              }
+              else if (other.email && other.email.trim()) {
+                name = other.email.split('@')[0];
+                console.log(`会话 ${index + 1} 使用otherParticipant.email:`, name);
+              }
             }
             
-            // 如果还没有名称，使用会话ID
-            if (!name) {
-              name = `私聊 ${id || index + 1}`;
+            // 如果都没有，尝试从联系人中查找
+            if (!name && conv.contactId) {
+              const contact = conversations.value.find((c: any) => c.id === conv.contactId);
+              if (contact && contact.name) {
+                name = contact.name;
+                console.log(`会话 ${index + 1} 使用联系人名称:`, name);
+              }
             }
+            
+            // 如果都没有，使用ID命名
+            if (!name && (conv.friendId || conv.userId)) {
+              name = `用户 ${conv.friendId || conv.userId}`;
+              console.log(`会话 ${index + 1} 使用用户ID命名:`, name);
+            }
+            
+            // 最后的备用选项
+            if (!name) {
+              name = `联系人 ${id || index + 1}`;
+              console.log(`会话 ${index + 1} 使用备用名称:`, name);
+            }
+          } else if (type === 'GROUP' && !name) {
+            name = `群聊 ${id || index + 1}`;
+            console.log(`会话 ${index + 1} 使用默认群聊名称:`, name);
           }
           
           console.log(`会话 ${index + 1} 名称:`, name);
           
           // 获取头像URL
-          const avatarUrl = conv.avatarUrl || conv.avatar || '/favicon.ico';
+          let avatarUrl = ''; // 默认为空，使用首字母头像
+          
+          // 1. 尝试使用avatarUrl字段
+          if (conv.avatarUrl && conv.avatarUrl.trim()) {
+            avatarUrl = conv.avatarUrl;
+            console.log(`会话 ${index + 1} 使用avatarUrl字段:`, avatarUrl);
+          } 
+          // 2. 尝试使用avatar字段
+          else if (conv.avatar && conv.avatar.trim()) {
+            avatarUrl = conv.avatar;
+            console.log(`会话 ${index + 1} 使用avatar字段:`, avatarUrl);
+          }
+          // 3. 尝试从参与者获取头像（对于私聊）
+          else if (type === 'PRIVATE' && conv.participants && Array.isArray(conv.participants)) {
+            const otherParticipant = conv.participants.find((p: any) => p.userId !== userId);
+            if (otherParticipant && otherParticipant.avatarUrl && otherParticipant.avatarUrl.trim()) {
+              avatarUrl = otherParticipant.avatarUrl;
+              console.log(`会话 ${index + 1} 使用参与者头像:`, avatarUrl);
+            }
+          }
+          // 4. 尝试从otherParticipant获取头像
+          else if (type === 'PRIVATE' && conv.otherParticipant && conv.otherParticipant.avatarUrl && conv.otherParticipant.avatarUrl.trim()) {
+            avatarUrl = conv.otherParticipant.avatarUrl;
+            console.log(`会话 ${index + 1} 使用otherParticipant头像:`, avatarUrl);
+          }
+          // 5. 如果都没有，将使用首字母头像
+          else {
+            console.log(`会话 ${index + 1} 将使用首字母头像`);
+          }
+          
+          console.log(`会话 ${index + 1} 最终数据:`, { id, name, avatarUrl, type });
           
           return {
             id: id,
@@ -459,55 +625,73 @@ const loadContactsAsConversations = async (userId: number) => {
       console.log('联系人数据样例:', JSON.stringify(response.data[0]));
       
       // 将联系人转换为会话
-      conversations.value = response.data.map((contact, index) => {
+      conversations.value = response.data.map((contact: any, index) => {
         console.log(`处理联系人 ${index + 1}:`, contact.id || '未知ID', contact);
         
-        // 获取联系人名称 - 详细记录每一步
+        // 获取联系人名称 - 确保一定能获取到名称
         let name = '';
         
-        // 尝试获取别名（备注）
-        if (contact.alias) {
+        // 1. 优先使用别名（备注）
+        if (contact.alias && contact.alias.trim()) {
           name = contact.alias;
           console.log(`联系人 ${index + 1} 使用别名:`, name);
         }
-        // 尝试获取好友昵称
-        else if (contact.friend && contact.friend.nickname) {
-          name = contact.friend.nickname || '';
+        // 2. 尝试获取好友对象中的昵称
+        else if (contact.friend && contact.friend.nickname && contact.friend.nickname.trim()) {
+          name = contact.friend.nickname;
           console.log(`联系人 ${index + 1} 使用好友昵称:`, name);
         }
-        // 尝试获取用户昵称
-        else if (contact.friend && contact.friend.nickname) {
-          name = contact.friend.nickname || '';
-          console.log(`联系人 ${index + 1} 使用用户昵称:`, name);
+        // 3. 尝试直接使用好友昵称字段 (使用any类型规避类型检查)
+        else if ((contact as any).nickname && (contact as any).nickname.trim()) {
+          name = (contact as any).nickname;
+          console.log(`联系人 ${index + 1} 使用昵称:`, name);
         }
-        // 尝试获取用户名
-        else if (contact.friend && contact.friend.email) {
-          name = (contact.friend.email || '').split('@')[0];
+        // 4. 尝试使用电子邮件
+        else if (contact.friend && contact.friend.email && contact.friend.email.trim()) {
+          const emailParts = contact.friend.email.split('@');
+          name = emailParts[0] || '';
+          console.log(`联系人 ${index + 1} 使用电子邮件名:`, name);
+        }
+        // 5. 尝试使用用户名 (使用any类型规避类型检查)
+        else if (contact.friend && (contact.friend as any).username && (contact.friend as any).username.trim()) {
+          name = (contact.friend as any).username;
           console.log(`联系人 ${index + 1} 使用用户名:`, name);
         }
-        // 尝试从邮箱获取名称
-        else if (contact.friend && contact.friend.email) {
-          name = (contact.friend.email || '').split('@')[0];
-          console.log(`联系人 ${index + 1} 使用邮箱名:`, name);
+        // 6. 如果都没有，使用ID
+        else if (contact.friendId || (contact.friend && contact.friend.id)) {
+          name = `用户 ${contact.friendId || (contact.friend && contact.friend.id)}`;
+          console.log(`联系人 ${index + 1} 使用ID作为名称:`, name);
         }
-        // 使用备用名称
+        // 7. 最后使用备用名称
         else {
           name = `联系人 ${index + 1}`;
           console.log(`联系人 ${index + 1} 使用备用名称:`, name);
         }
         
-        // 获取头像URL - 详细检查各种可能的属性
-        let avatarUrl = '/favicon.ico';
+        // 获取头像URL - 确保一定能获取到头像
+        let avatarUrl = ''; // 默认为空，会使用首字母头像
         
-        if (contact.friend && contact.friend.avatarUrl) {
-          avatarUrl = contact.friend.avatarUrl || '/favicon.ico';
-          console.log(`联系人 ${index + 1} 使用联系人头像:`, avatarUrl);
+        // 1. 尝试使用好友对象中的头像
+        if (contact.friend && contact.friend.avatarUrl && contact.friend.avatarUrl.trim()) {
+          avatarUrl = contact.friend.avatarUrl;
+          console.log(`联系人 ${index + 1} 使用好友头像:`, avatarUrl);
         }
+        // 2. 尝试直接使用头像URL字段 (使用any类型规避类型检查)
+        else if ((contact as any).avatarUrl && (contact as any).avatarUrl.trim()) {
+          avatarUrl = (contact as any).avatarUrl;
+          console.log(`联系人 ${index + 1} 使用头像URL:`, avatarUrl);
+        }
+        // 3. 尝试使用好友对象中的avatar字段 (使用any类型规避类型检查)
+        else if (contact.friend && (contact.friend as any).avatar && (contact.friend as any).avatar.trim()) {
+          avatarUrl = (contact.friend as any).avatar;
+          console.log(`联系人 ${index + 1} 使用好友avatar字段:`, avatarUrl);
+        }
+        // 4. 如果都没有有效的头像URL，将使用首字母头像
         else {
-          console.log(`联系人 ${index + 1} 使用默认头像`);
+          console.log(`联系人 ${index + 1} 将使用首字母头像`);
         }
         
-        // 获取friendId
+        // 获取friendId - 确保能获取到正确的ID
         let friendId = null;
         if (contact.friendId) {
           friendId = contact.friendId;
@@ -1003,12 +1187,27 @@ onMounted(() => {
   border-radius: 50%;
   overflow: hidden;
   margin-right: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .target-avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.initial-avatar {
+  width: 100%;
+  height: 100%;
+  background-color: #4caf50;
+  color: white;
+  font-size: 20px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .target-info {

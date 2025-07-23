@@ -586,13 +586,13 @@ const cleanupResources = () => {
   border: 1px solid #e0e0e0;
   border-radius: 8px;
   background-color: #fff;
-  padding: 8px;
+  padding: 2px; /* 原来是8px，减小padding */
   width: 100%;
 }
 
 .message-toolbar {
   display: flex;
-  padding-bottom: 8px;
+  padding-bottom: 2px; /* 原来是8px，减小padding */
   border-bottom: 1px solid #f0f0f0;
 }
 
@@ -622,15 +622,15 @@ const cleanupResources = () => {
 
 .input-area {
   flex: 1;
-  min-height: 60px;
-  padding: 8px 0;
+  min-height: 40px; /* 原来是60px，降低高度 */
+  padding: 6px 0; /* 原来是8px，稍微减小padding */
   width: 100%;
 }
 
 .message-textarea {
   width: 100%;
   height: 100%;
-  min-height: 60px;
+  min-height: 40px; /* 原来是60px，降低高度 */
   resize: none;
   border: none;
   outline: none;
@@ -643,7 +643,7 @@ const cleanupResources = () => {
 .message-actions {
   display: flex;
   justify-content: flex-end;
-  padding-top: 8px;
+  padding-top: 6px; /* 原来是8px，减小padding */
   border-top: 1px solid #f0f0f0;
 }
 

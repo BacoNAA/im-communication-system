@@ -80,8 +80,8 @@
             class="file-item"
             @click="previewMedia(item)"
           >
-            <div class="file-icon">
-              <i :class="getFileIcon(item)"></i>
+            <div :class="getFileIconClasses(item).classes.join(' ')">
+              <i :class="getFileIconClasses(item).icon"></i>
             </div>
             <div class="file-info">
               <span class="file-name">{{ getFileName(item) }}</span>
@@ -138,8 +138,8 @@
         
         <!-- 其他文件类型 -->
         <div v-else class="preview-file">
-          <div class="file-icon large">
-            <i :class="getFileIcon(previewItem)"></i>
+          <div :class="getFileIconClasses(previewItem).classes.concat('large').join(' ')">
+            <i :class="getFileIconClasses(previewItem).icon"></i>
           </div>
           <div class="file-name">{{ getFileName(previewItem) }}</div>
           <div class="file-size">{{ formatFileSize(previewItem.fileSize || 0) }}</div>
@@ -183,7 +183,8 @@ const mediaTypes = [
   { label: '图片', value: 'image', icon: 'fas fa-image' },
   { label: '视频', value: 'video', icon: 'fas fa-video' },
   { label: '音频', value: 'audio', icon: 'fas fa-music' },
-  { label: '文件', value: 'file', icon: 'fas fa-file' },
+  { label: '文档', value: 'document', icon: 'fas fa-file-alt' },
+  { label: '其他', value: 'other', icon: 'fas fa-file' },
   { label: '全部', value: 'all', icon: 'fas fa-photo-video' }
 ];
 
@@ -247,7 +248,8 @@ function handleMediaUpload(data: any) {
     // 检查媒体类型是否匹配当前筛选
     const mediaType = (mediaData.fileType || '').toLowerCase();
     if (activeType.value !== 'all') {
-      if (!mediaType.includes(activeType.value)) {
+      // 使用file_type字段进行匹配，完全匹配而不是部分包含
+      if (mediaType !== activeType.value) {
         console.log(`媒体类型 ${mediaType} 不匹配当前筛选 ${activeType.value}，忽略`);
         return;
       }
@@ -389,21 +391,30 @@ const loadMedia = async () => {
             console.log('处理后的url:', item.url);
           }
           
-          // 确保有正确的文件类型
+          // 确保有正确的文件类型，优先使用后端返回的fileType字段
+          // 如果fileType不存在，则根据扩展名推断（向后兼容）
           if (!item.fileType && item.fileName) {
             const ext = item.fileName.split('.').pop()?.toLowerCase();
             if (ext) {
+              // 将扩展名映射到file_uploads表中的fileType枚举
               if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext)) {
-                item.fileType = 'IMAGE';
+                item.fileType = 'image';
               } else if (['mp4', 'webm', 'avi', 'mov'].includes(ext)) {
-                item.fileType = 'VIDEO';
+                item.fileType = 'video';
               } else if (['mp3', 'wav', 'ogg', 'aac'].includes(ext)) {
-                item.fileType = 'AUDIO';
+                item.fileType = 'audio';
+              } else if (['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt'].includes(ext)) {
+                item.fileType = 'document';
               } else {
-                item.fileType = 'FILE';
+                item.fileType = 'other';
               }
               console.log('根据扩展名设置文件类型:', ext, '->', item.fileType);
+            } else {
+              item.fileType = 'other';
             }
+          } else if (item.fileType) {
+            // 确保文件类型是小写的（与后端枚举保持一致）
+            item.fileType = item.fileType.toLowerCase();
           }
           
           return item;
@@ -482,21 +493,30 @@ const loadMore = async () => {
             console.log('处理后的url:', item.url);
           }
           
-          // 确保有正确的文件类型
+          // 确保有正确的文件类型，优先使用后端返回的fileType字段
+          // 如果fileType不存在，则根据扩展名推断（向后兼容）
           if (!item.fileType && item.fileName) {
             const ext = item.fileName.split('.').pop()?.toLowerCase();
             if (ext) {
+              // 将扩展名映射到file_uploads表中的fileType枚举
               if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext)) {
-                item.fileType = 'IMAGE';
+                item.fileType = 'image';
               } else if (['mp4', 'webm', 'avi', 'mov'].includes(ext)) {
-                item.fileType = 'VIDEO';
+                item.fileType = 'video';
               } else if (['mp3', 'wav', 'ogg', 'aac'].includes(ext)) {
-                item.fileType = 'AUDIO';
+                item.fileType = 'audio';
+              } else if (['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt'].includes(ext)) {
+                item.fileType = 'document';
               } else {
-                item.fileType = 'FILE';
+                item.fileType = 'other';
               }
               console.log('根据扩展名设置文件类型:', ext, '->', item.fileType);
+            } else {
+              item.fileType = 'other';
             }
+          } else if (item.fileType) {
+            // 确保文件类型是小写的（与后端枚举保持一致）
+            item.fileType = item.fileType.toLowerCase();
           }
           
           return item;
@@ -551,40 +571,91 @@ const getFileName = (item: MediaUploadResponse) => {
   return item.originalFileName || item.fileName || '未命名文件';
 };
 
-// 获取文件图标
+// 获取文件图标类
+const getFileIconClasses = (item: MediaUploadResponse) => {
+  const fileType = (item.fileType || '').toLowerCase();
+  const classes = ['file-icon'];
+  
+  // 添加基本类型类
+  switch (fileType) {
+    case 'image':
+      classes.push('image');
+      return { icon: 'fas fa-file-image', classes };
+    case 'video':
+      classes.push('video');
+      return { icon: 'fas fa-file-video', classes };
+    case 'audio':
+      classes.push('audio');
+      return { icon: 'fas fa-file-audio', classes };
+    case 'document':
+      // 对于文档类型，根据文件扩展名返回更具体的图标和样式类
+      if (item.fileName) {
+        const ext = item.fileName.split('.').pop()?.toLowerCase() || '';
+        if (ext === 'pdf') {
+          classes.push('pdf');
+          return { icon: 'fas fa-file-pdf', classes };
+        }
+        if (['doc', 'docx'].includes(ext)) {
+          classes.push('word');
+          return { icon: 'fas fa-file-word', classes };
+        }
+        if (['xls', 'xlsx'].includes(ext)) {
+          classes.push('excel');
+          return { icon: 'fas fa-file-excel', classes };
+        }
+        if (['ppt', 'pptx'].includes(ext)) {
+          classes.push('powerpoint');
+          return { icon: 'fas fa-file-powerpoint', classes };
+        }
+        if (['txt', 'rtf'].includes(ext)) {
+          classes.push('text');
+          return { icon: 'fas fa-file-alt', classes };
+        }
+      }
+      classes.push('document');
+      return { icon: 'fas fa-file-alt', classes };
+    case 'other':
+      // 对于其他类型，尝试根据扩展名提供更具体的图标和样式类
+      if (item.fileName) {
+        const ext = item.fileName.split('.').pop()?.toLowerCase() || '';
+        if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) {
+          classes.push('archive');
+          return { icon: 'fas fa-file-archive', classes };
+        }
+        if (['json', 'xml', 'html', 'css', 'js', 'ts', 'py', 'java'].includes(ext)) {
+          classes.push('code');
+          return { icon: 'fas fa-file-code', classes };
+        }
+      }
+      classes.push('other');
+      return { icon: 'fas fa-file', classes };
+    default:
+      classes.push('other');
+      return { icon: 'fas fa-file', classes };
+  }
+};
+
+// 获取文件图标（向后兼容）
 const getFileIcon = (item: MediaUploadResponse) => {
-  const fileType = item.fileType?.toLowerCase() || '';
-  
-  if (fileType.includes('image')) return 'fas fa-file-image';
-  if (fileType.includes('video')) return 'fas fa-file-video';
-  if (fileType.includes('audio')) return 'fas fa-file-audio';
-  if (fileType.includes('pdf')) return 'fas fa-file-pdf';
-  if (fileType.includes('word') || fileType.includes('document')) return 'fas fa-file-word';
-  if (fileType.includes('excel') || fileType.includes('sheet')) return 'fas fa-file-excel';
-  if (fileType.includes('powerpoint') || fileType.includes('presentation')) return 'fas fa-file-powerpoint';
-  if (fileType.includes('zip') || fileType.includes('compressed')) return 'fas fa-file-archive';
-  if (fileType.includes('text') || fileType.includes('txt')) return 'fas fa-file-alt';
-  if (fileType.includes('code') || fileType.includes('json') || fileType.includes('xml')) return 'fas fa-file-code';
-  
-  return 'fas fa-file';
+  return getFileIconClasses(item).icon;
 };
 
 // 判断是否为图片文件
 const isImageFile = (item: MediaUploadResponse) => {
-  const fileType = item.fileType?.toLowerCase() || '';
-  return fileType.includes('image');
+  const fileType = (item.fileType || '').toLowerCase();
+  return fileType === 'image';
 };
 
 // 判断是否为视频文件
 const isVideoFile = (item: MediaUploadResponse) => {
-  const fileType = item.fileType?.toLowerCase() || '';
-  return fileType.includes('video');
+  const fileType = (item.fileType || '').toLowerCase();
+  return fileType === 'video';
 };
 
 // 判断是否为音频文件
 const isAudioFile = (item: MediaUploadResponse) => {
-  const fileType = item.fileType?.toLowerCase() || '';
-  return fileType.includes('audio');
+  const fileType = (item.fileType || '').toLowerCase();
+  return fileType === 'audio';
 };
 
 // 格式化日期
@@ -940,7 +1011,31 @@ const handleAudioError = (event: Event) => {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   margin-bottom: 8px;
   cursor: pointer;
+  transition: all 0.2s ease;
+  border-left: 3px solid transparent;
+  position: relative;
+  overflow: hidden;
 }
+
+.file-item:hover {
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+  border-left-color: var(--border-color, #1976d2);
+}
+
+/* 文件类型特定的边框色 */
+.file-item:has(.image) { --border-color: #4CAF50; }
+.file-item:has(.video) { --border-color: #FF5722; }
+.file-item:has(.audio) { --border-color: #9C27B0; }
+.file-item:has(.document) { --border-color: #2196F3; }
+.file-item:has(.pdf) { --border-color: #F44336; }
+.file-item:has(.word) { --border-color: #1565C0; }
+.file-item:has(.excel) { --border-color: #2E7D32; }
+.file-item:has(.powerpoint) { --border-color: #D84315; }
+.file-item:has(.text) { --border-color: #546E7A; }
+.file-item:has(.archive) { --border-color: #795548; }
+.file-item:has(.code) { --border-color: #212121; }
+.file-item:has(.other) { --border-color: #9E9E9E; }
 
 .file-icon {
   display: flex;
@@ -948,15 +1043,149 @@ const handleAudioError = (event: Event) => {
   justify-content: center;
   width: 40px;
   height: 40px;
-  border-radius: 4px;
-  background-color: #f5f5f5;
+  border-radius: 8px;
   margin-right: 12px;
-  color: #616161;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.file-icon::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  opacity: 0.8;
+  z-index: 0;
+  border-radius: 8px;
+}
+
+/* 折角效果 */
+.file-icon::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 10px;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.3);
+  border-bottom-left-radius: 4px;
+  z-index: 1;
+  transform: translate(5px, -5px) rotate(45deg);
+  box-shadow: -2px 2px 2px rgba(0, 0, 0, 0.1);
 }
 
 .file-icon i {
-  font-size: 20px;
+  font-size: 18px;
+  position: relative;
+  z-index: 1;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
+
+/* 为不同类型的文件设置不同的渐变背景 */
+.file-icon.image::before {
+  background: linear-gradient(135deg, #4CAF50, #8BC34A);
+}
+
+.file-icon.video::before {
+  background: linear-gradient(135deg, #FF5722, #FF9800);
+}
+
+.file-icon.audio::before {
+  background: linear-gradient(135deg, #9C27B0, #673AB7);
+}
+
+.file-icon.document::before {
+  background: linear-gradient(135deg, #2196F3, #03A9F4);
+}
+
+.file-icon.pdf::before {
+  background: linear-gradient(135deg, #F44336, #E91E63);
+}
+
+.file-icon.word::before {
+  background: linear-gradient(135deg, #1565C0, #0D47A1);
+}
+
+.file-icon.excel::before {
+  background: linear-gradient(135deg, #2E7D32, #388E3C);
+}
+
+.file-icon.powerpoint::before {
+  background: linear-gradient(135deg, #D84315, #BF360C);
+}
+
+.file-icon.text::before {
+  background: linear-gradient(135deg, #546E7A, #78909C);
+}
+
+.file-icon.archive::before {
+  background: linear-gradient(135deg, #795548, #5D4037);
+}
+
+.file-icon.code::before {
+  background: linear-gradient(135deg, #212121, #616161);
+}
+
+.file-icon.other::before {
+  background: linear-gradient(135deg, #9E9E9E, #757575);
+}
+
+.file-icon:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* 光泽效果 */
+.file-icon::before {
+  background-image: linear-gradient(
+    135deg, 
+    rgba(255, 255, 255, 0.25) 0%,
+    rgba(255, 255, 255, 0.15) 25%,
+    rgba(0, 0, 0, 0.05) 50%,
+    rgba(0, 0, 0, 0.1) 75%,
+    rgba(0, 0, 0, 0.15) 100%
+  ), linear-gradient(135deg, var(--start-color, #666), var(--end-color, #999));
+}
+
+/* 大图标的样式调整 */
+.file-icon.large {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 16px;
+  border-radius: 16px;
+}
+
+.file-icon.large::before {
+  border-radius: 16px;
+}
+
+.file-icon.large::after {
+  width: 20px;
+  height: 20px;
+}
+
+.file-icon.large i {
+  font-size: 36px;
+}
+
+/* 文件类型特定的变量 */
+.file-icon.image { --start-color: #4CAF50; --end-color: #8BC34A; }
+.file-icon.video { --start-color: #FF5722; --end-color: #FF9800; }
+.file-icon.audio { --start-color: #9C27B0; --end-color: #673AB7; }
+.file-icon.document { --start-color: #2196F3; --end-color: #03A9F4; }
+.file-icon.pdf { --start-color: #F44336; --end-color: #E91E63; }
+.file-icon.word { --start-color: #1565C0; --end-color: #0D47A1; }
+.file-icon.excel { --start-color: #2E7D32; --end-color: #388E3C; }
+.file-icon.powerpoint { --start-color: #D84315; --end-color: #BF360C; }
+.file-icon.text { --start-color: #546E7A; --end-color: #78909C; }
+.file-icon.archive { --start-color: #795548; --end-color: #5D4037; }
+.file-icon.code { --start-color: #212121; --end-color: #616161; }
+.file-icon.other { --start-color: #9E9E9E; --end-color: #757575; }
 
 .file-info {
   flex: 1;
@@ -980,6 +1209,12 @@ const handleAudioError = (event: Event) => {
 
 .file-actions {
   margin-left: 8px;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+.file-item:hover .file-actions {
+  opacity: 1;
 }
 
 .download-btn {
@@ -987,8 +1222,38 @@ const handleAudioError = (event: Event) => {
   border: none;
   color: #1976d2;
   cursor: pointer;
-  padding: 4px;
+  padding: 8px;
   font-size: 16px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.download-btn:hover {
+  background-color: rgba(25, 118, 210, 0.1);
+  transform: scale(1.1);
+}
+
+/* 预览文件中的下载按钮 */
+.preview-file .download-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #1976d2;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 4px;
+  margin-top: 16px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.preview-file .download-btn:hover {
+  background-color: #1565c0;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.preview-file .download-btn i {
+  margin-right: 8px;
 }
 
 .load-more {

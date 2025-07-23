@@ -111,6 +111,7 @@ import ContactItem from './ContactItem.vue';
 import { messageApi } from '@/api/message';
 import { contactApi } from '@/api/contact';
 import { reportApi } from '@/api/report';
+import { tagApi } from '@/api/tag';
 import { ElMessage } from 'element-plus';
 
 // 定义props
@@ -173,11 +174,37 @@ const loadContacts = async () => {
     loading.value = true;
     error.value = null;
     
+    // 首先获取所有标签信息
+    let allTags: any[] = [];
+    try {
+      const tagsResponse = await tagApi.getTags(props.currentUserId);
+      if (tagsResponse.success && tagsResponse.data) {
+        console.log('获取到的所有标签数据:', tagsResponse.data);
+        allTags = tagsResponse.data;
+      } else {
+        console.warn('获取标签列表失败:', tagsResponse.message);
+      }
+    } catch (tagErr: any) {
+      console.error('获取标签列表出错:', tagErr);
+    }
+    
     // includeBlocked设置为true，以便加载被拉黑的联系人
     const response = await contactApi.getContacts(props.currentUserId, true);
     
     if (response.success && response.data) {
       console.log('从API获取的原始联系人数据:', response.data);
+      
+      // 检查联系人数据中是否包含标签信息
+      const firstContact = response.data[0];
+      if (firstContact) {
+        console.log('第一个联系人数据示例:', firstContact);
+        console.log('联系人标签信息:', {
+          hasTagsField: 'tags' in firstContact,
+          tagsValue: firstContact.tags,
+          tagsType: firstContact.tags ? typeof firstContact.tags : 'undefined',
+          isArray: firstContact.tags ? Array.isArray(firstContact.tags) : false
+        });
+      }
       
       contacts.value = response.data.map((contact: any) => {
         // 确保ID是有效的数字
@@ -227,6 +254,54 @@ const loadContacts = async () => {
           最终拉黑状态: isBlocked
         });
         
+        // 处理标签数据
+        // 从多个可能的字段中获取标签数据
+        let rawTags: any[] = [];
+        
+        // 尝试从不同字段获取标签信息
+        if (contact.tags && Array.isArray(contact.tags)) {
+          console.log(`联系人 ${contact.alias || contact.nickname || 'unknown'} 的原始标签数据:`, contact.tags);
+          rawTags = contact.tags;
+        } else if (contact.tagIds && Array.isArray(contact.tagIds)) {
+          console.log(`联系人 ${contact.alias || contact.nickname || 'unknown'} 使用tagIds字段:`, contact.tagIds);
+          rawTags = contact.tagIds;
+        } else if (contact.friend && contact.friend.tags && Array.isArray(contact.friend.tags)) {
+          console.log(`联系人 ${contact.alias || contact.nickname || 'unknown'} 从friend对象获取标签:`, contact.friend.tags);
+          rawTags = contact.friend.tags;
+        }
+        
+        // 处理标签数据，将id或tagId转换为完整的标签对象
+        const processedTags = rawTags.map((tag: any) => {
+          if (typeof tag === 'object' && tag !== null) {
+            // 如果标签是对象，直接返回
+            return {
+              id: tag.id || tag.tagId || 0,
+              name: tag.name || '未命名',
+              color: tag.color || '#667eea'
+            };
+          } else {
+            // 如果标签是ID，查找完整信息
+            const tagId = typeof tag === 'string' ? parseInt(tag, 10) : tag;
+            
+            // 在所有标签中查找匹配的标签
+            const fullTag = allTags.find((t: any) => 
+              (t.id === tagId) || (t.tagId === tagId)
+            );
+            
+            if (fullTag) {
+              console.log(`联系人 ${contact.alias || contact.nickname || 'unknown'} 找到标签: ID=${tagId}, 名称=${fullTag.name}`);
+              return {
+                id: tagId,
+                name: fullTag.name || '未命名',
+                color: fullTag.color || '#667eea'
+              };
+            } else {
+              console.warn(`联系人 ${contact.alias || contact.nickname || 'unknown'} 未找到标签: ID=${tagId}`);
+              return { id: tagId, name: '标签' + tagId, color: '#667eea' };
+            }
+          }
+        });
+        
         return {
           id: contactId, // 确保ID是数字
           friendId: contactId, // 添加friendId字段，确保是数字
@@ -238,6 +313,8 @@ const loadContacts = async () => {
           email: contact.email,
           isBlocked: isBlocked, // 明确设置拉黑状态
           status: contact.status, // 保留原始状态
+          tags: rawTags, // 原始标签数据
+          fullTags: processedTags, // 处理后的完整标签数据
           rawData: contact
         };
       }).filter((contact: any) => contact.id > 0); // 过滤掉无效的联系人
@@ -246,7 +323,7 @@ const loadContacts = async () => {
       if (contacts.value.length > 0) {
         console.log('联系人列表加载完成，ID示例:');
         contacts.value.slice(0, 3).forEach(contact => {
-          console.log(`联系人ID: ${contact.id}, 类型: ${typeof contact.id}, 名称: ${contact.name}, 状态: ${contact.status}, 是否拉黑: ${contact.isBlocked}`);
+          console.log(`联系人ID: ${contact.id}, 类型: ${typeof contact.id}, 名称: ${contact.name}, 状态: ${contact.status}, 是否拉黑: ${contact.isBlocked}, 标签数量: ${contact.fullTags?.length || 0}`);
         });
       } else {
         console.log('联系人列表为空');
@@ -287,14 +364,44 @@ const handleChatError = (errorMessage: string) => {
 const showContextMenu = (event: MouseEvent, contact: any) => {
   event.preventDefault();
   selectedContact.value = contact;
-  menuPos.value = {
-    x: event.clientX,
-    y: event.clientY
-  };
+  
+  // 计算菜单位置
+  const x = event.clientX;
+  const y = event.clientY;
+  
+  menuPos.value = { x, y };
   showMenu.value = true;
   
-  // 点击其他地方关闭菜单
+  // 在下一个渲染周期调整菜单位置
   nextTick(() => {
+    // 获取菜单元素
+    const menuElement = document.querySelector('.context-menu') as HTMLElement;
+    if (!menuElement) return;
+    
+    // 获取视口高度和菜单高度
+    const viewportHeight = window.innerHeight;
+    const menuHeight = menuElement.offsetHeight;
+    
+    // 检查菜单是否会超出页面底部
+    if (y + menuHeight > viewportHeight) {
+      // 如果超出底部，将菜单向上显示
+      const adjustedY = Math.max(10, viewportHeight - menuHeight - 10); // 确保至少距离顶部10px
+      console.log(`调整菜单位置: 原始Y=${y}, 调整后Y=${adjustedY}, 菜单高度=${menuHeight}, 视口高度=${viewportHeight}`);
+      menuPos.value = { x, y: adjustedY };
+    }
+    
+    // 检查是否超出右侧边界
+    const viewportWidth = window.innerWidth;
+    const menuWidth = menuElement.offsetWidth;
+    
+    if (x + menuWidth > viewportWidth) {
+      // 如果超出右侧，将菜单向左显示
+      const adjustedX = Math.max(10, viewportWidth - menuWidth - 10); // 确保至少距离左侧10px
+      console.log(`调整菜单位置: 原始X=${x}, 调整后X=${adjustedX}, 菜单宽度=${menuWidth}, 视口宽度=${viewportWidth}`);
+      menuPos.value = { x: adjustedX, y: menuPos.value.y };
+    }
+    
+    // 点击其他地方关闭菜单
     document.addEventListener('click', closeMenu, { once: true });
   });
 };

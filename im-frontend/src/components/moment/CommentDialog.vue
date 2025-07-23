@@ -475,7 +475,7 @@ defineExpose({
 .comment-controls, .reply-controls {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 16px;
 }
 
 :deep(.el-card__body) {
@@ -485,4 +485,4 @@ defineExpose({
   flex: 1;
   overflow: hidden;
 }
-</style> 
+</style>

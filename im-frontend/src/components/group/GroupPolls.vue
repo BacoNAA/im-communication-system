@@ -377,6 +377,7 @@ const loadPolls = async () => {
       params.status = filterStatus.value;
     }
     
+    console.log('加载群组投票列表, 群组ID:', props.groupId);
     const response = await getGroupPolls(props.groupId, params);
     
     if (response.code === 200) {
@@ -397,6 +398,32 @@ const loadPolls = async () => {
 watch([filterStatus, currentPage], () => {
   loadPolls();
 });
+
+// 监听groupId变化，重新加载投票数据
+watch(() => props.groupId, (newGroupId, oldGroupId) => {
+  if (newGroupId && newGroupId !== oldGroupId) {
+    console.log('群组ID已变更，从', oldGroupId, '到', newGroupId, '，重新加载投票数据');
+    // 重置分页和筛选
+    currentPage.value = 1;
+    filterStatus.value = null;
+    // 重置投票状态
+    polls.value = [];
+    total.value = 0;
+    
+    // 重置当前查看的投票详情
+    currentPoll.value = {};
+    currentPollId.value = null;
+    selectedOptions.value = [];
+    
+    // 如果有正在查看的投票详情，关闭它
+    if (showDetailDialog.value) {
+      showDetailDialog.value = false;
+    }
+    
+    // 重新加载数据
+    loadPolls();
+  }
+}, { immediate: true });
 
 onMounted(() => {
   loadPolls();

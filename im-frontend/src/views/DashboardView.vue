@@ -19,8 +19,8 @@
     <!-- 顶部状态栏 -->
     <div class="status-bar">
       <div class="title">IM通信系统</div>
-      <button class="right-btn" @click="showSettings" title="设置">
-        ⚙️
+      <button class="right-btn" @click="openThemes" title="主题与外观">
+        🎨
       </button>
     </div>
     
@@ -55,6 +55,7 @@
               :conversation-id="activeChatId"
               :chat-name="getCurrentChatName()"
               :is-group-chat="isCurrentChatGroup()"
+              :group-id="isCurrentChatGroup() && currentChatInfo.value ? Number(currentChatInfo.value.groupId || currentChatInfo.value.id) : undefined"
             />
           </div>
           
@@ -350,11 +351,6 @@
               <div class="function-text">账户与安全</div>
               <div class="function-arrow">›</div>
             </div>
-            <div class="function-item" @click="showSettings">
-              <div class="function-icon">⚙️</div>
-              <div class="function-text">设置</div>
-              <div class="function-arrow">›</div>
-            </div>
             <div class="function-item" @click="openThemes">
               <div class="function-icon">🎨</div>
               <div class="function-text">主题与外观</div>
@@ -372,19 +368,30 @@
       <!-- 系统消息页面 -->
       <div :class="['tab-content', 'system-notifications-page', { active: activeTab === 'systemNotifications' }]">
         <div class="page-header">
-          <button class="back-btn" @click="backToProfile">‹</button>
+          <button class="back-btn" @click="backToProfile" title="返回个人中心">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span class="btn-text">返回</span>
+          </button>
           <div class="page-title">系统消息</div>
-          <button class="refresh-btn" @click="refreshNotifications" title="刷新数据">🔄</button>
+          <button class="refresh-btn" @click="refreshNotifications" title="刷新数据">
+            <i class="fa-solid fa-arrows-rotate"></i>
+            <span class="btn-text">刷新</span>
+          </button>
         </div>
         
+        <div class="system-notifications-wrapper">
         <!-- 使用SystemNotifications组件 -->
         <SystemNotifications />
+        </div>
       </div>
       
       <!-- 账户与安全页面 -->
       <div :class="['tab-content', 'account-security-page', { active: activeTab === 'accountSecurity' }]">
         <div class="page-header">
-          <button class="back-btn" @click="backToProfile">‹</button>
+          <button class="back-btn" @click="backToProfile" title="返回个人中心">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span class="btn-text">返回</span>
+          </button>
           <div class="page-title">账户与安全</div>
         </div>
         <div class="security-functions">
@@ -398,25 +405,21 @@
             <div class="security-function-text">登录设备管理</div>
             <div class="security-function-arrow">›</div>
           </div>
-          <div class="security-function-item" @click="openTwoFactorAuth">
-            <div class="security-function-icon">🛡️</div>
-            <div class="security-function-text">双重认证</div>
-            <div class="security-function-arrow">›</div>
-          </div>
-          <div class="security-function-item" @click="openPrivacySettings">
-            <div class="security-function-icon">🔐</div>
-            <div class="security-function-text">隐私设置</div>
-            <div class="security-function-arrow">›</div>
-          </div>
         </div>
       </div>
 
       <!-- 文件管理页面 -->
       <div :class="['tab-content', 'file-manager-page', { active: activeTab === 'fileManager' }]">
         <div class="page-header">
-          <button class="back-btn" @click="backToProfile">‹</button>
+          <button class="back-btn" @click="backToProfile" title="返回个人中心">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span class="btn-text">返回</span>
+          </button>
           <div class="page-title">文件管理</div>
-          <button class="refresh-btn" @click="refreshFileManager" title="刷新数据">🔄</button>
+          <button class="refresh-btn" @click="refreshFileManager" title="刷新数据">
+            <i class="fa-solid fa-arrows-rotate"></i>
+            <span class="btn-text">刷新</span>
+          </button>
         </div>
         
         <!-- 统计信息 -->
@@ -1764,7 +1767,7 @@
   <h1>IM系统</h1>
   <GlobalSearchButton @navigate-to-message="handleSelectChat" />
   <div class="user-actions">
-    <button @click="showSettings" class="settings-btn"><i class="fas fa-cog"></i></button>
+    <button @click="openThemes" class="settings-btn"><i class="fas fa-palette"></i></button>
     <button @click="logout" class="logout-btn">退出</button>
   </div>
 </div>
@@ -1846,7 +1849,7 @@ const tabNames = ['chat', 'contacts', 'moments', 'discover', 'me']
 const chatSearchKeyword = ref('')
 const contactSearchKeyword = ref('')
 // 动态搜索已移至MomentView组件
-const userStatus = ref({ emoji: '🚗', text: '在路上' })
+const userStatus = ref({ emoji: '😊', text: '' })
 const showSettingsModal = ref(false)
 const settingsDialogVisible = ref(false)
 const showProfileEditModal = ref(false)
@@ -2217,14 +2220,58 @@ const loadMessages = async (conversationId: string) => {
     // 清空当前消息
     messages.value = [];
     
-    // TODO: 实际从服务器加载消息
-    // const response = await messageApi.getMessages(Number(conversationId));
-    // if (response.success && response.data) {
-    //   messages.value = response.data.content.map(msg => ({
-    //     ...msg,
-    //     isSelf: msg.senderId === getCurrentUserId()
-    //   }));
-    // }
+    // 从服务器加载消息
+    const response = await messageApi.getMessages(Number(conversationId));
+    if (response.success && response.data) {
+      // 处理消息数据
+      let messagesArray = [];
+      
+      if (response.data.content && Array.isArray(response.data.content)) {
+        messagesArray = response.data.content;
+      } else if (response.data.data && Array.isArray(response.data.data)) {
+        messagesArray = response.data.data;
+      } else if (Array.isArray(response.data)) {
+        messagesArray = response.data;
+      }
+      
+      console.log(`获取到 ${messagesArray.length} 条消息`);
+      
+      // 处理消息格式
+      messages.value = messagesArray.map((msg: any) => {
+        // 获取当前用户ID
+        const currentUserId = getUserInfo()?.id;
+        
+        // 判断消息是否由当前用户发送
+        const isSelf = msg.senderId === currentUserId;
+        
+        return {
+          id: msg.id,
+          content: msg.content,
+          type: msg.messageType || msg.type,
+          senderId: msg.senderId,
+          senderName: msg.senderName || (isSelf ? '我' : `用户${msg.senderId}`),
+          senderAvatar: msg.senderAvatar,
+          timestamp: msg.createdAt,
+          status: msg.status || 'SENT',
+          isSelf: isSelf,
+          mediaFileId: msg.mediaFileId,
+          fileName: msg.fileName,
+          fileUrl: msg.fileUrl,
+          rawData: msg // 保存原始数据
+        };
+      });
+      
+      // 消息按时间排序
+      messages.value.sort((a: any, b: any) => {
+        return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
+      });
+      
+      console.log(`处理后有 ${messages.value.length} 条消息`);
+      
+      // 注意：不要自动标记为已读，只有在用户点击会话时才标记为已读
+      // 这里只是加载消息，不改变未读状态
+      console.log('消息加载完成，但不自动标记为已读，等待用户交互');
+    }
     
     // 滚动到底部
     scrollToBottom();
@@ -3162,6 +3209,15 @@ const updateContactAlias = async () => {
       
       showSuccessMessage('备注修改成功')
       showSetAliasModal.value = false
+      
+      // 重新加载联系人列表
+      loadContactsList()
+      
+      // 刷新ContactsList组件
+      if (contactsList.value) {
+        console.log('刷新ContactsList组件')
+        contactsList.value.loadContacts()
+      }
     } else {
       showErrorMessage(response.message || '修改备注失败')
     }
@@ -3360,6 +3416,12 @@ const saveTagAssignment = async () => {
       showSuccessMessage('标签分配成功')
       showAssignTagModal.value = false
       loadContactsList() // 重新加载联系人列表
+      
+      // 刷新ContactsList组件
+      if (contactsList.value) {
+        console.log('标签分配成功，刷新ContactsList组件')
+        contactsList.value.loadContacts()
+      }
     } else {
       showErrorMessage(response.message || '标签分配失败')
     }
@@ -3993,22 +4055,50 @@ const loadContactsList = async () => {
           friendId = 0
         }
         
+        // 添加标签处理的调试信息
+        console.log('原始联系人数据中的标签信息:', contact.tags)
+        console.log('标签存在性检查:', !!contact.tags)
+        if (contact.tags) {
+          console.log('标签类型:', typeof contact.tags)
+          console.log('是否为数组:', Array.isArray(contact.tags))
+          console.log('标签数量:', Array.isArray(contact.tags) ? contact.tags.length : 'N/A')
+        }
+        
+        // 确保标签是数组类型
+        let contactTags = null
+        if (contact.tags) {
+          if (Array.isArray(contact.tags)) {
+            contactTags = contact.tags
+            console.log('标签数组:', contactTags)
+          } else if (typeof contact.tags === 'object') {
+            // 尝试将对象转为数组
+            contactTags = Object.values(contact.tags)
+            console.log('从对象转换的标签数组:', contactTags)
+          } else {
+            console.warn('无法处理的标签类型:', typeof contact.tags)
+            contactTags = []
+          }
+        } else {
+          contactTags = []
+        }
+        
         return {
           id: friendId, // 确保ID是数字
           friendId: friendId, // 添加friendId字段，确保是数字
-        name: contact.nickname || contact.friendUsername || '',
-        avatar: contact.avatarUrl,
+          name: contact.nickname || contact.friendUsername || '',
+          avatar: contact.avatarUrl,
           avatarUrl: contact.avatarUrl,
-        signature: contact.signature || '',
-        isOnline: contact.isOnline || false,
-        alias: contact.alias,
-        tags: contact.tags,
-        friend: {
+          signature: contact.signature || '',
+          isOnline: contact.isOnline || false,
+          alias: contact.alias,
+          tags: contactTags, // 使用处理后的标签数组
+          fullTags: contactTags, // 添加fullTags字段以供ContactItem.vue使用
+          friend: {
             id: friendId, // 确保friend.id也是数字
-          nickname: contact.nickname,
-          avatarUrl: contact.avatarUrl,
-          signature: contact.signature
-        },
+            nickname: contact.nickname,
+            avatarUrl: contact.avatarUrl,
+            signature: contact.signature
+          },
           nickname: contact.nickname,
           email: contact.email || contact.friend?.email || ''
         }
@@ -4027,6 +4117,9 @@ const loadContactsList = async () => {
         console.log('联系人ID示例:')
         contacts.value.slice(0, 3).forEach(contact => {
           console.log(`联系人ID: ${contact.id}, 类型: ${typeof contact.id}, 名称: ${contact.name}`)
+          // 打印标签信息
+          console.log(`联系人 ${contact.name} 的标签:`, contact.tags)
+          console.log(`标签数量:`, contact.tags ? contact.tags.length : 0)
         })
       } else {
         console.log('联系人列表为空')
@@ -4673,13 +4766,7 @@ const formatDateTime = (dateTimeStr: string): string => {
   }
 }
 
-const openTwoFactorAuth = () => {
-  showErrorMessage('双重认证功能正在开发中，敬请期待！')
-}
-
-const openPrivacySettings = () => {
-  showErrorMessage('隐私设置功能正在开发中，敬请期待！')
-}
+// 双重认证和隐私设置功能已移除
 
 // 文件上传相关类型定义已从 @/types 导入
 
@@ -5230,18 +5317,19 @@ const deleteFile = async (file: FileItem) => {
 
 const openThemes = () => {
   settingsDialogVisible.value = true
-  // 让SettingsDialog自动选择外观选项卡，需要在下一个事件循环中执行
-  setTimeout(() => {
-    const appearanceTab = document.querySelector('.tab-item[data-tab="appearance"]') as HTMLElement
-    if (appearanceTab) {
-      appearanceTab.click()
-    }
-  }, 0)
 }
 
 // 获取状态显示
 const getStatusDisplay = () => {
-  if (!userStatus.value || !userStatus.value.text) return '😊 暂无状态'
+  // 如果用户状态不存在或text和emoji都为空，则显示默认状态
+  if (!userStatus.value || (!userStatus.value.text && !userStatus.value.emoji)) {
+    return '😊 暂无状态'
+  }
+  
+  // 如果只有emoji没有text
+  if (userStatus.value.emoji && !userStatus.value.text) {
+    return `${userStatus.value.emoji} 暂无状态`
+  }
   
   const statusMap: Record<string, string> = {
     '在线': '🟢 在线',
@@ -5526,8 +5614,8 @@ const saveStatus = async () => {
     
     const requestData = {
       emoji: statusData.emoji,
-      text: statusData.text,
-      expiryTime: expiryTime?.toISOString() || null
+      statusText: statusData.text,
+      expiresAt: expiryTime?.toISOString() || null
     }
     
     const response = await fetch('/api/user/status', {
@@ -5561,6 +5649,9 @@ const saveStatus = async () => {
       }
       showStatusForm.value = false
       showSuccessMessage('状态设置成功')
+      
+      // 刷新用户资料以获取最新的状态信息
+      setTimeout(() => refreshUserProfile(), 500)
     } else {
       showErrorMessage(data.message || '状态设置失败')
     }
@@ -5603,12 +5694,127 @@ const clearStatus = async () => {
       userProfile.value.statusExpiry = ''
       showStatusForm.value = false
       showSuccessMessage('状态已清除')
+      
+      // 刷新用户资料以确认状态已清除
+      setTimeout(() => refreshUserProfile(), 500)
     } else {
       showErrorMessage(data.message || '清除状态失败')
     }
   } catch (error) {
     console.error('清除状态失败:', error)
     showErrorMessage('清除状态失败，请稍后重试')
+  }
+}
+
+/**
+ * 仅刷新用户资料，不重置其他数据
+ * 用于在资料更新后获取最新数据
+ */
+const refreshUserProfile = async () => {
+  try {
+    const token = getAuthToken()
+    if (!token) {
+      console.error('刷新个人资料失败：未登录')
+      return
+    }
+    
+    console.log('正在刷新用户资料...')
+    
+    const profileResponse = await fetch('/api/user/profile', {
+      method: 'GET',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json'
+      }
+    })
+    
+    if (!profileResponse.ok) {
+      console.error('刷新个人资料请求失败，状态码:', profileResponse.status)
+      return
+    }
+    
+    const profileData = await profileResponse.json()
+    if (profileData.code === 200 && profileData.data) {
+      const profile = profileData.data
+      console.log('成功获取最新用户资料:', profile)
+      
+      // 将后端中文性别值转换为前端英文值
+      const convertGenderToFrontend = (gender: string | undefined) => {
+        const genderMap: Record<string, string> = {
+          '男': 'male',
+          '女': 'female',
+          '保密': 'private'
+        }
+        return gender ? genderMap[gender] || gender : undefined
+      }
+      
+      // 更新用户资料
+      Object.assign(userProfile.value, {
+        name: profile.nickname || profile.name || currentUser.value?.name,
+        signature: profile.signature || '',
+        avatar: profile.avatarUrl || currentUser.value?.avatar || '',
+        gender: convertGenderToFrontend(profile.gender),
+        birthday: profile.birthday || '',
+        email: profile.email || currentUser.value?.email,
+        phone: profile.phoneNumber || '',  
+        location: profile.location || '',
+        occupation: profile.occupation || '',
+        userIdString: profile.userIdString || ''  
+      })
+      
+      // 处理状态信息
+      if (profile.status) {
+        // 保留状态的各个部分，即使某些字段为空
+        userProfile.value.statusText = profile.status.text || ''
+        userProfile.value.statusEmoji = profile.status.emoji || ''
+        userProfile.value.statusExpiry = profile.status.expiresAt || ''
+        console.log('刷新资料：加载用户状态到userProfile:', {
+          text: userProfile.value.statusText,
+          emoji: userProfile.value.statusEmoji,
+          expiry: userProfile.value.statusExpiry
+        })
+      } else {
+        userProfile.value.statusText = ''
+        userProfile.value.statusEmoji = ''
+        userProfile.value.statusExpiry = ''
+      }
+      
+      // 更新当前用户信息
+      if (currentUser.value) {
+        Object.assign(currentUser.value, {
+          name: profile.nickname || profile.name || currentUser.value.name,
+          email: profile.email || currentUser.value.email,
+          nickname: profile.nickname,
+          avatar: profile.avatarUrl || currentUser.value.avatar,
+          userIdString: profile.userIdString || currentUser.value.userIdString,
+          phone: profile.phoneNumber || '',  
+          gender: convertGenderToFrontend(profile.gender),  
+          birthday: profile.birthday || '',  
+          location: profile.location || '',  
+          occupation: profile.occupation || '', 
+          signature: profile.signature || ''  
+        })
+      }
+      
+      // 更新用户状态
+      console.log('刷新资料：从服务器获取的用户状态:', profile.status)
+      if (profile.status) {
+        // 即使text为空也保留emoji
+        userStatus.value = { 
+          emoji: profile.status.emoji || '😊', 
+          text: profile.status.text || '' 
+        }
+        console.log('刷新资料：更新后的用户状态:', userStatus.value)
+      } else {
+        userStatus.value = { emoji: '😊', text: '' }
+      }
+      
+      console.log('用户资料刷新成功')
+    } else {
+      console.error('刷新个人资料失败:', profileData.message || '未知错误')
+    }
+  } catch (error) {
+    console.error('刷新个人资料时发生错误:', error)
   }
 }
 
@@ -5697,7 +5903,9 @@ const saveProfile = async () => {
       }
       showUserProfileModal.value = false
       showSuccessMessage('个人资料保存成功')
-      // 移除 initData() 调用，避免覆盖用户状态
+      
+      // 刷新用户资料以获取最新数据，但不重新加载全部数据
+      refreshUserProfile()
     } else {
       showErrorMessage(data.message || '保存个人资料失败')
     }
@@ -5707,9 +5915,7 @@ const saveProfile = async () => {
   }
 }
 
-const showSettings = () => {
-  settingsDialogVisible.value = true
-}
+// 设置功能已移除，只保留主题与外观
 
 const closeSettingsDialog = () => {
   settingsDialogVisible.value = false
@@ -6639,9 +6845,15 @@ const initData = async () => {
               
               // 处理状态信息
               if (profile.status) {
+                // 保留状态的各个部分，即使某些字段为空
                 userProfile.value.statusText = profile.status.text || ''
                 userProfile.value.statusEmoji = profile.status.emoji || ''
                 userProfile.value.statusExpiry = profile.status.expiresAt || ''
+                console.log('加载用户状态到userProfile:', {
+                  text: userProfile.value.statusText,
+                  emoji: userProfile.value.statusEmoji,
+                  expiry: userProfile.value.statusExpiry
+                });
               } else {
                 userProfile.value.statusText = ''
                 userProfile.value.statusEmoji = ''
@@ -6666,8 +6878,14 @@ const initData = async () => {
               }
               
               // 更新用户状态
-              if (profile.status && profile.status.text) {
-                userStatus.value = { emoji: profile.status.emoji || '😊', text: profile.status.text }
+              console.log('从服务器获取的用户状态:', profile.status);
+              if (profile.status) {
+                // 即使text为空也保留emoji
+                userStatus.value = { 
+                  emoji: profile.status.emoji || '😊', 
+                  text: profile.status.text || '' 
+                };
+                console.log('更新后的用户状态:', userStatus.value);
               } else {
                 userStatus.value = { emoji: '😊', text: '暂无状态' }
               }
@@ -6856,7 +7074,7 @@ const handleKeydown = (event: KeyboardEvent) => {
 
 // 会话面板处理函数
 // 处理会话选择
-const handleSelectChat = (chat: any) => {
+const handleSelectChat = async (chat: any) => {
   console.log('选择会话:', chat);
   // 防止无限循环
   if (activeChatId.value === String(chat.id) && activeTab.value === 'chat') {
@@ -6876,7 +7094,44 @@ const handleSelectChat = (chat: any) => {
   // 加载会话消息
   loadMessages(String(chat.id));
   
-  // 不再触发select-chat事件，避免循环调用
+  // 如果会话有未读消息，标记为已读
+  if (chat.unreadCount > 0) {
+    console.log(`会话 ${chat.id} 有 ${chat.unreadCount} 条未读消息，标记为已读`);
+    
+    try {
+      // 获取会话的最新消息
+      const response = await messageApi.getMessages(chat.id, 0, 1);
+      
+      if (response.success && response.data && response.data.content && response.data.content.length > 0) {
+        const latestMessage = response.data.content[0];
+        
+        // 确保latestMessage存在且有id
+        if (latestMessage && latestMessage.id) {
+          console.log(`标记消息 ${latestMessage.id} 为已读`);
+          await messageApi.markMessageAsRead(latestMessage.id);
+          
+          // 标记整个会话为已读
+          await messageApi.markConversationAsRead(chat.id);
+          
+          // 立即更新未读计数（乐观更新）
+          chat.unreadCount = 0;
+        } else {
+          console.log('无法获取有效的最新消息ID，直接标记整个会话为已读');
+          await messageApi.markConversationAsRead(chat.id);
+          chat.unreadCount = 0;
+        }
+      } else {
+        // 如果无法获取最新消息，直接标记整个会话为已读
+        console.log('无法获取最新消息，直接标记整个会话为已读');
+        await messageApi.markConversationAsRead(chat.id);
+        
+        // 立即更新未读计数（乐观更新）
+        chat.unreadCount = 0;
+      }
+    } catch (error) {
+      console.error('标记会话已读失败:', error);
+    }
+  }
 };
 
 // 处理会话置顶
@@ -7057,9 +7312,9 @@ const updateNavigationBadges = () => {
 
 // 生命周期
 onMounted(async () => {
-  // 初始化共享WebSocket连接
-  const { connect: connectWs } = useSharedWebSocket();
-  connectWs();
+  // 注意：不要在这里初始化WebSocket连接，ConversationsPanel组件已经处理了WebSocket
+  // 避免重复连接和消息处理冲突
+  console.log('DashboardView: 使用ConversationsPanel中的WebSocket连接');
   
   // 创建全局变量用于通知未读数量
   window.notificationUnreadCount = 0;
@@ -7891,33 +8146,59 @@ onUnmounted(() => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  background: #f7f7f7;
+  background: #f5f7fa;
+  padding-bottom: 20px;
 }
 
 .profile-header {
-  background: white;
-  margin-bottom: 10px;
+  background: linear-gradient(135deg, #5c6bc0 0%, #3949ab 100%);
+  margin-bottom: 16px;
+  border-radius: 0 0 24px 24px;
+  box-shadow: 0 4px 20px rgba(59, 73, 171, 0.2);
+  overflow: hidden;
+  position: relative;
+}
+
+.profile-header::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 60%);
+  z-index: 1;
 }
 
 .profile-cover {
   display: flex;
   align-items: center;
-  padding: 20px 16px;
+  padding: 28px 20px;
+  position: relative;
+  z-index: 2;
 }
 
 .profile-avatar {
-  width: 60px;
-  height: 60px;
-  border-radius: 6px;
-  background: #07c160;
+  width: 80px;
+  height: 80px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #42a5f5 0%, #1976d2 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
   font-weight: 600;
-  font-size: 24px;
-  margin-right: 16px;
+  font-size: 28px;
+  margin-right: 20px;
   overflow: hidden;
+  box-shadow: 0 4px 15px rgba(25, 118, 210, 0.3);
+  border: 3px solid rgba(255, 255, 255, 0.8);
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.profile-avatar:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(25, 118, 210, 0.4);
 }
 
 .profile-avatar img {
@@ -7932,66 +8213,90 @@ onUnmounted(() => {
 }
 
 .profile-name {
-  font-size: 20px;
-  font-weight: 600;
-  color: #000;
-  margin-bottom: 4px;
+  font-size: 24px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 6px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .profile-id {
-  font-size: 14px;
-  color: #999;
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.9);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  font-weight: 500;
 }
 
 .profile-status {
   font-size: 14px;
-  color: #999;
+  color: rgba(255, 255, 255, 0.8);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 4px 12px;
+  border-radius: 20px;
+  display: inline-block;
 }
 
 .qr-btn {
-  background: none;
+  background: rgba(255, 255, 255, 0.15);
   border: none;
-  font-size: 18px;
-  color: #999;
+  font-size: 22px;
+  color: white;
   cursor: pointer;
-  padding: 8px;
-  border-radius: 4px;
-  transition: background-color 0.2s;
+  padding: 10px;
+  border-radius: 50%;
+  transition: all 0.3s;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(5px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .qr-btn:hover {
-  background: #f0f0f0;
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .profile-functions {
   background: white;
-  margin-bottom: 10px;
+  margin: 0 16px 16px;
   text-align: left;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
 }
 
 .function-item {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  padding: 12px 16px;
+  padding: 16px 20px;
   border-bottom: 1px solid #f0f0f0;
   cursor: pointer;
   text-align: left;
-  transition: background-color 0.2s;
+  transition: all 0.25s;
+  position: relative;
+}
+
+.function-item:hover {
+  background: #f8f9fa;
 }
 
 .function-item:active {
   background: #f0f0f0;
+  transform: translateY(1px);
 }
 
 .function-item:last-child {
@@ -7999,41 +8304,79 @@ onUnmounted(() => {
 }
 
 .function-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 6px;
-  background: #007aff;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #5c6bc0 0%, #3949ab 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 20px;
-  margin-right: 12px;
+  margin-right: 16px;
+  box-shadow: 0 2px 8px rgba(59, 73, 171, 0.15);
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.function-item:hover .function-icon {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 5px 15px rgba(59, 73, 171, 0.25);
 }
 
 .function-text {
   flex: 1;
   font-size: 16px;
-  color: #000;
+  font-weight: 500;
+  color: #333;
 }
 
 .function-arrow {
-  font-size: 16px;
-  color: #999;
+  font-size: 18px;
+  color: #bbb;
+  transition: transform 0.2s;
+}
+
+.function-item:hover .function-arrow {
+  transform: translateX(3px);
+  color: #888;
+}
+
+.function-badge {
+  min-width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  background-color: #f44336;
+  color: white;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  margin-right: 12px;
+  font-weight: bold;
 }
 
 .profile-settings {
   background: white;
   text-align: left;
+  margin: 0 16px;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
 }
 
 .setting-item {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  padding: 12px 16px;
+  padding: 16px 20px;
   border-bottom: 1px solid #f0f0f0;
   cursor: pointer;
   text-align: left;
+  transition: all 0.25s;
+}
+
+.setting-item:hover {
+  background: #f8f9fa;
 }
 
 .setting-item:active {
@@ -8045,26 +8388,215 @@ onUnmounted(() => {
 }
 
 .setting-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 6px;
-  background: #007aff;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #5c6bc0 0%, #3949ab 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 20px;
-  margin-right: 12px;
+  margin-right: 16px;
+  box-shadow: 0 2px 8px rgba(59, 73, 171, 0.15);
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.setting-item:hover .setting-icon {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(59, 73, 171, 0.25);
 }
 
 .setting-text {
   flex: 1;
   font-size: 16px;
-  color: #000;
+  font-weight: 500;
+  color: #333;
 }
 
 .setting-arrow {
+  font-size: 18px;
+  color: #bbb;
+  transition: transform 0.2s;
+}
+
+.setting-item:hover .setting-arrow {
+  transform: translateX(3px);
+  color: #888;
+}
+
+/* 账号安全和系统消息页面美化 */
+.page-header {
+  background: linear-gradient(135deg, #5c6bc0 0%, #3949ab 100%);
+  color: white;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.page-title {
+  font-size: 18px;
+  font-weight: 600;
+  flex-grow: 1;
+  text-align: center;
+  margin: 0 15px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.back-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  color: white;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+  backdrop-filter: blur(5px);
+}
+
+.back-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+}
+
+.refresh-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  color: white;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+  backdrop-filter: blur(5px);
+}
+
+.refresh-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: rotate(180deg);
+}
+
+.security-functions {
+  padding: 16px;
+  background: #f5f7fa;
+}
+
+.security-function-item {
+  display: flex;
+  align-items: center;
+  background: white;
+  padding: 16px 20px;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  transition: all 0.25s;
+}
+
+.security-function-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+}
+
+.security-function-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #5c6bc0 0%, #3949ab 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  margin-right: 16px;
+  color: white;
+  box-shadow: 0 2px 8px rgba(59, 73, 171, 0.15);
+}
+
+.security-function-text {
+  flex: 1;
   font-size: 16px;
-  color: #999;
+  font-weight: 500;
+  color: #333;
+}
+
+.security-function-arrow {
+  font-size: 18px;
+  color: #bbb;
+  transition: transform 0.2s;
+}
+
+.security-function-item:hover .security-function-arrow {
+  transform: translateX(3px);
+  color: #888;
+}
+
+/* Web端适配，确保功能项内容靠左显示 */
+@media (min-width: 768px) {
+  .function-item {
+    justify-content: flex-start;
+    text-align: left;
+  }
+  
+  .function-icon {
+    margin-right: 16px;
+  }
+  
+  .function-text {
+    flex: 1;
+    text-align: left;
+    justify-content: flex-start;
+  }
+  
+  .security-function-item {
+    justify-content: flex-start;
+    text-align: left;
+  }
+  
+  .security-function-icon {
+    margin-right: 16px;
+  }
+  
+  .security-function-text {
+    flex: 1;
+    text-align: left;
+    justify-content: flex-start;
+  }
+  
+  /* 修复可能的Flex布局问题 */
+  .profile-functions, .security-functions {
+    display: block;
+  }
+}
+
+/* 移动端适配，确保在小屏幕上的显示一致性 */
+@media (max-width: 767px) {
+  .function-item, .security-function-item {
+    padding: 14px 16px;
+  }
+  
+  .function-icon, .security-function-icon {
+    width: 38px;
+    height: 38px;
+    margin-right: 14px;
+  }
+  
+  .function-text, .security-function-text {
+    font-size: 15px;
+  }
 }
 
 /* 选项菜单样式 */
@@ -8722,15 +9254,34 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: white;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   z-index: 100;
   overflow-y: auto;
   padding: 0;
+  transition: all 0.3s ease-in-out;
 }
 
 .file-manager-page.active,
 .system-notifications-page.active {
   display: block;
+  animation: slideIn 0.4s ease-out;
+}
+
+.system-notifications-wrapper {
+  padding: 20px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 /* 页面头部 */
@@ -8738,45 +9289,88 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
+  padding: 20px 24px;
   background: white;
   margin: 0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid #e2e8f0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .back-btn {
-  background: none;
-  border: none;
-  font-size: 24px;
-  color: #3b82f6;
+  background: #1e293b;
+  border: 2px solid #1e293b;
+  font-size: 16px;
+  color: white;
   cursor: pointer;
-  padding: 8px;
-  border-radius: 50%;
-  transition: background-color 0.2s ease;
+  padding: 8px 16px;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  min-width: 100px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.25);
+  gap: 8px;
+}
+
+.back-btn .btn-text {
+  font-weight: 500;
 }
 
 .back-btn:hover {
-  background: #f0f4ff;
+  background: #0f172a;
+  transform: translateX(-4px);
+  box-shadow: 0 6px 15px rgba(15, 23, 42, 0.4);
+  border-color: #0f172a;
 }
 
 .page-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #1f2937;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1e293b;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .refresh-btn {
-  background: none;
-  border: none;
-  font-size: 18px;
-  color: #6b7280;
+  background: #1e293b;
+  border: 2px solid #1e293b;
+  font-size: 16px;
+  color: white;
   cursor: pointer;
-  padding: 8px;
-  border-radius: 50%;
-  transition: all 0.2s ease;
+  padding: 8px 16px;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  min-width: 100px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.25);
+  gap: 8px;
+}
+
+.refresh-btn .btn-text {
+  font-weight: 500;
 }
 
 .refresh-btn:hover {
-  background: #f3f4f6;
+  background: #0f172a;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(15, 23, 42, 0.4);
+  border-color: #0f172a;
+}
+
+.refresh-btn i {
+  transition: all 0.3s ease;
+}
+
+.refresh-btn:hover i {
   transform: rotate(180deg);
 }
 
@@ -10557,7 +11151,7 @@ onUnmounted(() => {
   font-weight: bold;
   margin-right: 16px;
   flex-shrink: 0;
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 6px 20px rgba(102, 126, 244, 0.3);
   border: 3px solid white;
   position: relative;
   overflow: hidden;

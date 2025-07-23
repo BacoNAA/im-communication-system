@@ -421,77 +421,125 @@ async function handleResetPassword() {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background-color: #f5f7fa;
+  background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
   padding: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-login-container::before {
+  content: '';
+  position: absolute;
+  width: 140%;
+  height: 140%;
+  top: -20%;
+  left: -20%;
+  background: radial-gradient(circle, rgba(25, 30, 45, 0.2) 0%, rgba(25, 30, 45, 0.6) 100%);
+  z-index: 1;
 }
 
 .admin-login-card {
   width: 100%;
   max-width: 450px;
-  background-color: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  background-color: rgba(255, 255, 255, 0.97);
+  border-radius: 16px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
   overflow: hidden;
+  position: relative;
+  z-index: 2;
+  animation: fadeIn 0.8s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .admin-login-header {
-  padding: 30px;
+  padding: 40px 30px;
   text-align: center;
-  background-color: #1a202c;
+  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
   color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-login-header::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0) 60%);
 }
 
 .admin-login-header h1 {
   margin: 0;
-  font-size: 24px;
-  font-weight: 600;
+  font-size: 28px;
+  font-weight: 700;
+  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  position: relative;
 }
 
 .admin-login-header p {
-  margin: 10px 0 0;
+  margin: 12px 0 0;
   font-size: 16px;
-  opacity: 0.8;
+  opacity: 0.9;
+  position: relative;
 }
 
 .admin-login-form {
-  padding: 30px;
+  padding: 35px;
 }
 
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
+  position: relative;
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #4a5568;
+  margin-bottom: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e293b;
 }
 
 .form-group input {
   width: 100%;
-  padding: 12px 16px;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
+  padding: 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
   font-size: 16px;
-  transition: border-color 0.2s;
+  transition: all 0.3s;
+  background-color: #f8fafc;
 }
 
 .form-group input:focus {
-  border-color: #4299e1;
+  border-color: #3b82f6;
   outline: none;
-  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+  background-color: white;
 }
 
 .form-group input.error {
-  border-color: #e53e3e;
+  border-color: #ef4444;
+  background-color: #fef2f2;
 }
 
 .error-message {
-  color: #e53e3e;
+  color: #ef4444;
   font-size: 14px;
-  margin-top: 5px;
+  margin-top: 8px;
+  font-weight: 500;
 }
 
 .password-input-container {
@@ -506,12 +554,23 @@ async function handleResetPassword() {
   background: none;
   border: none;
   cursor: pointer;
-  color: #718096;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  transition: color 0.3s;
+}
+
+.toggle-password:hover {
+  color: #334155;
 }
 
 .remember-me {
   display: flex;
   align-items: center;
+  margin-bottom: 28px;
 }
 
 .checkbox-container {
@@ -520,9 +579,10 @@ async function handleResetPassword() {
   position: relative;
   padding-left: 30px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 15px;
   user-select: none;
-  color: #4a5568;
+  color: #334155;
+  font-weight: 500;
 }
 
 .checkbox-container input {
@@ -538,18 +598,20 @@ async function handleResetPassword() {
   left: 0;
   height: 20px;
   width: 20px;
-  background-color: #f7fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 4px;
+  background-color: #f8fafc;
+  border: 2px solid #cbd5e0;
+  border-radius: 6px;
+  transition: all 0.3s;
 }
 
 .checkbox-container:hover input ~ .checkmark {
-  background-color: #edf2f7;
+  border-color: #3b82f6;
+  background-color: #f0f9ff;
 }
 
 .checkbox-container input:checked ~ .checkmark {
-  background-color: #4299e1;
-  border-color: #4299e1;
+  background-color: #3b82f6;
+  border-color: #3b82f6;
 }
 
 .checkmark:after {
@@ -563,8 +625,8 @@ async function handleResetPassword() {
 }
 
 .checkbox-container .checkmark:after {
-  left: 7px;
-  top: 3px;
+  left: 6px;
+  top: 2px;
   width: 5px;
   height: 10px;
   border: solid white;
@@ -574,37 +636,42 @@ async function handleResetPassword() {
 
 .admin-login-btn {
   width: 100%;
-  padding: 14px;
-  background-color: #3182ce;
+  padding: 16px;
+  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 12px;
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.3s;
   display: flex;
   justify-content: center;
   align-items: center;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.25);
 }
 
-.admin-login-btn:hover {
-  background-color: #2b6cb0;
+.admin-login-btn:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px rgba(59, 130, 246, 0.35);
 }
 
 .admin-login-btn:disabled {
-  background-color: #a0aec0;
+  background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .loading-spinner {
   display: inline-block;
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   border: 3px solid rgba(255, 255, 255, 0.3);
   border-radius: 50%;
   border-top-color: #ffffff;
-  animation: spin 1s ease-in-out infinite;
+  animation: spin 1s linear infinite;
+  margin-right: 10px;
 }
 
 @keyframes spin {
@@ -614,36 +681,56 @@ async function handleResetPassword() {
 }
 
 .alert {
-  padding: 12px 16px;
-  border-radius: 6px;
-  margin-bottom: 20px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  margin-bottom: 24px;
   font-size: 14px;
+  font-weight: 500;
+  animation: fadeSlideDown 0.4s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+@keyframes fadeSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .alert.error {
-  background-color: #fed7d7;
-  color: #c53030;
+  background-color: rgba(254, 226, 226, 0.8);
+  color: #b91c1c;
+  border-left: 4px solid #ef4444;
 }
 
 .alert.success {
-  background-color: #c6f6d5;
-  color: #2f855a;
+  background-color: rgba(209, 250, 229, 0.8);
+  color: #047857;
+  border-left: 4px solid #10b981;
 }
 
 .alert.info {
-  background-color: #e2e8f0;
-  color: #4a5568;
+  background-color: rgba(219, 234, 254, 0.8);
+  color: #1e40af;
+  border-left: 4px solid #3b82f6;
 }
 
 .admin-login-footer {
   margin-top: 30px;
   text-align: center;
+  padding-top: 20px;
+  border-top: 1px solid #f1f5f9;
 }
 
 .admin-login-footer p {
   font-size: 14px;
-  color: #718096;
-  margin-bottom: 10px;
+  color: #64748b;
+  margin-bottom: 12px;
+  font-weight: 500;
 }
 
 .admin-login-links {
@@ -653,19 +740,21 @@ async function handleResetPassword() {
 }
 
 .back-to-main, .reset-password-link {
-  color: #3182ce;
+  color: #3b82f6;
   text-decoration: none;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 15px;
+  font-weight: 600;
+  transition: color 0.3s;
 }
 
 .back-to-main:hover, .reset-password-link:hover {
+  color: #1e3a8a;
   text-decoration: underline;
 }
 
 .link-divider {
-  margin: 0 10px;
-  color: #a0aec0;
+  margin: 0 12px;
+  color: #cbd5e0;
 }
 
 /* 模态框样式 */
@@ -675,97 +764,172 @@ async function handleResetPassword() {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  animation: fadeIn 0.3s ease;
 }
 
 .modal-content {
   background-color: white;
-  border-radius: 8px;
+  border-radius: 16px;
   width: 100%;
   max-width: 450px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
   overflow: hidden;
+  animation: modalSlideUp 0.4s ease;
+}
+
+@keyframes modalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px;
+  padding: 25px 30px;
   border-bottom: 1px solid #e2e8f0;
+  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+  color: white;
 }
 
 .modal-header h3 {
   margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #2d3748;
+  font-size: 20px;
+  font-weight: 700;
+  color: white;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .modal-close {
   background: none;
   border: none;
-  font-size: 24px;
+  font-size: 26px;
   cursor: pointer;
-  color: #a0aec0;
+  color: rgba(255, 255, 255, 0.8);
   padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  transition: all 0.3s;
 }
 
 .modal-close:hover {
-  color: #4a5568;
+  color: white;
+  background-color: rgba(255, 255, 255, 0.15);
 }
 
 .modal-body {
-  padding: 20px;
+  padding: 30px;
 }
 
 .form-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
-  margin-top: 20px;
+  gap: 12px;
+  margin-top: 28px;
 }
 
 .cancel-btn {
-  padding: 10px 16px;
-  background-color: #e2e8f0;
-  color: #4a5568;
+  padding: 12px 20px;
+  background-color: #f1f5f9;
+  color: #334155;
   border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
   cursor: pointer;
+  transition: all 0.3s;
 }
 
 .submit-btn {
-  padding: 10px 16px;
-  background-color: #3182ce;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
   color: white;
   border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
   cursor: pointer;
   display: flex;
   justify-content: center;
   align-items: center;
-  min-width: 100px;
+  min-width: 120px;
+  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2);
+  transition: all 0.3s;
 }
 
 .cancel-btn:hover {
-  background-color: #cbd5e0;
+  background-color: #e2e8f0;
+  transform: translateY(-2px);
 }
 
-.submit-btn:hover {
-  background-color: #2b6cb0;
+.submit-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 15px rgba(59, 130, 246, 0.3);
 }
 
 .submit-btn:disabled {
-  background-color: #a0aec0;
+  background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* 响应式设计 */
+@media (max-width: 480px) {
+  .admin-login-container {
+    padding: 15px;
+  }
+
+  .admin-login-card {
+    max-width: 100%;
+  }
+
+  .admin-login-form {
+    padding: 25px;
+  }
+
+  .form-group input {
+    padding: 14px;
+    font-size: 15px;
+  }
+
+  .admin-login-btn {
+    padding: 14px;
+  }
+
+  .modal-content {
+    margin: 15px;
+  }
+
+  .modal-header,
+  .modal-body {
+    padding: 20px;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .cancel-btn,
+  .submit-btn {
+    width: 100%;
+    padding: 14px;
+  }
 }
 </style> 

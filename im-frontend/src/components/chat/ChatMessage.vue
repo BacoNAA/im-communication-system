@@ -12,9 +12,9 @@
         
         <!-- 消息内容 -->
         <div class="message-content-wrapper">
-          <!-- 发送者名称 - 仅对方消息且需要显示名称时 -->
-          <div class="sender-name" v-if="showSenderName">
-            {{ message.senderName || '用户' }}
+          <!-- 发送者名称 - 对方消息总是显示 -->
+          <div class="sender-name" v-if="!message.isSelf">
+            {{ senderDisplayName }}
           </div>
           
           <!-- 消息气泡 -->
@@ -89,6 +89,11 @@
       <template v-else>
         <!-- 消息内容 -->
         <div class="message-content-wrapper">
+          <!-- 自己发送的消息显示"我" -->
+          <div class="sender-name self-name">
+            我
+          </div>
+          
           <!-- 消息气泡 -->
           <div class="message-bubble self-bubble" @contextmenu.prevent="handleContextMenu">
             <!-- 已撤回消息 -->
@@ -288,6 +293,7 @@ interface MessageProps {
   fileName?: string; // 新增文件名属性
   edited?: boolean; // 新增编辑状态
   isRead?: boolean; // 新增已读状态
+  memberRole?: string; // 新增成员角色属性
 }
 
 const props = defineProps<{
@@ -494,6 +500,33 @@ const userAvatar = computed(() => {
   } else {
     // 如果是对方的消息，使用消息中的senderAvatar
     return props.message.senderAvatar || defaultAvatar;
+  }
+});
+
+// 计算发送者显示名称
+const senderDisplayName = computed(() => {
+  // 拼接角色标识和名称
+  let roleBadge = '';
+  if (props.message.memberRole) {
+    const role = props.message.memberRole.toLowerCase();
+    console.log(`消息ID ${props.message.id} 的成员角色: ${role}`);
+    if (role === 'owner') {
+      roleBadge = '[群主] ';
+    } else if (role === 'admin') {
+      roleBadge = '[管理员] ';
+    } else if (role === 'member') {
+      roleBadge = '[成员] ';
+    }
+  } else {
+    console.log(`消息ID ${props.message.id} 没有成员角色信息`);
+  }
+
+  if (props.message.senderName) {
+    return roleBadge + props.message.senderName;
+  } else if (props.message.senderId) {
+    return roleBadge + `用户 ${props.message.senderId}`;
+  } else {
+    return roleBadge + '未知用户';
   }
 });
 
@@ -1302,9 +1335,24 @@ const submitReport = async () => {
 }
 
 .sender-name {
-  font-size: 12px;
+  font-size: 13px;
   color: #666;
   margin-bottom: 4px;
+  font-weight: 500;
+  padding: 0 4px;
+  line-height: 1.2;
+}
+
+/* 为用户ID添加特殊样式 */
+.sender-name .user-id {
+  color: #909399;
+  font-weight: 400;
+  font-size: 12px;
+}
+
+.self-name {
+  text-align: right;
+  color: #409eff;
 }
 
 .emoji {
