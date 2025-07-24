@@ -12,10 +12,7 @@
         <group-management-view v-else-if="activeMenu === 'groups'" />
         <report-management-view v-else-if="activeMenu === 'reports'" />
         <system-notification-view v-else-if="activeMenu === 'notifications'" />
-        <div v-else-if="activeMenu === 'settings'" class="placeholder-view">
-          <h2>系统设置</h2>
-          <p>系统设置功能正在开发中...</p>
-        </div>
+
       </div>
     </div>
   </div>
@@ -46,8 +43,7 @@ const pageTitle = computed(() => {
       return '举报处理'
     case 'notifications':
       return '系统通知'
-    case 'settings':
-      return '系统设置'
+
     default:
       return '管理后台'
   }
@@ -79,24 +75,5 @@ const handleMenuChange = (menu) => {
   overflow: auto;
 }
 
-.placeholder-view {
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  padding: 40px;
-  text-align: center;
-  color: #718096;
-}
 
-.placeholder-view h2 {
-  margin-top: 0;
-  margin-bottom: 16px;
-  font-size: 24px;
-  font-weight: 600;
-  color: #2d3748;
-}
-
-.placeholder-view p {
-  font-size: 16px;
-}
-</style> 
+</style>

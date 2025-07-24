@@ -18,9 +18,12 @@ public interface ReportService {
      * @param pageable 分页信息
      * @param status 状态过滤（可选）
      * @param contentType 内容类型过滤（可选）
+     * @param userId 用户ID搜索（可选）
+     * @param groupId 群组ID搜索（可选）
+     * @param reason 举报原因过滤（可选）
      * @return 举报响应对象分页结果
      */
-    Page<ReportResponse> getReportListWithPagination(Pageable pageable, String status, String contentType);
+    Page<ReportResponse> getReportListWithPagination(Pageable pageable, String status, String contentType, String userId, String groupId, String reason);
 
     /**
      * 获取举报详情
@@ -68,4 +71,4 @@ public interface ReportService {
      */
     ReportResponse createReport(Long reporterId, Long reportedUserId, String reportedContentType, 
                               Long reportedContentId, String reason, String description);
-} 
+}

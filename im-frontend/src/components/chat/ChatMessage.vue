@@ -1,7 +1,8 @@
 <template>
   <div class="message-wrapper" 
        :class="{ 'message-self': message.isSelf, 'message-other': !message.isSelf, 'highlight-message': isHighlighted }"
-       :data-message-id="message.id">
+       :data-message-id="message.id"
+       @contextmenu.prevent="handleContextMenu">
     <!-- 消息容器 -->
     <div class="message-container">
       <!-- 左侧头像 - 仅对方消息显示 -->
@@ -18,7 +19,7 @@
           </div>
           
           <!-- 消息气泡 -->
-          <div class="message-bubble other-bubble" @contextmenu.prevent="handleContextMenu">
+          <div class="message-bubble other-bubble">
             <!-- 已撤回消息 -->
             <template v-if="isRecalled">
               <div class="recalled-message">
@@ -95,7 +96,7 @@
           </div>
           
           <!-- 消息气泡 -->
-          <div class="message-bubble self-bubble" @contextmenu.prevent="handleContextMenu">
+          <div class="message-bubble self-bubble">
             <!-- 已撤回消息 -->
             <template v-if="isRecalled">
               <div class="recalled-message">
@@ -176,11 +177,11 @@
     </div>
     
     <!-- 消息操作菜单 -->
-    <div class="context-menu" v-if="showActions && !isRecalled" :style="menuPosition">
-      <div class="menu-item" @click="replyMessage">
-        <span class="menu-icon">↩️</span>
-        <span class="menu-text">回复</span>
-      </div>
+    <div v-if="showMenu && !isRecalled" 
+         class="context-menu" 
+         :style="{ top: menuPos.y + 'px', left: menuPos.x + 'px' }" 
+         @click.stop>
+
       <div class="menu-item" @click="openForwardDialog">
         <span class="menu-icon">↪️</span>
         <span class="menu-text">转发</span>
@@ -189,11 +190,11 @@
         <span class="menu-icon">✏️</span>
         <span class="menu-text">编辑</span>
       </div>
-      <div class="menu-item" v-if="canRecall" @click="recallMessage">
+      <div class="menu-item recall" v-if="canRecall" @click="recallMessage">
         <span class="menu-icon">🗑️</span>
         <span class="menu-text">撤回</span>
       </div>
-      <div class="menu-item" v-if="!message.isSelf" @click="reportMessage">
+      <div class="menu-item report" v-if="!message.isSelf" @click="reportMessage">
         <span class="menu-icon">🚩</span>
         <span class="menu-text">举报</span>
       </div>
@@ -319,92 +320,98 @@ const isHighlighted = computed(() => props.isHighlighted || false);
 const mediaUrl = ref('');
 
 // 显示操作菜单
-const showActions = ref(false);
-const menuPosition = ref({
-  top: '0px',
-  left: '0px'
+const showMenu = ref(false);
+const menuPos = ref({
+  x: 0,
+  y: 0
 });
 
-// 静态ID用于标识当前消息的菜单
-const menuId = ref(`menu-${Date.now()}-${Math.floor(Math.random() * 1000)}`);
-
-// 点击其他地方关闭菜单的处理函数
-const handleDocumentClick = () => {
-  showActions.value = false;
-  document.removeEventListener('click', handleDocumentClick);
-};
+// 全局的点击外部处理函数
+let currentClickOutsideHandler: ((e: MouseEvent) => void) | null = null;
 
 // 处理右键菜单
 const handleContextMenu = (event: MouseEvent) => {
-  // 阻止默认右键菜单
+  // 1. 阻止浏览器默认右键菜单
   event.preventDefault();
-  
-  // 如果消息已撤回，不显示菜单
+
+  // 2. 如果消息已撤回，则不显示菜单
   if (isRecalled.value) {
     return;
   }
   
-  // 关闭所有其他消息的菜单
-  window.dispatchEvent(new CustomEvent('close-message-menus', {
-    detail: { exceptId: menuId.value }
-  }));
-  
-  // 获取视口宽度和高度
-  const viewportWidth = window.innerWidth;
-  const viewportHeight = window.innerHeight;
-  
-  // 预估菜单宽度和高度 (可根据实际情况调整)
-  const menuWidth = 120;
-  const menuHeight = 120;
-  
-  // 计算菜单位置，确保不会超出视口边界
-  let left = event.clientX;
-  let top = event.clientY;
-  
-  // 检查右边界
-  if (left + menuWidth > viewportWidth) {
-    left = viewportWidth - menuWidth - 5; // 5px的安全边距
+  // 3. 清除之前的监听器
+  if (currentClickOutsideHandler) {
+    document.removeEventListener('click', currentClickOutsideHandler);
+    currentClickOutsideHandler = null;
   }
   
-  // 检查下边界
-  if (top + menuHeight > viewportHeight) {
-    top = viewportHeight - menuHeight - 5; // 5px的安全边距
-  }
-  
-  // 设置菜单位置
-  menuPosition.value = {
-    top: `${top}px`,
-    left: `${left}px`
-  };
-  
-  // 显示菜单
-  showActions.value = true;
-  
-  // 移除之前可能存在的点击事件监听器
-  document.removeEventListener('click', handleDocumentClick);
-  
-  // 添加全局点击事件监听器
-  setTimeout(() => {
-    document.addEventListener('click', handleDocumentClick);
-  }, 0);
+  // 4. 使用 pageX/pageY 作为基础定位坐标，解决布局偏移问题
+  let finalX = event.pageX;
+  let finalY = event.pageY;
+
+  // 5. 显示菜单，让 DOM 更新以便后续获取尺寸
+  showMenu.value = true;
+  menuPos.value = { x: finalX, y: finalY };
+
+  // 6. 使用 nextTick，在菜单真实渲染后，进行精确的边界检测和位置微调
+  nextTick(() => {
+    const menuElement = document.querySelector('.context-menu') as HTMLElement;
+    if (!menuElement) return;
+
+    // 获取菜单的真实尺寸
+    const menuWidth = menuElement.offsetWidth;
+    const menuHeight = menuElement.offsetHeight;
+    
+    // 获取视口尺寸
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    
+    // 【关键修正】使用 clientX/clientY (相对于窗口的坐标) 来进行边界判断
+    
+    // 检查是否超出右边界
+    if (event.clientX + menuWidth > viewportWidth) {
+      // 从 pageX 中减去超出的部分，并留出边距
+      finalX = event.pageX - (event.clientX + menuWidth - viewportWidth) - 10;
+    }
+
+    // 检查是否超出下边界
+    if (event.clientY + menuHeight > viewportHeight) {
+      // 从 pageY 中减去超出的部分，并留出边距
+      finalY = event.pageY - (event.clientY + menuHeight - viewportHeight) - 10;
+    }
+    
+    // 确保菜单不会跑到屏幕左侧或顶部的外面
+    if (event.clientX < 10) {
+      finalX = event.pageX - event.clientX + 10;
+    }
+    if (event.clientY < 10) {
+      finalY = event.pageY - event.clientY + 10;
+    }
+
+    // 设置最终计算好的位置
+    menuPos.value = { x: finalX, y: finalY };
+    
+    // 7. 在菜单渲染完成后再添加点击外部监听器
+    setTimeout(() => {
+      currentClickOutsideHandler = (e: MouseEvent) => {
+        const menuElement = document.querySelector('.context-menu');
+        // 如果点击的目标在菜单内部，则什么都不做
+        if (menuElement && e.target && menuElement.contains(e.target as Node)) {
+          return;
+        }
+        // 否则，关闭菜单并移除监听器
+        showMenu.value = false;
+        if (currentClickOutsideHandler) {
+          document.removeEventListener('click', currentClickOutsideHandler);
+          currentClickOutsideHandler = null;
+        }
+      };
+      document.addEventListener('click', currentClickOutsideHandler);
+    }, 100); // 增加延迟时间，确保菜单完全渲染
+  });
 };
 
-// 监听关闭菜单的事件
-onMounted(() => {
-  const handleCloseMenus = (e: CustomEvent) => {
-    if (e.detail && e.detail.exceptId !== menuId.value) {
-      showActions.value = false;
-    }
-  };
-  
-  window.addEventListener('close-message-menus', handleCloseMenus as EventListener);
-  
-  // 组件卸载时移除事件监听
-  onUnmounted(() => {
-    window.removeEventListener('close-message-menus', handleCloseMenus as EventListener);
-    document.removeEventListener('click', handleDocumentClick);
-  });
-});
+
 
 // 加载媒体信息
 const loadMediaInfo = async (mediaFileId: string | number) => {
@@ -540,6 +547,14 @@ onMounted(() => {
   }
 });
 
+// 组件卸载时清理事件监听器
+onUnmounted(() => {
+  if (currentClickOutsideHandler) {
+    document.removeEventListener('click', currentClickOutsideHandler);
+    currentClickOutsideHandler = null;
+  }
+});
+
 // 计算消息类型
 const messageType = computed(() => {
   return (props.message.type || '').toUpperCase();
@@ -602,7 +617,7 @@ const editMessage = () => {
   showEditDialog.value = true;
   
   // 关闭上下文菜单
-  showActions.value = false;
+  showMenu.value = false;
   
   // 下一帧聚焦编辑框
   nextTick(() => {
@@ -683,7 +698,7 @@ const saveEdit = async () => {
       cancelEdit();
       
       // 关闭上下文菜单
-      showActions.value = false;
+      showMenu.value = false;
     } else {
       console.error('消息编辑请求失败:', response.message);
       alert('消息编辑失败: ' + response.message);
@@ -1117,7 +1132,7 @@ const recallMessage = async () => {
       // 移除触发父组件更新消息状态的代码，因为现在由WebSocket通知统一处理
       
       // 关闭上下文菜单
-      showActions.value = false;
+      showMenu.value = false;
     } else {
       console.error('消息撤回请求失败:', response.message);
       alert('消息撤回失败: ' + response.message);
@@ -1128,11 +1143,7 @@ const recallMessage = async () => {
   }
 };
 
-// 回复消息 (占位函数)
-const replyMessage = () => {
-  console.log('回复消息:', props.message.id);
-  // TODO: 实现回复消息功能
-};
+
 
 // 转发消息相关状态
 const showForwardDialog = ref(false);
@@ -1141,7 +1152,7 @@ const showForwardDialog = ref(false);
 const openForwardDialog = () => {
   console.log('打开转发对话框，消息ID:', props.message.id);
   showForwardDialog.value = true;
-  showActions.value = false; // 关闭上下文菜单
+  showMenu.value = false; // 关闭上下文菜单
 };
 
 // 关闭转发对话框
@@ -1168,7 +1179,7 @@ const reportDescription = ref('');
 const reportMessage = () => {
   console.log('举报消息:', props.message.id);
   showReportDialog.value = true;
-  showActions.value = false; // 关闭上下文菜单
+  showMenu.value = false; // 关闭上下文菜单
 };
 
 // 取消举报
@@ -1217,35 +1228,112 @@ const submitReport = async () => {
 </script>
 
 <style scoped>
-/* 高亮消息样式 */
+/* 防止菜单导致页面出现横向滚动条的全局样式 */
+:global(body) {
+  overflow-x: hidden !important;
+}
+
+:global(html) {
+  overflow-x: hidden !important;
+}
+
+/* 确保聊天容器不会产生横向滚动 */
+:global(.chat-panel),
+:global(.messages-area),
+:global(.message-wrapper),
+:global(.message-container) {
+  overflow-x: hidden !important;
+  max-width: 100% !important;
+}
+/* 高亮消息样式 - 更加明显和显眼 */
 .highlight-message {
-  animation: highlight-fade 3s ease-out;
   position: relative;
+  background-color: rgba(255, 235, 59, 0.3) !important; /* 明亮的黄色背景 */
+  border-radius: 12px;
+  padding: 4px;
+  margin: -4px;
+  box-shadow: 0 0 20px rgba(255, 193, 7, 0.6) !important; /* 金色光晕 */
+  animation: highlight-glow 3s ease-out;
 }
 
 .highlight-message::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(76, 175, 80, 0.2);
-  border-radius: 8px;
+  top: -6px;
+  left: -6px;
+  right: -6px;
+  bottom: -6px;
+  background: linear-gradient(45deg, #ff9800, #ffc107, #ffeb3b, #ffc107, #ff9800);
+  background-size: 400% 400%;
+  border: 4px solid #ff9800; /* 更粗的橙色边框 */
+  border-radius: 16px;
   pointer-events: none;
   z-index: -1;
-  animation: highlight-pulse 3s ease-out;
+  animation: highlight-rainbow 3s ease-out, highlight-pulse 3s ease-out;
 }
 
-@keyframes highlight-fade {
-  0%, 25% { background-color: rgba(76, 175, 80, 0.1); }
-  100% { background-color: transparent; }
+.highlight-message::after {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  right: -10px;
+  bottom: -10px;
+  background: radial-gradient(circle, rgba(255, 193, 7, 0.4) 0%, transparent 70%);
+  border-radius: 20px;
+  pointer-events: none;
+  z-index: -2;
+  animation: highlight-outer-glow 3s ease-out;
+}
+
+@keyframes highlight-glow {
+  0% { 
+    background-color: rgba(255, 235, 59, 0.8) !important;
+    box-shadow: 0 0 30px rgba(255, 193, 7, 0.9) !important;
+  }
+  50% { 
+    background-color: rgba(255, 235, 59, 0.5) !important;
+    box-shadow: 0 0 25px rgba(255, 193, 7, 0.7) !important;
+  }
+  100% { 
+    background-color: transparent !important;
+    box-shadow: none !important;
+  }
+}
+
+@keyframes highlight-rainbow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 @keyframes highlight-pulse {
-  0%, 10% { transform: scale(1.02); opacity: 0.7; }
-  25% { transform: scale(1); opacity: 0.5; }
-  100% { transform: scale(1); opacity: 0; }
+  0%, 10% { 
+    transform: scale(1.05);
+    opacity: 1;
+    border-width: 4px;
+  }
+  25% { 
+    transform: scale(1.02);
+    opacity: 0.8;
+    border-width: 3px;
+  }
+  50% { 
+    transform: scale(1.01);
+    opacity: 0.6;
+    border-width: 2px;
+  }
+  100% { 
+    transform: scale(1);
+    opacity: 0;
+    border-width: 0px;
+  }
+}
+
+@keyframes highlight-outer-glow {
+  0% { opacity: 0.6; }
+  50% { opacity: 0.3; }
+  100% { opacity: 0; }
 }
 
 .message-wrapper {
@@ -1253,13 +1341,15 @@ const submitReport = async () => {
   margin-bottom: 16px;
   display: flex;
   flex-direction: column;
-  position: relative; /* 添加相对定位 */
+  position: relative;
+  background-color: transparent !important; /* 确保消息包装器背景透明 */
 }
 
 .message-container {
   display: flex;
   align-items: flex-start;
   width: 100%;
+  background-image: unset !important; 
   background-color: transparent !important; /* 确保背景完全透明 */
 }
 
@@ -1314,7 +1404,7 @@ const submitReport = async () => {
 
 /* 强化对方消息气泡边框 */
 .other-bubble {
-  background-color: rgba(255, 255, 255, 0.9);
+  background-color: rgba(255, 255, 255, 0.95) !important;
   border: 2px solid #555555;
   border-top-left-radius: 0;
   float: left;
@@ -1377,7 +1467,7 @@ const submitReport = async () => {
 }
 
 .self-bubble {
-  background-color: rgba(230, 247, 255, 0.9);
+  background-color: rgba(230, 247, 255, 0.95) !important;
   border: 1px solid #91d5ff;
   border-top-right-radius: 0;
   float: right;
@@ -1583,35 +1673,49 @@ const submitReport = async () => {
 }
 
 .context-menu {
-  position: fixed; /* 改为fixed定位，以便精确定位到鼠标位置 */
-  background-color: #fff;
-  border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  padding: 4px;
-  display: flex;
-  flex-direction: column;
-  z-index: 100; /* 提高z-index确保在最上层 */
+  position: fixed;
+  background: white;
   border: 1px solid #e0e0e0;
-  background-color: #f9f9f9;
+  border-radius: 4px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 9999;
+  min-width: 150px;
+  pointer-events: auto;
+  user-select: none;
 }
 
 .menu-item {
-  padding: 8px 12px;
+  padding: 10px 16px;
   cursor: pointer;
   font-size: 14px;
-  color: #333;
-  border-bottom: 1px solid #eee;
+  transition: background-color 0.2s;
+  user-select: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.menu-item:last-child {
-  border-bottom: none;
+.menu-item:hover {
+  background-color: #f5f5f5;
 }
 
-.menu-item:hover {
-  background-color: #e0e0e0;
+.menu-item.recall {
+  color: #e74c3c;
+}
+
+.menu-item.recall:hover {
+  background-color: #fee;
+}
+
+.menu-item.report {
+  color: #9b59b6;
+}
+
+.menu-item.report:hover {
+  background-color: #f8f0fc;
 }
 
 .menu-icon {
@@ -1866,4 +1970,4 @@ const submitReport = async () => {
   cursor: not-allowed;
   color: #999;
 }
-</style> 
+</style>

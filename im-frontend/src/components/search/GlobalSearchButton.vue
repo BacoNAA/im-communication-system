@@ -3,7 +3,7 @@
     <!-- 搜索按钮 -->
     <div class="search-bar" @click="openGlobalSearch">
       <i class="fas fa-search"></i>
-      <span>搜索消息、联系人、文件...</span>
+      <span>搜索消息...</span>
     </div>
 
     <!-- 全局搜索对话框 -->

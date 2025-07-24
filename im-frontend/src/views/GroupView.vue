@@ -121,13 +121,7 @@
           </el-dialog>
 
           <el-tabs v-model="activeTab" class="group-tabs">
-            <el-tab-pane label="群聊" name="chat">
-              <div class="group-chat">
-                <el-button type="primary" @click="goToConversation">
-                  进入群聊
-                </el-button>
-              </div>
-            </el-tab-pane>
+            <!-- 群聊标签页已删除 -->
 
             <el-tab-pane label="成员" name="members">
               <div class="group-members">
@@ -1136,12 +1130,7 @@ export default {
       loadMembers();
     };
 
-    // 转到会话页面
-    const goToConversation = () => {
-      if (!activeGroupId.value) return;
-      // 使用路由跳转到会话页面，并传递群组ID
-      router.push(`/conversation/group/${activeGroupId.value}`);
-    };
+    // 转到会话页面功能已删除
 
     // 加载群组详情
     const loadGroupDetail = () => {
@@ -1179,8 +1168,8 @@ export default {
           // 重置状态
           activeGroupId.value = null;
           members.value = [];
-          // 返回群组列表
-          router.push('/groups');
+          // 切换回群组界面
+          activeTab.value = 'groups';
         } else {
           ElMessage.error(response.message || '解散群组失败');
         }
@@ -2101,7 +2090,6 @@ export default {
       canManageMember,
       canSetAdmin,
       canCancelAdmin,
-      goToConversation,
       showEditForm,
       handleUpdateSuccess,
       isCurrentUserOwner,
@@ -2798,4 +2786,4 @@ export default {
   overflow-y: auto;
   padding: 0 20px 20px;
 }
-</style> 
+</style>

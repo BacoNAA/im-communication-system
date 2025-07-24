@@ -3,21 +3,67 @@
     <div class="page-header">
       <h1>举报管理</h1>
       <div class="filter-controls">
-        <el-select v-model="statusFilter" placeholder="状态筛选" clearable>
-          <el-option label="全部" value=""></el-option>
-          <el-option label="待处理" value="pending"></el-option>
-          <el-option label="处理中" value="processing"></el-option>
-          <el-option label="已解决" value="resolved"></el-option>
-          <el-option label="已拒绝" value="rejected"></el-option>
-        </el-select>
+        <!-- 搜索栏 -->
+        <div class="search-section">
+          <el-input
+            v-model="searchForm.userId"
+            placeholder="按用户ID搜索"
+            clearable
+            style="width: 200px; margin-right: 10px;"
+            @keyup.enter="handleSearch"
+          >
+            <template #prepend>用户ID</template>
+          </el-input>
+          
+          <el-input
+            v-model="searchForm.groupId"
+            placeholder="按群组ID搜索"
+            clearable
+            style="width: 200px; margin-right: 10px;"
+            @keyup.enter="handleSearch"
+          >
+            <template #prepend>群组ID</template>
+          </el-input>
+          
+          <el-button type="primary" @click="handleSearch" :loading="loading">
+            搜索
+          </el-button>
+          
+          <el-button @click="handleReset">
+            重置
+          </el-button>
+        </div>
         
-        <el-select v-model="contentTypeFilter" placeholder="内容类型" clearable>
-          <el-option label="全部" value=""></el-option>
-          <el-option label="用户" value="USER"></el-option>
-          <el-option label="消息" value="MESSAGE"></el-option>
-          <el-option label="群组" value="GROUP"></el-option>
-          <el-option label="群组成员" value="GROUP_MEMBER"></el-option>
-        </el-select>
+        <!-- 筛选器 -->
+        <div class="filter-section">
+          <el-select v-model="statusFilter" placeholder="状态筛选" clearable style="width: 150px; margin-right: 10px;">
+            <el-option label="全部" value=""></el-option>
+            <el-option label="待处理" value="pending"></el-option>
+            <el-option label="处理中" value="processing"></el-option>
+            <el-option label="已解决" value="resolved"></el-option>
+            <el-option label="已拒绝" value="rejected"></el-option>
+          </el-select>
+          
+          <el-select v-model="contentTypeFilter" placeholder="内容类型" clearable style="width: 150px; margin-right: 10px;">
+            <el-option label="全部" value=""></el-option>
+            <el-option label="用户" value="USER"></el-option>
+            <el-option label="消息" value="MESSAGE"></el-option>
+            <el-option label="群组" value="GROUP"></el-option>
+            <el-option label="群组成员" value="GROUP_MEMBER"></el-option>
+            <el-option label="动态" value="MOMENT"></el-option>
+          </el-select>
+          
+          <el-select v-model="reasonFilter" placeholder="举报原因" clearable style="width: 150px;">
+            <el-option label="全部" value=""></el-option>
+            <el-option label="垃圾信息" value="垃圾信息"></el-option>
+            <el-option label="色情内容" value="色情内容"></el-option>
+            <el-option label="暴力内容" value="暴力内容"></el-option>
+            <el-option label="诈骗信息" value="诈骗信息"></el-option>
+            <el-option label="政治敏感" value="政治敏感"></el-option>
+            <el-option label="侮辱谩骂" value="侮辱谩骂"></el-option>
+            <el-option label="其他" value="其他"></el-option>
+          </el-select>
+        </div>
       </div>
     </div>
     
@@ -370,6 +416,13 @@ const total = ref(0);
 // 筛选参数
 const statusFilter = ref('');
 const contentTypeFilter = ref('');
+const reasonFilter = ref('');
+
+// 搜索表单
+const searchForm = ref({
+  userId: '',
+  groupId: ''
+});
 
 // 表格数据
 const reports = ref([]);
@@ -412,15 +465,47 @@ watch(() => handleForm.value.action, (newAction) => {
   }
 });
 
+// 搜索方法
+const handleSearch = () => {
+  currentPage.value = 1; // 重置到第一页
+  loadReports();
+};
+
+// 重置搜索
+const handleReset = () => {
+  searchForm.value = {
+    userId: '',
+    groupId: ''
+  };
+  statusFilter.value = '';
+  contentTypeFilter.value = '';
+  reasonFilter.value = '';
+  currentPage.value = 1;
+  loadReports();
+};
+
 // 加载举报列表
 const loadReports = async () => {
   loading.value = true;
   try {
+    // 构建搜索参数
+    const searchParams = {};
+    if (searchForm.value.userId) {
+      searchParams.userId = searchForm.value.userId;
+    }
+    if (searchForm.value.groupId) {
+      searchParams.groupId = searchForm.value.groupId;
+    }
+    if (reasonFilter.value) {
+      searchParams.reason = reasonFilter.value;
+    }
+    
     const response = await reportApi.getReportList(
       currentPage.value - 1,
       pageSize.value,
       statusFilter.value,
-      contentTypeFilter.value
+      contentTypeFilter.value,
+      searchParams
     );
     
     if (response.success) {
@@ -668,8 +753,44 @@ onMounted(() => {
 }
 
 .filter-controls {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.search-section {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+}
+
+.search-section .el-input {
+  width: 200px;
+}
+
+.search-buttons {
   display: flex;
   gap: 10px;
+}
+
+.filter-section {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.filter-section .el-select {
+  width: 150px;
+}
+
+.filter-section label {
+  font-weight: 500;
+  color: #606266;
+  margin-right: 5px;
 }
 
 .report-stats {
@@ -797,4 +918,4 @@ onMounted(() => {
   color: #606266;
   line-height: 1.6;
 }
-</style> 
+</style>

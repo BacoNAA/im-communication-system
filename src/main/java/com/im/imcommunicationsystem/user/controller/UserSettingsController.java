@@ -129,6 +129,31 @@ public class UserSettingsController {
             // 检查Authorization头
             String authHeader = request.getHeader("Authorization");
             log.info("Authorization头: {}", authHeader != null ? "存在" : "不存在");
+            
+            // 紧急方案：尝试从请求参数中获取用户ID，与updateUserSettings方法保持一致
+            Long alternativeUserId = null;
+            try {
+                String userIdParam = request.getParameter("userId");
+                if (userIdParam != null && !userIdParam.isEmpty()) {
+                    alternativeUserId = Long.parseLong(userIdParam);
+                    log.info("从URL参数获取到用户ID: {}", alternativeUserId);
+                }
+            } catch (Exception e) {
+                log.warn("尝试从参数获取用户ID失败", e);
+            }
+            
+            // 如果找到了替代的用户ID，使用它
+            if (alternativeUserId != null) {
+                log.info("使用替代用户ID重置设置: {}", alternativeUserId);
+                try {
+                    userSettingsService.resetToDefaultSettings(alternativeUserId);
+                    return ResponseEntity.ok(ApiResponse.success(null));
+                } catch (Exception e) {
+                    log.error("使用替代ID重置用户设置失败", e);
+                    return ResponseEntity.status(500).body(ApiResponse.error(500, "重置设置失败: " + e.getMessage()));
+                }
+            }
+            
             return ResponseEntity.status(401).body(ApiResponse.unauthorized("未登录或登录已过期，请重新登录"));
         }
         

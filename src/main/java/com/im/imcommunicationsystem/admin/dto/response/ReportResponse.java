@@ -33,6 +33,11 @@ public class ReportResponse {
     private String reporterUsername;
     
     /**
+     * The reporter avatar URL
+     */
+    private String reporterAvatarUrl;
+    
+    /**
      * The reported user ID (if applicable)
      */
     private Long reportedUserId;
@@ -41,6 +46,11 @@ public class ReportResponse {
      * The reported user username (if applicable)
      */
     private String reportedUsername;
+    
+    /**
+     * The reported user avatar URL (if applicable)
+     */
+    private String reportedUserAvatarUrl;
     
     /**
      * The reported content type
@@ -81,4 +91,4 @@ public class ReportResponse {
      * The admin ID who handled the report
      */
     private Long handledBy;
-} 
+}

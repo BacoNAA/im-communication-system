@@ -8,7 +8,7 @@
           v-model="keyword"
           @keyup.enter="search"
           @input="handleInput"
-          placeholder="搜索消息、联系人、文件..."
+          placeholder="搜索..."
           ref="searchInput"
         />
         <i v-if="keyword" class="clear-icon fas fa-times-circle" @click="clearSearch"></i>
@@ -29,7 +29,7 @@
       </div>
     </div>
     
-    <div v-else-if="hasResults" class="search-results">
+    <div v-else-if="hasResults" class="search-results" ref="searchResultsRef">
       <!-- 消息结果 -->
       <div v-if="messageResults.length > 0" class="result-section">
         <div class="section-header">
@@ -46,17 +46,17 @@
           >
             <div class="result-avatar">
               <img 
-                v-if="result.message.sender?.avatarUrl"
-                :src="result.message.sender.avatarUrl"
+                v-if="result.message.senderAvatar"
+                :src="result.message.senderAvatar"
                 alt="Avatar"
               />
               <div v-else class="default-avatar">
-                {{ getInitials(result.message.sender?.nickname || '') }}
+                {{ getInitials(result.message.senderNickname || '') }}
               </div>
             </div>
             <div class="result-content">
               <div class="result-header">
-                <div class="sender-name">{{ result.message.sender?.nickname || '用户' }}</div>
+                <div class="sender-name">{{ result.message.senderNickname || '用户' }}</div>
                 <div class="result-time">{{ formatTime(result.message.createdAt) }}</div>
               </div>
               <div class="result-text" v-html="getHighlightedContent(result)"></div>
@@ -67,8 +67,33 @@
             </div>
           </div>
           
-          <div v-if="hasMoreMessageResults" class="view-more" @click="viewMoreMessages">
-            查看更多消息结果
+          <!-- 分页组件 -->
+          <div v-if="totalMessageResults > pageSize" class="pagination-container">
+            <div class="pagination">
+              <button 
+                class="pagination-btn" 
+                :disabled="currentPage === 0" 
+                @click="goToPage(currentPage - 1)"
+              >
+                上一页
+              </button>
+              
+              <div class="pagination-info">
+                第 {{ currentPage + 1 }} 页，共 {{ totalPages }} 页
+              </div>
+              
+              <button 
+                class="pagination-btn" 
+                :disabled="currentPage >= totalPages - 1" 
+                @click="goToPage(currentPage + 1)"
+              >
+                下一页
+              </button>
+            </div>
+            
+            <div class="pagination-summary">
+              共找到 {{ totalMessageResults }} 条结果
+            </div>
           </div>
         </div>
       </div>
@@ -77,7 +102,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import { messageApi } from '@/api/message';
 import type { MessageSearchResult, MessageSearchResponse } from '@/api/message';
 import { formatRelativeTime } from '@/utils/helpers';
@@ -124,10 +149,7 @@ watch(() => props.visible, (visible) => {
 
 // 计算属性
 const hasResults = computed(() => messageResults.value.length > 0);
-const hasMoreMessageResults = computed(() => {
-  if (!searchResponse.value) return false;
-  return totalMessageResults.value > messageResults.value.length;
-});
+const totalPages = computed(() => Math.ceil(totalMessageResults.value / pageSize.value));
 
 // 处理输入防抖
 let debounceTimeout: number | null = null;
@@ -146,6 +168,9 @@ const handleInput = () => {
 // 执行搜索
 const search = async () => {
   if (keyword.value.trim().length === 0) return;
+  
+  // 重置页码
+  currentPage.value = 0;
   
   isSearching.value = true;
   hasSearched.value = true;
@@ -199,14 +224,18 @@ const clearSearch = () => {
   searchResponse.value = null;
   messageResults.value = [];
   totalMessageResults.value = 0;
+  currentPage.value = 0;
   searchInput.value?.focus();
 };
 
-// 查看更多消息结果
-const viewMoreMessages = async () => {
-  if (isSearching.value || !hasMoreMessageResults.value) return;
+// 搜索结果容器引用
+const searchResultsRef = ref<HTMLElement | null>(null);
+
+// 跳转到指定页面
+const goToPage = async (page: number) => {
+  if (isSearching.value || page < 0 || page >= totalPages.value) return;
   
-  currentPage.value++;
+  currentPage.value = page;
   isSearching.value = true;
   
   try {
@@ -218,12 +247,16 @@ const viewMoreMessages = async () => {
     });
     
     if (response.success && response.data) {
-      // 合并结果
-      const newResults = response.data.results || [];
-      messageResults.value = [...messageResults.value, ...newResults];
+      // 替换当前页结果
+      messageResults.value = response.data.results || [];
+      
+      // 滚动到顶部
+      if (searchResultsRef.value) {
+        searchResultsRef.value.scrollTop = 0;
+      }
     }
   } catch (error) {
-    console.error('加载更多结果出错:', error);
+    console.error('翻页出错:', error);
   } finally {
     isSearching.value = false;
   }
@@ -231,7 +264,16 @@ const viewMoreMessages = async () => {
 
 // 导航到消息
 const navigateToMessage = (result: MessageSearchResult) => {
-  emit('navigate-to-message', result.message);
+  // 构造包含会话ID和消息ID的对象，用于消息导航
+  const navigationData = {
+    id: result.message.id, // 消息ID
+    conversationId: result.message.conversationId, // 会话ID
+    content: result.message.content,
+    senderNickname: result.message.senderNickname,
+    createdAt: result.message.createdAt
+  };
+  console.log('导航到消息:', navigationData);
+  emit('navigate-to-message', navigationData);
 };
 
 // 获取会话名称
@@ -487,14 +529,52 @@ onUnmounted(() => {
   margin-right: 4px;
 }
 
-.view-more {
-  text-align: center;
-  color: #1890ff;
-  padding: 12px 0;
-  cursor: pointer;
+.pagination-container {
+  margin-top: 16px;
+  padding: 16px 0;
+  border-top: 1px solid #f0f0f0;
 }
 
-.view-more:hover {
-  text-decoration: underline;
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 8px;
 }
-</style> 
+
+.pagination-btn {
+  padding: 6px 12px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  background-color: #fff;
+  color: #333;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  border-color: #40a9ff;
+  color: #40a9ff;
+}
+
+.pagination-btn:disabled {
+  background-color: #f5f5f5;
+  color: #ccc;
+  cursor: not-allowed;
+  border-color: #f0f0f0;
+}
+
+.pagination-info {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+}
+
+.pagination-summary {
+  text-align: center;
+  font-size: 12px;
+  color: #999;
+}
+</style>

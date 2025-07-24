@@ -27,53 +27,11 @@ const initThemeObserver = () => {
             if (messageContainers.length > 0) {
               console.log('检测到新的消息容器，应用当前背景设置');
               
-              // 对每个消息容器应用背景
-              messageContainers.forEach((container) => {
-                const element = container as HTMLElement;
-                
-                // 应用保存的背景设置
-                if (currentChatBackground === 'default') {
-                  element.style.background = '#f9f9f9'; // 默认浅灰色背景
-                  element.style.backgroundImage = 'none';
-                } else if (currentChatBackground.startsWith('#')) {
-                  // 应用颜色背景
-                  // 增强背景颜色深度，使其更加明显
-                  const r = parseInt(currentChatBackground.slice(1, 3), 16);
-                  const g = parseInt(currentChatBackground.slice(3, 5), 16);
-                  const b = parseInt(currentChatBackground.slice(5, 7), 16);
-                  
-                  // 降低亮度，增加饱和度，使颜色更深
-                  const darken = (c: number) => Math.max(0, Math.floor(c * 0.85));
-                  const deeperColor = `rgb(${darken(r)}, ${darken(g)}, ${darken(b)})`;
-                  
-                  element.style.background = deeperColor;
-                  element.style.backgroundImage = 'none';
-                } else {
-                  // 应用图片背景
-                  element.style.background = 'transparent';
-                  element.style.backgroundImage = `url(${currentChatBackground})`;
-                  element.style.backgroundSize = 'cover';
-                  element.style.backgroundPosition = 'center';
-                }
-              });
+              // 不再对消息容器直接应用背景，避免与ChatMessage.vue中的透明设置冲突
+              // 背景应该通过CSS变量在messages-area上应用
               
-              // 确保消息气泡保持半透明
-              const messageBubbles = node.querySelectorAll('.message-bubble');
-              messageBubbles.forEach((bubble) => {
-                const element = bubble as HTMLElement;
-                if (element.classList.contains('self-bubble')) {
-                  element.style.backgroundColor = 'rgba(230, 247, 255, 0.9)';
-                } else {
-                  element.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
-                }
-              });
-              
-              // 确保消息内容容器保持透明
-              const contentWrappers = node.querySelectorAll('.message-content-wrapper');
-              contentWrappers.forEach((wrapper) => {
-                const element = wrapper as HTMLElement;
-                element.style.backgroundColor = 'transparent';
-              });
+              // 移除对消息相关元素的直接样式设置
+              // 这些样式已经在ChatMessage.vue中正确设置
             }
           }
         }
@@ -322,35 +280,8 @@ export const applyBackground = (bg: string): void => {
   // 保存当前背景设置
   currentChatBackground = bg;
   
-  // 立即查询所有当前存在的消息列表容器
-  const messageContainers = document.querySelectorAll('.message-container');
-  
-  // 只对消息列表容器应用背景
-  messageContainers.forEach((container) => {
-    const element = container as HTMLElement;
-    if (bg === 'default') {
-      element.style.background = '#f9f9f9'; // 默认浅灰色背景
-      element.style.backgroundImage = 'none';
-    } else if (bg.startsWith('#')) {
-      // 增强背景颜色深度，使其更加明显
-      // 将颜色转换为RGB格式
-      const r = parseInt(bg.slice(1, 3), 16);
-      const g = parseInt(bg.slice(3, 5), 16);
-      const b = parseInt(bg.slice(5, 7), 16);
-      
-      // 降低亮度，增加饱和度，使颜色更深
-      const darken = (c: number) => Math.max(0, Math.floor(c * 0.85));
-      const deeperColor = `rgb(${darken(r)}, ${darken(g)}, ${darken(b)})`;
-      
-      element.style.background = deeperColor;
-      element.style.backgroundImage = 'none';
-    } else {
-      element.style.background = 'transparent';
-      element.style.backgroundImage = `url(${bg})`;
-      element.style.backgroundSize = 'cover';
-      element.style.backgroundPosition = 'center';
-    }
-  });
+  // 不再直接设置message-container的背景，而是通过CSS变量来处理
+  // 这样可以避免与ChatMessage.vue中的透明背景设置冲突
   
   // 保存背景设置到CSS变量，以便新创建的聊天面板也能应用相同的背景
   if (bg === 'default') {
@@ -374,35 +305,11 @@ export const applyBackground = (bg: string): void => {
     document.documentElement.style.setProperty('--chat-background-image', `url(${bg})`);
   }
   
-  // 确保消息气泡背景是半透明的
-  const messageBubbles = document.querySelectorAll('.message-bubble');
-  messageBubbles.forEach((bubble) => {
-    const element = bubble as HTMLElement;
-    if (element.classList.contains('self-bubble')) {
-      // 自己的消息气泡保持浅蓝色背景，但使用透明度
-      element.style.backgroundColor = 'rgba(230, 247, 255, 0.9)';
-    } else {
-      // 对方的消息气泡保持白色背景，但使用透明度
-      element.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
-    }
-  });
-  
-  // 确保消息内容容器是完全透明的
-  const messageContentWrappers = document.querySelectorAll('.message-content-wrapper');
-  messageContentWrappers.forEach((wrapper) => {
-    const element = wrapper as HTMLElement;
-    element.style.backgroundColor = 'transparent';
-  });
-  
-  // 确保聊天面板其他部分保持透明
-  const chatPanels = document.querySelectorAll('.chat-panel');
-  chatPanels.forEach((panel) => {
-    const element = panel as HTMLElement;
-    element.style.backgroundColor = 'transparent';
-  });
+  // 移除对消息相关元素的直接样式设置
+  // 这些样式已经在ChatMessage.vue中正确设置为透明背景
   
   console.log(`应用了聊天背景: ${bg}`);
   
   // 确保观察器已初始化
   initThemeObserver();
-}; 
+};

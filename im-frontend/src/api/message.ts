@@ -191,12 +191,14 @@ export interface MarkAsReadRequest {
   messageIds?: number[];
   lastReadMessageId?: number;
   markAllAsRead?: boolean;
+  isUserAction?: boolean; // 标记是否是用户主动操作
 }
 
 // New interface for read cursor updates
 export interface UpdateReadCursorRequest {
   conversationId: number;
   lastReadMessageId: number;
+  isUserAction?: boolean; // 标记是否是用户主动操作
 }
 
 // 创建会话请求
@@ -536,13 +538,22 @@ export const messageApi = {
   async getMessages(conversationId: number, page: number = 0, size: number = 20): Promise<ApiResponse<PageResponse<Message>>> {
     console.log(`调用getMessages API，conversationId=${conversationId}, page=${page}, size=${size}`);
     
-    // 构建请求URL
-    const url = `/messages/conversation/${conversationId}?page=${page}&size=${size}`;
+    // 构建请求URL - 添加noAutoRead=true参数，防止后端自动标记为已读
+    const url = `/messages/conversation/${conversationId}?page=${page}&size=${size}&noAutoRead=true&preventReadUpdate=true`;
     
     console.log(`准备发送请求: ${url}`);
     
+    // 记录调用栈，帮助确定哪里调用了这个API
+    console.log('[DEBUG] getMessages 调用栈:', new Error().stack);
+    
     try {
-      const response = await api.get<ApiResponse<PageResponse<Message>>>(url);
+      // 添加自定义请求头，确保不自动更新已读状态
+      const headers = {
+        'X-Prevent-Read-Update': 'true',
+        'X-No-Auto-Read': 'true'
+      };
+      
+      const response = await api.get<ApiResponse<PageResponse<Message>>>(url, { headers });
       
       // 添加调试日志
       console.log('getMessages原始响应:', JSON.stringify(response).substring(0, 300) + '...');
@@ -578,6 +589,15 @@ export const messageApi = {
               return item;
             });
           }
+          
+          // 确保消息的isRead状态不被自动更新
+          response.data.content = response.data.content.map(message => {
+            // 如果消息已经有isRead字段，保留原始值，否则设为false（不自动标记为已读）
+            return {
+              ...message,
+              isRead: message.isRead === true ? true : false // 明确设置布尔值，避免undefined
+            };
+          });
         }
         
         // 打印处理后的消息
@@ -807,13 +827,24 @@ export const messageApi = {
 
   // 标记消息已读
   async markAsRead(request: MarkAsReadRequest): Promise<ApiResponse<void>> {
-    console.log('调用markAsRead API，请求参数:', JSON.stringify(request));
+    console.log('[DEBUG] 调用markAsRead API，请求参数:', JSON.stringify(request));
     
     if (!request.conversationId) {
-      console.error('无效的会话ID:', request.conversationId);
+      console.error('[DEBUG] 无效的会话ID:', request.conversationId);
       return {
         success: false,
         message: '无效的会话ID',
+        code: 400,
+        data: undefined
+      };
+    }
+    
+    // 如果不是用户主动操作，记录警告并拒绝更新
+    if (request.isUserAction !== true) {
+      console.warn(`[DEBUG] 拒绝非用户主动操作的标记已读请求: conversationId=${request.conversationId}`);
+      return {
+        success: false,
+        message: '拒绝非用户主动操作的标记已读请求',
         code: 400,
         data: undefined
       };
@@ -831,7 +862,15 @@ export const messageApi = {
         headers['Authorization'] = `Bearer ${token}`;
       }
       
-      console.log('发送标记已读请求: /messages/read', request);
+      console.log('[DEBUG] 发送标记已读请求: /messages/read', JSON.stringify({
+        conversationId: request.conversationId,
+        lastReadMessageId: request.lastReadMessageId,
+        markAllAsRead: request.markAllAsRead,
+        isUserAction: request.isUserAction
+      }));
+      
+      // 记录调用栈，帮助确定哪里调用了这个API
+      console.log('[DEBUG] markAsRead 调用栈:', new Error().stack);
       
       const response = await api.put<ApiResponse<void>>(
         '/messages/read', 
@@ -839,10 +878,10 @@ export const messageApi = {
         { headers }
       );
       
-      console.log('标记已读响应:', response);
+      console.log('[DEBUG] 标记已读响应:', response);
       return response;
     } catch (error) {
-      console.error('标记已读请求失败:', error);
+      console.error('[DEBUG] 标记已读请求失败:', error);
       
       let errorMessage = '标记消息已读失败';
       let errorCode = 500;
@@ -867,15 +906,41 @@ export const messageApi = {
   },
   
   // 标记单条消息为已读
-  async markMessageAsRead(messageId: number): Promise<ApiResponse<void>> {
+  async markMessageAsRead(messageId: number, isUserAction: boolean = false): Promise<ApiResponse<void>> {
+    // 如果不是用户主动操作，记录警告并拒绝更新
+    if (!isUserAction) {
+      console.warn(`[DEBUG] 拒绝非用户主动操作的消息已读标记: messageId=${messageId}`);
+      return {
+        success: false,
+        message: '拒绝非用户主动操作的消息已读标记',
+        code: 400,
+        data: undefined
+      };
+    }
+    
+    // 记录调用栈，帮助确定哪里调用了这个API
+    console.log('[DEBUG] markMessageAsRead 调用栈:', new Error().stack);
+    
     return api.put<ApiResponse<void>>(`/messages/${messageId}/read`);
   },
   
   // 标记整个会话为已读
-  async markConversationAsRead(conversationId: number): Promise<ApiResponse<void>> {
+  async markConversationAsRead(conversationId: number, isUserAction: boolean = false): Promise<ApiResponse<void>> {
+    // 如果不是用户主动操作，记录警告并拒绝更新
+    if (!isUserAction) {
+      console.warn(`[DEBUG] 拒绝非用户主动操作的会话已读标记: conversationId=${conversationId}`);
+      return {
+        success: false,
+        message: '拒绝非用户主动操作的会话已读标记',
+        code: 400,
+        data: undefined
+      };
+    }
+    
     const request: MarkAsReadRequest = {
       conversationId,
-      markAllAsRead: true
+      markAllAsRead: true,
+      isUserAction: isUserAction // 添加标志表明是否是用户主动操作
     };
     return this.markAsRead(request);
   },
@@ -1611,8 +1676,33 @@ export const messageApi = {
     console.log(`获取会话 ${conversationId} 的未读消息数量`);
     
     try {
-      const response = await api.get<ApiResponse<number>>(`/messages/conversation/${conversationId}/unread-count`);
+      // 添加自定义请求头，确保不自动更新已读状态
+      const headers = {
+        'X-Prevent-Read-Update': 'true',
+        'X-No-Auto-Read': 'true',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      };
+      
+      // 添加URL参数，防止后端自动更新已读状态和缓存
+      const timestamp = new Date().getTime();
+      const url = `/messages/conversation/${conversationId}/unread-count?preventReadUpdate=true&noAutoRead=true&_t=${timestamp}`;
+      
+      // 记录调用栈，帮助确定哪里调用了这个API
+      console.log('[DEBUG] getUnreadMessageCount 调用栈:', new Error().stack);
+      
+      const response = await api.get<ApiResponse<number>>(url, { headers });
       console.log(`会话 ${conversationId} 的未读消息数量:`, response);
+      
+      // 确保返回的是数字
+      if (response.success && response.data !== undefined) {
+        if (typeof response.data !== 'number') {
+          console.warn(`[DEBUG] 未读消息数量不是数字类型: ${typeof response.data}, 值: ${response.data}`);
+          response.data = Number(response.data) || 0;
+        }
+      }
+      
       return response;
     } catch (error) {
       console.error(`获取会话 ${conversationId} 的未读消息数量失败:`, error);
@@ -1630,16 +1720,32 @@ export const messageApi = {
    * 
    * @param conversationId 会话ID
    * @param lastReadMessageId 最后读到的消息ID
+   * @param isUserAction 是否是用户主动操作
    * @returns 
    */
-  async updateReadCursor(conversationId: number, lastReadMessageId: number): Promise<ApiResponse<void>> {
-    console.log(`更新会话 ${conversationId} 的阅读光标: ${lastReadMessageId}`);
+  async updateReadCursor(conversationId: number, lastReadMessageId: number, isUserAction: boolean = false): Promise<ApiResponse<void>> {
+    console.log(`更新会话 ${conversationId} 的阅读光标: ${lastReadMessageId}, 用户主动操作: ${isUserAction}`);
+    
+    // 如果不是用户主动操作，记录警告并拒绝更新
+    if (!isUserAction) {
+      console.warn(`[DEBUG] 拒绝非用户主动操作的阅读光标更新: conversationId=${conversationId}, lastReadMessageId=${lastReadMessageId}`);
+      return {
+        success: false,
+        message: '拒绝非用户主动操作的阅读光标更新',
+        code: 400,
+        data: undefined
+      };
+    }
     
     try {
       const request: UpdateReadCursorRequest = {
         conversationId,
-        lastReadMessageId
+        lastReadMessageId,
+        isUserAction // 添加标志表明是否是用户主动操作
       };
+      
+      // 记录调用栈，帮助确定哪里调用了这个API
+      console.log('[DEBUG] updateReadCursor 调用栈:', new Error().stack);
       
       const response = await api.put<ApiResponse<void>>(`/conversations/${conversationId}/read-cursor`, request);
       console.log(`更新阅读光标响应:`, response);

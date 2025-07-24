@@ -76,8 +76,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { messageApi } from '@/api/message';
-import type { MessageSearchResult, MessageSearchResponse } from '@/api/message';
+import type { MessageSearchResult, MessageSearchResponse, Conversation } from '@/api/message';
 import { formatRelativeTime } from '@/utils/helpers';
+import { useUserStore } from '@/stores/userStore';
+import { useMessages } from '@/composables/useMessages';
 
 // 定义props
 const props = defineProps({
@@ -93,6 +95,12 @@ const props = defineProps({
 
 // 定义事件
 const emit = defineEmits(['close', 'navigate-to-message']);
+
+// 用户store
+const userStore = useUserStore();
+
+// 使用messages composable
+const { conversations, getConversationDisplayName } = useMessages();
 
 // 搜索输入框
 const searchInput = ref<HTMLInputElement | null>(null);
@@ -160,6 +168,8 @@ const search = async () => {
       searchResponse.value = response.data;
       messageResults.value = response.data.results || [];
       totalMessageResults.value = response.data.total || 0;
+      
+      // 不需要预加载，直接从已加载的会话列表中获取
     } else {
       searchError.value = response.message || '搜索失败';
       messageResults.value = [];
@@ -214,12 +224,35 @@ const viewMoreMessages = async () => {
 
 // 导航到消息
 const navigateToMessage = (result: MessageSearchResult) => {
-  emit('navigate-to-message', result.message);
+  // 构造包含会话ID和消息ID的对象，用于消息导航
+  const navigationData = {
+    id: result.message.id, // 消息ID
+    conversationId: result.message.conversationId, // 会话ID
+    content: result.message.content,
+    senderNickname: result.message.senderNickname,
+    createdAt: result.message.createdAt
+  };
+  console.log('导航到消息:', navigationData);
+  emit('navigate-to-message', navigationData);
 };
 
 // 获取会话名称
-const getConversationName = (conversationId: number) => {
-  // TODO: 根据会话ID获取会话名称，这里暂时返回一个占位符
+const getConversationName = (conversationId: number): string => {
+  // 从已加载的会话列表中查找
+  const conversation = conversations.value.find(c => c.id === conversationId);
+  if (conversation) {
+    // 创建一个兼容的会话对象，处理只读类型问题
+    const compatibleConversation = {
+      ...conversation,
+      lastMessage: conversation.lastMessage ? {
+        ...conversation.lastMessage,
+        attachments: conversation.lastMessage.attachments ? [...conversation.lastMessage.attachments] : undefined
+      } : undefined
+    } as Conversation;
+    return getConversationDisplayName(compatibleConversation);
+  }
+  
+  // 如果在已加载的会话列表中找不到，返回默认名称
   return `会话 ${conversationId}`;
 };
 
@@ -474,4 +507,4 @@ onUnmounted(() => {
 .view-more:hover {
   text-decoration: underline;
 }
-</style> 
+</style>

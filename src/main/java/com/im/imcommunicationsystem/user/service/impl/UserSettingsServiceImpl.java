@@ -114,16 +114,29 @@ public class UserSettingsServiceImpl implements UserSettingsService {
             throw new IllegalArgumentException("用户ID不能为空");
         }
         
-        UserSettings userSettings = new UserSettings();
-        userSettings.setUserId(userId);
+        // 查找现有设置记录
+        Optional<UserSettings> existingSettings = userSettingsRepository.findByUserId(userId);
+        
+        UserSettings userSettings;
+        if (existingSettings.isPresent()) {
+            // 更新现有记录
+            userSettings = existingSettings.get();
+            log.info("找到现有设置记录，将更新为默认值");
+        } else {
+            // 创建新记录
+            userSettings = new UserSettings();
+            userSettings.setUserId(userId);
+            log.info("未找到现有设置记录，将创建新的默认设置");
+        }
+        
+        // 设置默认值
         userSettings.setLanguage("zh-CN");
         userSettings.setPrivacySettings(createDefaultPrivacySettings());
         userSettings.setNotificationSettings(createDefaultNotificationSettings());
         userSettings.setThemeSettings(createDefaultThemeSettings());
         
-        userSettingsRepository.save(userSettings);
-        
-        log.info("用户设置重置成功，用户ID: {}", userId);
+        // 保存设置
+        UserSettings savedSettings = userSettingsRepository.save(userSettings);
     }
 
     @Override

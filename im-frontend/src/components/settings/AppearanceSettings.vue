@@ -143,9 +143,18 @@ const originalSettings = ref({
 
 // 计算是否有更改
 const hasChanges = computed(() => {
-  return selectedThemeColor.value !== originalSettings.value.themeColor ||
-         selectedBackground.value !== originalSettings.value.background ||
-         fontSize.value !== originalSettings.value.fontSize;
+  // 检查当前设置是否与原始设置不同，或者是否为默认设置
+  const isChanged = selectedThemeColor.value !== originalSettings.value.themeColor ||
+                   selectedBackground.value !== originalSettings.value.background ||
+                   fontSize.value !== originalSettings.value.fontSize;
+  
+  // 检查是否为默认设置
+  const isDefault = selectedThemeColor.value === '#1890ff' &&
+                   selectedBackground.value === 'default' &&
+                   fontSize.value === 14;
+  
+  // 如果有更改或者是默认设置，都允许保存
+  return isChanged || isDefault;
 });
 
 // 消息提示状态
@@ -219,7 +228,7 @@ const applyThemeColor = (color: string) => {
 
 // 应用背景
 const applyBackground = (bg: string) => {
-  const chatPanels = document.querySelectorAll('.message-container');
+  const chatPanels = document.querySelectorAll('.messages-area');
   chatPanels.forEach((panel) => {
     const element = panel as HTMLElement;
     if (bg === 'default') {
@@ -380,53 +389,29 @@ const saveSettings = async () => {
 };
 
 // 重置为默认设置
-const resetToDefaults = async () => {
-  try {
-    await resetSettings();
-    
-    // 重置本地状态
-    selectedThemeColor.value = '#1890ff';
-    customThemeColor.value = '#1890ff';
-    selectedBackground.value = 'default';
-    fontSize.value = 14;
-    
-    // 应用默认设置
-    applyThemeColor(selectedThemeColor.value);
-    applyBackground(selectedBackground.value);
-    applyFontSize(fontSize.value);
-    
-    // 更新原始设置
-    originalSettings.value = {
-      themeColor: selectedThemeColor.value,
-      background: selectedBackground.value,
-      fontSize: fontSize.value
-    };
-    
-    // 显示成功消息
-    messageType.value = 'success';
-    messageText.value = '已恢复默认设置';
-    showMessage.value = true;
-    
-    // 定时隐藏消息
-    setTimeout(() => {
-      showMessage.value = false;
-    }, 3000);
-    
-    // 关闭设置对话框
-    emit('close');
-    
-    // 刷新页面
-    setTimeout(() => {
-      window.location.reload();
-    }, 500);
-  } catch (error) {
-    console.error('重置设置失败:', error);
-    
-    // 显示错误消息
-    messageType.value = 'error';
-    messageText.value = '重置设置失败: ' + ((error as Error)?.message || '未知错误');
-    showMessage.value = true;
-  }
+const resetToDefaults = () => {
+  // 定义默认值
+  const defaultThemeColor = '#1890ff';
+  const defaultBackground = 'default';
+  const defaultFontSize = 14;
+  
+  // 更新组件的本地状态
+  selectedThemeColor.value = defaultThemeColor;
+  customThemeColor.value = defaultThemeColor;
+  selectedBackground.value = defaultBackground;
+  fontSize.value = defaultFontSize;
+  
+  // 不立即应用设置到UI，等待用户点击保存
+  
+  // 显示成功消息
+  messageType.value = 'success';
+  messageText.value = '已恢复默认设置，请点击保存设置以应用';
+  showMessage.value = true;
+  
+  // 定时隐藏消息
+  setTimeout(() => {
+    showMessage.value = false;
+  }, 3000);
 };
 
 // 初始化
@@ -690,4 +675,4 @@ onMounted(() => {
   padding: 0;
   line-height: 1;
 }
-</style> 
+</style>

@@ -115,6 +115,11 @@ export interface ReportResponse {
     reporterUsername: string;
     
     /**
+     * 举报者头像URL
+     */
+    reporterAvatarUrl?: string;
+    
+    /**
      * 被举报用户ID（如适用）
      */
     reportedUserId?: number;
@@ -123,6 +128,11 @@ export interface ReportResponse {
      * 被举报用户名（如适用）
      */
     reportedUsername?: string;
+    
+    /**
+     * 被举报用户头像URL（如适用）
+     */
+    reportedUserAvatarUrl?: string;
     
     /**
      * 被举报内容类型
@@ -289,7 +299,7 @@ export const reportApi = {
      * @param contentType 内容类型过滤（可选）
      * @returns 举报列表
      */
-    async getReportList(page: number = 0, size: number = 10, status?: string, contentType?: string): Promise<ApiResponse<Page<ReportResponse>>> {
+    async getReportList(page: number = 0, size: number = 10, status?: string, contentType?: string, searchParams?: any): Promise<ApiResponse<Page<ReportResponse>>> {
         try {
             // 获取管理员令牌
             const token = getAdminToken();
@@ -314,7 +324,20 @@ export const reportApi = {
                 params.append('contentType', contentType);
             }
             
-            console.log('获取举报列表:', { page, size, status, contentType });
+            // 添加搜索参数
+            if (searchParams) {
+                if (searchParams.userId) {
+                    params.append('userId', searchParams.userId);
+                }
+                if (searchParams.groupId) {
+                    params.append('groupId', searchParams.groupId);
+                }
+                if (searchParams.reason) {
+                    params.append('reason', searchParams.reason);
+                }
+            }
+            
+            console.log('获取举报列表:', { page, size, status, contentType, searchParams });
             const response = await api.get<ApiResponse<Page<ReportResponse>>>(`/admin/reports?${params.toString()}`, { headers });
             console.log('获取举报列表成功:', response);
             return response;
@@ -533,4 +556,4 @@ interface Page<T> {
     totalElements: number;
 }
 
-export default reportApi; 
+export default reportApi;

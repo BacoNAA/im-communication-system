@@ -91,12 +91,18 @@ public class MessageServiceImpl implements MessageService {
                 if (conversation.getConversationType() == ConversationType.GROUP) {
                     // 检查用户是否是群组成员
                     Long groupId = conversation.getRelatedGroupId();
+                    if (groupId == null) {
+                        // 群聊类型但群组ID为空，说明群组已解散
+                        log.warn("Group conversation {} has null groupId, group has been dissolved", conversation.getId());
+                        return MessageResponse.error("该群组已解散，无法发送消息");
+                    }
                     if (groupId != null) {
                         try {
-                            // 检查群组是否被封禁
+                            // 检查群组是否存在（如果群组已解散，会抛出异常）
                             com.im.imcommunicationsystem.group.entity.Group group = 
                                 groupService.getGroupEntityById(groupId);
                             
+                            // 检查群组是否被封禁
                             if (group != null && Boolean.TRUE.equals(group.getIsBanned())) {
                                 String reason = group.getBannedReason() != null ? 
                                     "原因：" + group.getBannedReason() : "";
@@ -115,6 +121,14 @@ public class MessageServiceImpl implements MessageService {
                                 log.warn("User {} is muted in group {}, cannot send message", senderId, groupId);
                                 return MessageResponse.error("您已被禁言，无法发送消息");
                             }
+                        } catch (com.im.imcommunicationsystem.group.exception.GroupException e) {
+                            // 群组不存在，说明群组已被解散
+                            if (e.getMessage().contains("群组不存在")) {
+                                log.warn("Group {} has been dissolved, user {} cannot send message", groupId, senderId);
+                                return MessageResponse.error("该群组已解散，无法发送消息");
+                            }
+                            log.warn("Group error for user {} in group {}: {}", senderId, groupId, e.getMessage());
+                            return MessageResponse.error(e.getMessage());
                         } catch (Exception e) {
                             log.warn("User {} is not a member of group {}, cannot send message", senderId, groupId);
                             return MessageResponse.error("您不是群组成员，无法发送消息");

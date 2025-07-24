@@ -438,27 +438,37 @@ function _useUserSettings() {
         }
       };
       
-      // 更新本地设置
-      settings.value = defaultSettings;
-      saveLocalSettings();
-      
-      // 立即应用默认设置
-      applySettingsToUI();
-      
-      // 发送到服务器
+      // 发送到服务器重置设置
       try {
+        console.log('发送重置设置请求到服务器:', '/user/settings/reset');
         const userId = currentUser.value.id;
-        const response = await api.post(`/user/settings/reset?userId=${userId}`);
+        const response = await api.post(`/user/settings/reset?userId=${userId}`, {}, {
+          headers: {
+            'X-User-Id': String(userId) // 添加额外的用户ID头
+          }
+        });
       
-      if (!response.success) {
-        throw new Error(response.message || '重置设置失败');
+        if (!response.success) {
+          throw new Error(response.message || '重置设置失败');
         }
         
         console.log('服务器设置重置成功');
+        
+        // 服务器重置成功后，重新从服务器获取设置以确保同步
+        await fetchSettings();
+        
       } catch (err) {
         console.error('服务器设置重置失败:', err);
-        // 尽管服务器请求失败，我们仍然重置了本地设置
+        // 即使服务器请求失败，我们仍然继续重置本地设置
+        
+        // 更新本地设置
+        settings.value = defaultSettings;
+        saveLocalSettings();
+        
+        // 立即应用默认设置
+        applySettingsToUI();
       }
+      
     } catch (err) {
       console.error('重置用户设置失败:', err);
       error.value = '重置设置失败';
@@ -492,4 +502,4 @@ function _useUserSettings() {
 }
 
 // 为了向后兼容，保留原始的useUserSettings导出
-export const useUserSettings = getUserSettings; 
+export const useUserSettings = getUserSettings;

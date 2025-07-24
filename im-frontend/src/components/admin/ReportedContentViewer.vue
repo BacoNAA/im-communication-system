@@ -20,7 +20,7 @@
           <h3>用户信息</h3>
         </div>
         <div class="user-info">
-          <el-avatar :size="64" :src="contentData?.avatar">
+          <el-avatar :size="64" :src="contentData?.avatar || contentData?.avatarUrl">
             {{ getInitials(contentData?.nickname) }}
           </el-avatar>
           <div class="user-details">
@@ -42,9 +42,16 @@
           <h3>消息内容</h3>
         </div>
         <div class="message-info">
-          <div class="sender-info">
-            <span class="label">发送者:</span>
-            <span class="value">{{ contentData?.senderName }} (#{{ contentData?.senderId }})</span>
+          <div class="sender-avatar-section">
+            <el-avatar :size="48" :src="contentData?.avatar || contentData?.avatarUrl">
+              {{ getInitials(contentData?.senderName) }}
+            </el-avatar>
+            <div class="sender-details">
+              <div class="sender-info">
+                <span class="label">发送者:</span>
+                <span class="value">{{ contentData?.senderName }} (#{{ contentData?.senderId }})</span>
+              </div>
+            </div>
           </div>
           <div class="message-time">
             <span class="label">发送时间:</span>
@@ -123,7 +130,7 @@
         
         <!-- 正常显示群组信息 -->
         <div v-else class="group-info">
-          <el-avatar :size="64" :src="contentData?.avatar" shape="square">
+          <el-avatar :size="64" :src="contentData?.avatar || contentData?.avatarUrl" shape="square">
             {{ getInitials(contentData?.name) }}
           </el-avatar>
           <div class="group-details">
@@ -205,9 +212,16 @@
         
         <!-- 正常显示成员信息 -->
         <div v-else class="member-info">
-          <div class="member-name">
-            <span class="label">成员:</span>
-            <span class="value">{{ contentData?.nickname }} (#{{ contentData?.userId }})</span>
+          <div class="member-avatar-section">
+            <el-avatar :size="48" :src="contentData?.avatar || contentData?.avatarUrl">
+              {{ getInitials(contentData?.nickname) }}
+            </el-avatar>
+            <div class="member-details">
+              <div class="member-name">
+                <span class="label">成员:</span>
+                <span class="value">{{ contentData?.nickname }} (#{{ contentData?.userId }})</span>
+              </div>
+            </div>
           </div>
           <div class="group-name">
             <span class="label">所属群组:</span>
@@ -262,10 +276,15 @@
         <!-- 正常显示动态信息 -->
         <div v-else class="moment-card">
           <div class="moment-header">
-            <div class="user-info">
-              <span class="user-name">{{ contentData?.userNickname || '未知用户' }}</span>
-              <span class="user-id">(#{{ contentData?.userId }})</span>
-              <span class="moment-time">{{ formatDate(contentData?.createdAt) }}</span>
+            <div class="author-avatar-section">
+              <el-avatar :size="48" :src="contentData?.avatar || contentData?.avatarUrl">
+                {{ getInitials(contentData?.userNickname) }}
+              </el-avatar>
+              <div class="user-info">
+                <span class="user-name">{{ contentData?.userNickname || '未知用户' }}</span>
+                <span class="user-id">(#{{ contentData?.userId }})</span>
+                <span class="moment-time">{{ formatDate(contentData?.createdAt) }}</span>
+              </div>
             </div>
             <div class="moment-visibility">
               可见性: {{ formatMomentVisibility(contentData?.visibility) }}
@@ -311,7 +330,7 @@
             <!-- 旧的处理方式，兼容之前的数据结构 -->
             <div v-else>
               <div class="image-grid" v-if="hasMomentImages">
-              <div v-for="(media, index) in momentImages" :key="index" class="image-item">
+                <div v-for="(media, index) in momentImages" :key="index" class="image-item">
                   <el-image 
                     :src="media.url"
                     fit="cover"
@@ -322,11 +341,11 @@
                     @error="handleMediaError"
                   />
                   <div class="media-info small">图片ID: {{ media.mediaFileId || index + 1 }}</div>
+                </div>
               </div>
-            </div>
-            
-            <div class="video-container" v-if="hasMomentVideos">
-              <div v-for="(media, index) in momentVideos" :key="index" class="video-item">
+              
+              <div class="video-container" v-if="hasMomentVideos">
+                <div v-for="(media, index) in momentVideos" :key="index" class="video-item">
                   <video controls :src="media.url" @error="handleMediaError" class="video-player"></video>
                   <div class="media-info small">视频ID: {{ media.mediaFileId || index + 1 }}</div>
                 </div>
@@ -402,14 +421,27 @@ const loadReportedContent = async () => {
           type: contentData.value.type,
           mediaUrl: getMediaUrl(contentData.value.mediaFileId)
         });
-      } else if (props.contentType === 'MOMENT' && contentData.value && contentData.value.media) {
-        console.log('动态媒体信息:', contentData.value.media);
+      } else if (props.contentType === 'MOMENT' && contentData.value) {
+        console.log('动态完整数据结构:', {
+          hasMedia: !!contentData.value.media,
+          hasMediaType: !!contentData.value.mediaType,
+          hasMediaUrls: !!contentData.value.mediaUrls,
+          media: contentData.value.media,
+          mediaType: contentData.value.mediaType,
+          mediaUrls: contentData.value.mediaUrls
+        });
         
-        // 检查并输出图片和视频URL
-        const processedImages = momentImages.value;
-        const processedVideos = momentVideos.value;
-        console.log('处理后的图片:', processedImages);
-        console.log('处理后的视频:', processedVideos);
+        if (contentData.value.media) {
+          console.log('动态媒体信息:', contentData.value.media);
+          
+          // 检查并输出图片和视频URL
+          const processedImages = momentImages.value;
+          const processedVideos = momentVideos.value;
+          console.log('处理后的图片:', processedImages);
+          console.log('处理后的视频:', processedVideos);
+        } else {
+          console.warn('动态没有media字段');
+        }
       }
 
       // 处理兼容性：如果存在media数组但没有mediaUrls，则从media中构造mediaUrls
@@ -790,6 +822,21 @@ onMounted(() => {
   color: #E6A23C;
 }
 
+/* 头像部分样式 */
+.sender-avatar-section,
+.member-avatar-section,
+.author-avatar-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 15px;
+}
+
+.sender-details,
+.member-details {
+  flex: 1;
+}
+
 /* 动态内容样式 */
 .moment-card {
   border: 1px solid #e6e6e6;
@@ -839,8 +886,9 @@ onMounted(() => {
 
 .image-item img {
   width: 100%;
-  height: 150px;
-  object-fit: cover;
+  height: auto;
+  min-height: 150px;
+  object-fit: contain;
   border-radius: 4px;
 }
 
@@ -946,7 +994,8 @@ onMounted(() => {
 .image-item {
   position: relative;
   overflow: hidden;
-  height: 150px;
+  min-height: 150px;
+  height: auto;
 }
 
 .video-player {
@@ -966,4 +1015,4 @@ onMounted(() => {
 .moment-media {
   margin-top: 15px;
 }
-</style> 
+</style>

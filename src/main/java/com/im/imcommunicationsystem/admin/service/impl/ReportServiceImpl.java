@@ -115,6 +115,12 @@ public class ReportServiceImpl implements ReportService {
         userDetails.put("email", user.getEmail());
         userDetails.put("createdAt", user.getCreatedAt());
         
+        // 添加用户头像字段
+        if (user.getAvatarUrl() != null) {
+            userDetails.put("avatar", user.getAvatarUrl());
+            userDetails.put("avatarUrl", user.getAvatarUrl());
+        }
+        
         result.put("content", userDetails);
     }
     
@@ -132,6 +138,11 @@ public class ReportServiceImpl implements ReportService {
         messageDetails.put("content", message.getContent());
         messageDetails.put("senderId", message.getSenderId());
         messageDetails.put("senderName", sender != null ? sender.getNickname() : "未知用户");
+        // 添加发送者头像字段
+        if (sender != null) {
+            messageDetails.put("avatar", sender.getAvatarUrl());
+            messageDetails.put("avatarUrl", sender.getAvatarUrl());
+        }
         messageDetails.put("conversationId", message.getConversationId());
         messageDetails.put("createdAt", message.getCreatedAt());
         
@@ -175,9 +186,10 @@ public class ReportServiceImpl implements ReportService {
                 groupDetails.put("bannedUntil", group.getBannedUntil());
             }
         
-        // 使用avatarUrl而不是avatar
+        // 添加群组头像字段，同时提供avatar和avatarUrl两个字段名以确保兼容性
         if (group.getAvatarUrl() != null) {
             groupDetails.put("avatar", group.getAvatarUrl());
+            groupDetails.put("avatarUrl", group.getAvatarUrl());
         }
         
         // 群成员数量需要单独查询
@@ -248,6 +260,12 @@ public class ReportServiceImpl implements ReportService {
                         memberDetails.put("nickname", member != null ? member.getNickname() : "未知用户");
                         memberDetails.put("role", groupMember.getRole());
                         memberDetails.put("joinTime", groupMember.getJoinedAt());
+                        
+                        // 添加用户头像字段
+                        if (member != null && member.getAvatarUrl() != null) {
+                            memberDetails.put("avatar", member.getAvatarUrl());
+                            memberDetails.put("avatarUrl", member.getAvatarUrl());
+                        }
                     } else {
                         memberDetails.put("userId", reportedUserId);
                         memberDetails.put("userNotFound", "该用户不在此群组中或已退出");
@@ -255,6 +273,11 @@ public class ReportServiceImpl implements ReportService {
                         User user = userRepository.findById(reportedUserId).orElse(null);
                         if (user != null) {
                             memberDetails.put("nickname", user.getNickname());
+                            // 添加用户头像字段
+                            if (user.getAvatarUrl() != null) {
+                                memberDetails.put("avatar", user.getAvatarUrl());
+                                memberDetails.put("avatarUrl", user.getAvatarUrl());
+                            }
                         } else {
                             memberDetails.put("nickname", "未知用户");
                         }
@@ -279,6 +302,11 @@ public class ReportServiceImpl implements ReportService {
                     memberDetails.put("userId", reportedUserId);
                     memberDetails.put("nickname", user.getNickname());
                     memberDetails.put("note", "用户所在群组已被删除");
+                    // 添加用户头像字段
+                    if (user.getAvatarUrl() != null) {
+                        memberDetails.put("avatar", user.getAvatarUrl());
+                        memberDetails.put("avatarUrl", user.getAvatarUrl());
+                    }
                 } else {
                     memberDetails.put("userId", reportedUserId);
                     memberDetails.put("nickname", "未知用户");
@@ -306,6 +334,11 @@ public class ReportServiceImpl implements ReportService {
         
         momentDetails.put("userId", moment.getUserId());
         momentDetails.put("userNickname", author != null ? author.getNickname() : "未知用户");
+        // 添加作者头像字段
+        if (author != null) {
+            momentDetails.put("avatar", author.getAvatarUrl());
+            momentDetails.put("avatarUrl", author.getAvatarUrl());
+        }
         momentDetails.put("content", moment.getContent());
         momentDetails.put("visibility", moment.getVisibilityType().toString());
         momentDetails.put("likeCount", moment.getLikeCount());
@@ -314,13 +347,94 @@ public class ReportServiceImpl implements ReportService {
         
         // 动态媒体处理
         try {
-            if (moment.getMediaUrls() != null) {
-                // 将JSON字符串解析为媒体列表
-                List<Map<String, Object>> mediaList = objectMapper.readValue(
-                    moment.getMediaUrls(), 
-                    objectMapper.getTypeFactory().constructCollectionType(List.class, Map.class)
-                );
-                momentDetails.put("media", mediaList);
+            if (moment.getMediaUrls() != null && !moment.getMediaUrls().trim().isEmpty()) {
+                log.info("处理动态媒体信息: {}", moment.getMediaUrls());
+                
+                // 尝试解析为URL数组（新格式）
+                try {
+                    List<String> urlList = objectMapper.readValue(
+                        moment.getMediaUrls(),
+                        objectMapper.getTypeFactory().constructCollectionType(List.class, String.class)
+                    );
+                    
+                    if (!urlList.isEmpty()) {
+                        // 构造媒体对象列表
+                        List<Map<String, Object>> mediaList = new ArrayList<>();
+                        List<String> imageUrls = new ArrayList<>();
+                        
+                        for (String url : urlList) {
+                            if (url != null && !url.trim().isEmpty()) {
+                                // 根据URL判断媒体类型
+                                String type = "IMAGE"; // 默认为图片
+                                if (url.toLowerCase().contains(".mp4") || url.toLowerCase().contains(".avi") || 
+                                    url.toLowerCase().contains(".mov") || url.toLowerCase().contains(".wmv")) {
+                                    type = "VIDEO";
+                                }
+                                
+                                Map<String, Object> mediaItem = new HashMap<>();
+                                mediaItem.put("type", type);
+                                mediaItem.put("url", url);
+                                mediaList.add(mediaItem);
+                                
+                                if ("IMAGE".equals(type)) {
+                                    imageUrls.add(url);
+                                }
+                            }
+                        }
+                        
+                        momentDetails.put("media", mediaList);
+                        
+                        // 设置兼容性字段
+                        if (!imageUrls.isEmpty()) {
+                            momentDetails.put("mediaType", "IMAGE");
+                            momentDetails.put("mediaUrls", imageUrls);
+                        }
+                        
+                        log.info("成功解析URL数组格式，媒体数量: {}", mediaList.size());
+                    }
+                } catch (Exception urlArrayException) {
+                    // 如果解析URL数组失败，尝试解析为对象数组（旧格式）
+                    try {
+                        List<Map<String, Object>> mediaList = objectMapper.readValue(
+                            moment.getMediaUrls(), 
+                            objectMapper.getTypeFactory().constructCollectionType(List.class, Map.class)
+                        );
+                        momentDetails.put("media", mediaList);
+                        
+                        // 为前端兼容性添加mediaType和mediaUrls字段
+                        if (!mediaList.isEmpty()) {
+                            String primaryType = null;
+                            List<String> mediaUrls = new ArrayList<>();
+                            
+                            for (Map<String, Object> media : mediaList) {
+                                String type = (String) media.get("type");
+                                if ("IMAGE".equals(type)) {
+                                    primaryType = "IMAGE";
+                                    String url = (String) media.get("url");
+                                    if (url != null) {
+                                        mediaUrls.add(url);
+                                    }
+                                } else if ("VIDEO".equals(type) && primaryType == null) {
+                                    primaryType = "VIDEO";
+                                    String url = (String) media.get("url");
+                                    if (url != null) {
+                                        mediaUrls.add(url);
+                                    }
+                                }
+                            }
+                            
+                            if (primaryType != null && !mediaUrls.isEmpty()) {
+                                momentDetails.put("mediaType", primaryType);
+                                momentDetails.put("mediaUrls", mediaUrls);
+                            }
+                        }
+                        
+                        log.info("成功解析对象数组格式，媒体数量: {}", mediaList.size());
+                    } catch (Exception objectArrayException) {
+                        log.warn("解析动态媒体信息失败，URL数组解析错误: {}, 对象数组解析错误: {}", 
+                                urlArrayException.getMessage(), objectArrayException.getMessage());
+                    }
+                }
             }
         } catch (Exception e) {
             log.warn("解析动态媒体信息失败", e);
@@ -335,37 +449,89 @@ public class ReportServiceImpl implements ReportService {
     }
     
     @Override
-    public Page<ReportResponse> getReportListWithPagination(Pageable pageable, String status, String contentType) {
-        log.info("获取举报列表，状态：{}，内容类型：{}", status, contentType);
+    public Page<ReportResponse> getReportListWithPagination(Pageable pageable, String status, String contentType, String userId, String groupId, String reason) {
+        log.info("获取举报列表，状态：{}，内容类型：{}，用户ID：{}，群组ID：{}，举报原因：{}", status, contentType, userId, groupId, reason);
         
-        Page<Report> reportPage;
+        // 获取所有举报，然后在内存中过滤（简化实现）
+        List<Report> allReports = reportRepository.findAll();
         
-        // 根据过滤条件查询
-        if (StringUtils.hasText(status) && StringUtils.hasText(contentType)) {
-            // 状态和内容类型都有指定
-            try {
-                Report.ReportStatus reportStatus = Report.ReportStatus.valueOf(status.toLowerCase());
-                reportPage = reportRepository.findByStatusAndReportedContentType(reportStatus, contentType, pageable);
-            } catch (IllegalArgumentException e) {
-                log.warn("无效的举报状态：{}", status);
-                reportPage = reportRepository.findByReportedContentType(contentType, pageable);
-            }
-        } else if (StringUtils.hasText(status)) {
-            // 只有状态有指定
-            try {
-                Report.ReportStatus reportStatus = Report.ReportStatus.valueOf(status.toLowerCase());
-                reportPage = reportRepository.findByStatus(reportStatus, pageable);
-            } catch (IllegalArgumentException e) {
-                log.warn("无效的举报状态：{}", status);
-                reportPage = reportRepository.findAll(pageable);
-            }
-        } else if (StringUtils.hasText(contentType)) {
-            // 只有内容类型有指定
-            reportPage = reportRepository.findByReportedContentType(contentType, pageable);
-        } else {
-            // 没有任何过滤条件
-            reportPage = reportRepository.findAll(pageable);
-        }
+        // 应用过滤条件
+        List<Report> filteredReports = allReports.stream()
+            .filter(report -> {
+                // 状态过滤
+                if (StringUtils.hasText(status)) {
+                    try {
+                        Report.ReportStatus reportStatus = Report.ReportStatus.valueOf(status.toLowerCase());
+                        if (!report.getStatus().equals(reportStatus)) {
+                            return false;
+                        }
+                    } catch (IllegalArgumentException e) {
+                        log.warn("无效的举报状态：{}", status);
+                    }
+                }
+                
+                // 内容类型过滤
+                if (StringUtils.hasText(contentType) && !contentType.equals(report.getReportedContentType())) {
+                    return false;
+                }
+                
+                // 用户ID搜索（举报者或被举报者）
+                if (StringUtils.hasText(userId)) {
+                    try {
+                        Long searchUserId = Long.parseLong(userId);
+                        boolean matchesReporter = report.getReporterId().equals(searchUserId);
+                        boolean matchesReported = report.getReportedUserId() != null && report.getReportedUserId().equals(searchUserId);
+                        if (!matchesReporter && !matchesReported) {
+                            return false;
+                        }
+                    } catch (NumberFormatException e) {
+                        log.warn("无效的用户ID：{}", userId);
+                        return false;
+                    }
+                }
+                
+                // 群组ID搜索（对群组相关举报有效）
+                if (StringUtils.hasText(groupId)) {
+                    try {
+                        Long searchGroupId = Long.parseLong(groupId);
+                        boolean isGroupRelated = false;
+                        
+                        // 检查是否为群组类型的举报
+                        if ("GROUP".equals(report.getReportedContentType())) {
+                            // 直接举报群组
+                            isGroupRelated = report.getReportedContentId().equals(searchGroupId);
+                        } else if ("GROUP_MEMBER".equals(report.getReportedContentType())) {
+                            // 举报群组成员，需要通过其他方式关联群组ID
+                            // 这里简化处理，假设reportedContentId就是群组ID
+                            isGroupRelated = report.getReportedContentId().equals(searchGroupId);
+                        }
+                        // 注意：对于MESSAGE类型的举报，如果是群组消息，也应该能通过群组ID搜索
+                        // 但这需要额外的数据库查询来获取消息所属的群组，这里暂时不实现
+                        
+                        if (!isGroupRelated) {
+                            return false;
+                        }
+                    } catch (NumberFormatException e) {
+                        log.warn("无效的群组ID：{}", groupId);
+                        return false;
+                    }
+                }
+                
+                // 举报原因过滤
+                if (StringUtils.hasText(reason) && !reason.equals(report.getReason())) {
+                    return false;
+                }
+                
+                return true;
+            })
+            .collect(Collectors.toList());
+        
+        // 手动分页
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), filteredReports.size());
+        List<Report> pageContent = start < filteredReports.size() ? filteredReports.subList(start, end) : new ArrayList<>();
+        
+        Page<Report> reportPage = new PageImpl<>(pageContent, pageable, filteredReports.size());
         
         // 获取所有举报者和被举报者ID
         List<Long> userIds = new ArrayList<>();
@@ -1088,8 +1254,10 @@ public class ReportServiceImpl implements ReportService {
                 .reportId(report.getId())
                 .reporterId(report.getReporterId())
                 .reporterUsername(reporter != null ? reporter.getNickname() : "未知用户")
+                .reporterAvatarUrl(reporter != null ? reporter.getAvatarUrl() : null)
                 .reportedUserId(report.getReportedUserId())
                 .reportedUsername(reportedUser != null ? reportedUser.getNickname() : null)
+                .reportedUserAvatarUrl(reportedUser != null ? reportedUser.getAvatarUrl() : null)
                 .reportedContentType(report.getReportedContentType())
                 .reportedContentId(report.getReportedContentId())
                 .reason(report.getReason())
@@ -1100,4 +1268,4 @@ public class ReportServiceImpl implements ReportService {
                 .handledBy(report.getHandledBy())
                 .build();
     }
-} 
+}

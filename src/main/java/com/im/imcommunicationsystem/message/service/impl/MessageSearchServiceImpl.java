@@ -194,7 +194,7 @@ public class MessageSearchServiceImpl implements MessageSearchService {
      * @return 消息DTO
      */
     private MessageDTO convertToMessageDTO(Message message) {
-        return MessageDTO.builder()
+        MessageDTO.MessageDTOBuilder builder = MessageDTO.builder()
             .id(message.getId())
             .conversationId(message.getConversationId())
             .senderId(message.getSenderId())
@@ -202,8 +202,23 @@ public class MessageSearchServiceImpl implements MessageSearchService {
             .messageType(message.getMessageType())
             .status(message.getStatus())
             .createdAt(message.getCreatedAt())
-            .updatedAt(message.getUpdatedAt())
-            .build();
+            .updatedAt(message.getUpdatedAt());
+        
+        // 获取发送者信息
+        try {
+            if (message.getSenderId() != null) {
+                var senderProfile = userProfileService.getUserProfile(message.getSenderId());
+                if (senderProfile != null) {
+                    builder.senderNickname(senderProfile.getNickname())
+                           .senderAvatar(senderProfile.getAvatarUrl());
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Failed to get sender profile for user {}: {}", message.getSenderId(), e.getMessage());
+            // 如果获取发送者信息失败，继续构建消息DTO，但不包含发送者信息
+        }
+        
+        return builder.build();
     }
 
     @Override

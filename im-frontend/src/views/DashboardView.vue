@@ -1,18 +1,5 @@
 <template>
   <div class="app-container">
-    <!-- 错误提示 -->
-    <div v-if="showError" class="error-toast">
-      <i class="icon-error"></i>
-      <span>{{ errorMessage }}</span>
-      <button @click="() => showError = false" class="close-btn">×</button>
-    </div>
-    
-    <!-- 成功提示 -->
-    <div v-if="showSuccess" class="success-toast">
-      <i class="icon-success">✓</i>
-      <span>{{ successMessage }}</span>
-      <button @click="() => showSuccess = false" class="close-btn">×</button>
-    </div>
     
     <!-- 标签详情视图已移除 -->
     
@@ -44,7 +31,6 @@
             @pin-chat="handlePinChat"
             @mute-chat="handleMute"
             @archive-chat="handleArchiveChat"
-            @delete-chat="handleDeleteChat"
             @error="handlePanelError"
           />
           </div>
@@ -52,6 +38,7 @@
           <!-- 聊天内容区域 -->
           <div class="chat-content-panel" v-if="activeChatId">
             <chat-panel
+              ref="chatPanel"
               :conversation-id="activeChatId"
               :chat-name="getCurrentChatName()"
               :is-group-chat="isCurrentChatGroup()"
@@ -130,6 +117,9 @@
                     已发送
                   </button>
                   <span v-else class="relationship-status">{{ getRelationshipText(user.relationshipStatus) }}</span>
+                  <button class="report-btn" @click="handleReportUserFromSearch(user)" title="举报用户">
+                    举报
+                  </button>
                 </div>
               </div>
             </div>
@@ -160,7 +150,7 @@
             @edit-alias="handleEditAlias"
             @manage-tags="handleManageTags"
             @delete-contact="handleDeleteContact"
-            @error="(msg) => showErrorMessage(msg)"
+            @error="(msg) => ElMessage.error(msg)"
           />
         </div>
       </div>
@@ -1404,6 +1394,46 @@
             <span>{{ viewingUserProfile.occupation || '未公开' }}</span>
           </div>
         </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- 举报用户对话框 -->
+  <div v-if="showReportUserDialog" class="report-dialog-overlay" @click.self="cancelReportUser">
+    <div class="report-dialog">
+      <div class="report-dialog-header">
+        <h3>举报用户</h3>
+        <button class="close-btn" @click="cancelReportUser">×</button>
+      </div>
+      <div class="report-dialog-body">
+        <div class="report-form">
+          <div class="form-group">
+            <label>举报原因</label>
+            <select v-model="reportUserReason" class="report-reason-select">
+              <option value="">请选择举报原因</option>
+              <option value="垃圾信息">垃圾信息</option>
+              <option value="色情内容">色情内容</option>
+              <option value="暴力内容">暴力内容</option>
+              <option value="诈骗信息">诈骗信息</option>
+              <option value="政治敏感">政治敏感</option>
+              <option value="侮辱谩骂">侮辱谩骂</option>
+              <option value="其他">其他</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>详细描述（选填）</label>
+            <textarea 
+              v-model="reportUserDescription" 
+              class="report-description"
+              placeholder="请描述具体情况，有助于我们更好地处理..."
+            ></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="report-dialog-footer">
+        <button class="cancel-btn" @click="cancelReportUser">取消</button>
+        <button class="submit-btn" @click="submitReportUser" :disabled="!reportUserReason">提交</button>
       </div>
     </div>
   </div>
@@ -1592,10 +1622,6 @@
         <div class="icon">🔕</div>
         <div class="text">消息免打扰</div>
       </div>
-      <div class="menu-item danger" @click="deleteChat(selectedChat)">
-        <div class="icon">🗑️</div>
-        <div class="text">删除聊天</div>
-      </div>
     </div>
   </div>
 
@@ -1776,10 +1802,12 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import type { FileItem, FileStats, FileUploadResult } from '@/types'
 import { api } from '@/api/request'
 import { contactApi } from '@/api/contact'
 import { tagApi } from '@/api/tag'
+import { reportApi } from '@/api/report'
 import { formatFileSize, formatRelativeTime, getCurrentUserId } from '@/utils/helpers'
 import ConversationsPanel from '@/components/chat/ConversationsPanel.vue'
 import ContactsList from '@/components/chat/ContactsList.vue'
@@ -1857,16 +1885,19 @@ const showAddFriendModal = ref(false)
 const showUserProfileModal = ref(false)
 const showViewUserProfileModal = ref(false)
 const viewingUserProfile = ref<any>({})
+
+// 举报用户相关
+const showReportUserDialog = ref(false)
+const reportUserReason = ref('')
+const reportUserDescription = ref('')
+const reportingUser = ref<any>(null)
 const isLoading = ref(false)
-const errorMessage = ref('')
-const showError = ref(false)
-const successMessage = ref('')
-const showSuccess = ref(false)
 const showOptionsMenuVisible = ref(false)
 const selectedChat = ref<Chat | null>(null)
 const touchTimer = ref<number | null>(null)
 const conversationsPanel = ref<InstanceType<typeof ConversationsPanel> | null>(null)
 const contactsList = ref<InstanceType<typeof ContactsList> | null>(null)
+const chatPanel = ref<any>(null)
 const activeChatId = ref<string | null>(null)
 const notificationUnreadCount = ref(0)
 
@@ -2073,7 +2104,7 @@ const sendFriendRequest = async (userId: string, userName: string) => {
   try {
     const token = getAuthToken()
     if (!token) {
-      showErrorMessage('请先登录')
+      ElMessage.error('请先登录')
       return
     }
 
@@ -2094,7 +2125,7 @@ const sendFriendRequest = async (userId: string, userName: string) => {
     })
 
     if (response.status === 401) {
-      showErrorMessage('登录已过期，请重新登录')
+      ElMessage.error('登录已过期，请重新登录')
       clearLoginInfo()
       setTimeout(() => {
         router.push('/login')
@@ -2104,7 +2135,7 @@ const sendFriendRequest = async (userId: string, userName: string) => {
 
     const data = await response.json()
     if (data.code === 200) {
-      showSuccessMessage('好友请求已发送')
+      ElMessage.success('好友请求已发送')
       
       // 更新搜索结果中的用户状态
       const user = searchResults.value.find(u => u.userId === userId)
@@ -2112,11 +2143,11 @@ const sendFriendRequest = async (userId: string, userName: string) => {
         user.relationshipStatus = '已发送请求'
       }
     } else {
-      showErrorMessage(data.message || '发送好友请求失败')
+      ElMessage.error(data.message || '发送好友请求失败')
     }
   } catch (error) {
     console.error('发送好友请求失败:', error)
-    showErrorMessage('发送好友请求失败，请稍后重试')
+    ElMessage.error('发送好友请求失败，请稍后重试')
   }
 }
 
@@ -2220,6 +2251,11 @@ const loadMessages = async (conversationId: string) => {
     // 清空当前消息
     messages.value = [];
     
+    // 重置历史消息加载状态
+    isLoadingHistory.value = false;
+    hasMoreHistory.value = true;
+    currentPage.value = 0;
+    
     // 从服务器加载消息
     const response = await messageApi.getMessages(Number(conversationId));
     if (response.success && response.data) {
@@ -2282,9 +2318,13 @@ const loadMessages = async (conversationId: string) => {
 
 // 滚动到底部
 const scrollToBottom = () => {
+  // 记录调用栈，帮助确定哪里调用了这个方法
+  console.log('[DEBUG] DashboardView scrollToBottom 调用栈:', new Error().stack);
+  
   nextTick(() => {
     if (messageContainer.value) {
       messageContainer.value.scrollTop = messageContainer.value.scrollHeight;
+      console.log('[DEBUG] DashboardView 滚动到底部，但不标记为已读');
     }
   });
 };
@@ -2305,6 +2345,147 @@ const focusMessageInput = () => {
       console.error('聚焦消息输入框失败:', err);
     }
   }, 300);
+};
+
+// 历史消息加载相关状态
+const isLoadingHistory = ref(false);
+const hasMoreHistory = ref(true);
+const currentPage = ref(0);
+const pageSize = ref(50); // 增加页面大小，减少请求次数
+
+// 加载历史消息直到找到目标消息
+const loadHistoryUntilMessage = async (targetMessageId: number) => {
+  const maxAttempts = 50; // 增加最大尝试次数，支持更久远的消息
+  let attempts = 0;
+  let messageFound = false; // 添加标志记录是否找到消息
+  
+  // 显示加载指示器
+  isLoadingHistory.value = true;
+  
+  while (attempts < maxAttempts && hasMoreHistory.value && !messageFound) {
+    attempts++;
+    console.log(`尝试加载历史消息 (${attempts}/${maxAttempts})...`);
+    
+    // 显示搜索进度
+    if (attempts % 5 === 0 || attempts === 1) {
+      ElMessage.info(`正在搜索历史消息... 已搜索约${attempts * pageSize.value}条消息`);
+    }
+    
+    try {
+      // 加载下一页历史消息
+      const response = await messageApi.getMessages(
+        Number(activeChatId.value),
+        currentPage.value + 1,
+        pageSize.value
+      );
+      
+      if (response.success && response.data) {
+        let newMessages: any[] = [];
+        
+        if (Array.isArray(response.data)) {
+          newMessages = response.data;
+        } else if (response.data.content && Array.isArray(response.data.content)) {
+          newMessages = response.data.content;
+          hasMoreHistory.value = !response.data.last;
+        }
+        
+        if (newMessages.length === 0) {
+          hasMoreHistory.value = false;
+          break;
+        }
+        
+        // 获取当前用户ID
+        const currentUserId = getUserInfo()?.id;
+        
+        // 格式化新消息
+        const formattedMessages = newMessages
+          .filter(msg => msg && msg.id) // 过滤掉无效消息
+          .map(msg => {
+            // 判断消息是否由当前用户发送
+            const isSelf = msg.senderId === currentUserId;
+            
+            return {
+              id: msg.id,
+              content: msg.content,
+              type: msg.messageType || msg.type,
+              senderId: msg.senderId,
+              senderName: msg.senderName || (isSelf ? '我' : `用户${msg.senderId}`),
+              senderAvatar: msg.senderAvatar,
+              timestamp: msg.createdAt,
+              status: msg.status || 'SENT',
+              isSelf: isSelf,
+              mediaFileId: msg.mediaFileId,
+              fileName: msg.fileName,
+              fileUrl: msg.fileUrl,
+              rawData: msg // 保存原始数据
+            };
+          });
+        
+        // 对历史消息按时间排序（早的在前，晚的在后）
+        const sortedHistoryMessages = formattedMessages.sort((a, b) => {
+          const dateA = new Date(a.timestamp || 0).getTime();
+          const dateB = new Date(b.timestamp || 0).getTime();
+          return dateA - dateB;
+        });
+        
+        // 将排序后的历史消息添加到列表开头
+        messages.value = [...sortedHistoryMessages, ...messages.value];
+        currentPage.value++;
+        
+        // 检查是否找到目标消息
+        const targetMessage = formattedMessages.find(msg => msg.id === targetMessageId);
+        if (targetMessage) {
+          console.log('找到目标消息，准备滚动');
+          messageFound = true; // 标记已找到消息
+          
+          // 等待DOM更新
+          await nextTick();
+          
+          // 查找消息元素并滚动
+          const messageElement = document.querySelector(`[data-message-id="${targetMessageId}"]`);
+          if (messageElement) {
+            messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // 高亮消息
+            messageElement.classList.add('highlight-message');
+        setTimeout(() => {
+          messageElement?.classList.remove('highlight-message');
+        }, 3000);
+            
+            console.log('消息定位和高亮完成');
+            ElMessage.success('已定位到目标消息');
+          } else {
+            console.warn('找到消息数据但未找到DOM元素');
+          }
+          
+          break;
+        }
+        
+      } else {
+        console.error('加载历史消息失败:', response.message);
+        break;
+      }
+      
+    } catch (error) {
+      console.error('加载历史消息时出错:', error);
+      break;
+    }
+  }
+  
+  // 隐藏加载指示器
+  isLoadingHistory.value = false;
+  
+  // 根据结果显示相应提示
+  if (messageFound) {
+    // 消息已找到，不需要额外提示
+    console.log('消息查找成功完成');
+  } else if (attempts >= maxAttempts) {
+    console.warn(`已达到最大尝试次数(${maxAttempts})，停止加载历史消息`);
+    ElMessage.warning(`已搜索${maxAttempts * pageSize.value}条历史消息，未找到目标消息。消息可能在更早的记录中，建议手动滚动查看或缩小搜索范围。`);
+  } else if (!hasMoreHistory.value) {
+    console.log('没有更多历史消息了');
+    ElMessage.info('已搜索完所有历史消息，未找到指定消息，可能已被删除');
+  }
 };
 
 
@@ -2484,7 +2665,7 @@ const availableTags = computed(() => tags.value)
 const searchFriend = async () => {
   const keyword = friendSearchKeyword.value.trim()
   if (!keyword) {
-    showErrorMessage('请输入搜索关键词')
+    ElMessage.error('请输入搜索关键词')
     return
   }
   
@@ -2494,7 +2675,7 @@ const searchFriend = async () => {
   try {
     const token = getAuthToken()
     if (!token) {
-      showErrorMessage('请先登录')
+      ElMessage.error('请先登录')
       return
     }
     
@@ -2518,7 +2699,7 @@ const searchFriend = async () => {
     }
   } catch (error: any) {
     console.error('搜索用户失败:', error)
-    showErrorMessage('搜索失败: ' + error.message)
+    ElMessage.error('搜索失败: ' + error.message)
     friendSearchResults.value = []
   } finally {
     friendSearchLoading.value = false
@@ -2530,7 +2711,7 @@ const sendFriendRequestFromModal = async (userId: string, userName: string) => {
   try {
     const token = getAuthToken()
     if (!token) {
-      showErrorMessage('请先登录')
+      ElMessage.error('请先登录')
       return
     }
     
@@ -2549,7 +2730,7 @@ const sendFriendRequestFromModal = async (userId: string, userName: string) => {
     
     const data = await response.json()
     if (data.code === 200) {
-      showSuccessMessage('好友请求已发送')
+      ElMessage.success('好友请求已发送')
       
       // 更新搜索结果中的用户状态
       const user = friendSearchResults.value.find(u => u.id === userId)
@@ -2557,11 +2738,11 @@ const sendFriendRequestFromModal = async (userId: string, userName: string) => {
         user.relationshipStatus = '已发送请求'
       }
     } else {
-      showErrorMessage(data.message || '发送好友请求失败')
+      ElMessage.error(data.message || '发送好友请求失败')
     }
   } catch (error) {
     console.error('发送好友请求失败:', error)
-    showErrorMessage('发送好友请求失败，请稍后重试')
+    ElMessage.error('发送好友请求失败，请稍后重试')
   }
 }
 
@@ -2584,7 +2765,7 @@ const searchUsers = async () => {
   try {
     const token = getAuthToken()
     if (!token) {
-      showErrorMessage('请先登录')
+      ElMessage.error('请先登录')
       return
     }
 
@@ -2598,7 +2779,7 @@ const searchUsers = async () => {
     })
 
     if (profileResponse.status === 401) {
-      showErrorMessage('登录已过期，请重新登录')
+      ElMessage.error('登录已过期，请重新登录')
       clearLoginInfo()
       setTimeout(() => {
         router.push('/login')
@@ -2627,7 +2808,7 @@ const searchUsers = async () => {
     })
 
     if (response.status === 401) {
-      showErrorMessage('登录已过期，请重新登录')
+      ElMessage.error('登录已过期，请重新登录')
       clearLoginInfo()
       setTimeout(() => {
         router.push('/login')
@@ -2647,7 +2828,7 @@ const searchUsers = async () => {
     }
   } catch (error: any) {
     console.error('搜索用户失败:', error)
-    showErrorMessage('搜索失败: ' + error.message)
+    ElMessage.error('搜索失败: ' + error.message)
   } finally {
     searchLoading.value = false
   }
@@ -2688,7 +2869,7 @@ const viewUserProfile = async (userIdOrStr: string | number) => {
   try {
     const token = getAuthToken()
     if (!token) {
-      showErrorMessage('请先登录')
+      ElMessage.error('请先登录')
       return
     }
 
@@ -2714,7 +2895,7 @@ const viewUserProfile = async (userIdOrStr: string | number) => {
     })
 
     if (response.status === 401) {
-      showErrorMessage('登录已过期，请重新登录')
+      ElMessage.error('登录已过期，请重新登录')
       clearLoginInfo()
       setTimeout(() => {
         router.push('/login')
@@ -2728,11 +2909,11 @@ const viewUserProfile = async (userIdOrStr: string | number) => {
       viewingUserProfile.value = data.data
       showViewUserProfileModal.value = true
     } else {
-      showErrorMessage(data.message || '获取用户资料失败')
+      ElMessage.error(data.message || '获取用户资料失败')
     }
   } catch (error) {
     console.error('获取用户资料失败:', error)
-    showErrorMessage('获取用户资料失败，请稍后重试')
+    ElMessage.error('获取用户资料失败，请稍后重试')
   }
 }
 
@@ -2761,7 +2942,7 @@ const handleSendFriendRequest = async () => {
   try {
     const token = getAuthToken()
     if (!token) {
-      showErrorMessage('请先登录')
+      ElMessage.error('请先登录')
       return
     }
 
@@ -2779,7 +2960,7 @@ const handleSendFriendRequest = async () => {
     })
 
     if (response.status === 401) {
-      showErrorMessage('登录已过期，请重新登录')
+      ElMessage.error('登录已过期，请重新登录')
       clearLoginInfo()
       setTimeout(() => {
         router.push('/login')
@@ -2789,7 +2970,7 @@ const handleSendFriendRequest = async () => {
 
     const data = await response.json()
     if (data.code === 200) {
-      showSuccessMessage('好友请求已发送')
+      ElMessage.success('好友请求已发送')
       closeFriendRequestModal()
       
       // 更新搜索结果中的用户状态
@@ -2798,11 +2979,11 @@ const handleSendFriendRequest = async () => {
         user.isPending = true
       }
     } else {
-      showErrorMessage(data.message || '发送好友请求失败')
+      ElMessage.error(data.message || '发送好友请求失败')
     }
   } catch (error) {
     console.error('发送好友请求失败:', error)
-    showErrorMessage('发送好友请求失败，请稍后重试')
+    ElMessage.error('发送好友请求失败，请稍后重试')
   }
 }
 
@@ -2829,7 +3010,7 @@ const loadFriendRequests = async () => {
   try {
     const token = getAuthToken()
     if (!token) {
-      showErrorMessage('请先登录')
+      ElMessage.error('请先登录')
       return
     }
 
@@ -2873,7 +3054,7 @@ const loadFriendRequests = async () => {
     }
   } catch (error) {
     console.error('加载好友请求失败:', error)
-    showErrorMessage('加载好友请求失败')
+    ElMessage.error('加载好友请求失败')
   }
 }
 
@@ -2882,7 +3063,7 @@ const handleFriendRequest = async (requestId: number, action: 'approve' | 'rejec
   try {
     const token = getAuthToken()
     if (!token) {
-      showErrorMessage('请先登录')
+      ElMessage.error('请先登录')
       return
     }
 
@@ -2899,17 +3080,17 @@ const handleFriendRequest = async (requestId: number, action: 'approve' | 'rejec
 
     const data = await response.json()
     if (data.code === 200) {
-      showSuccessMessage(action === 'approve' ? '已同意好友请求' : '已拒绝好友请求')
+      ElMessage.success(action === 'approve' ? '已同意好友请求' : '已拒绝好友请求')
       loadFriendRequests() // 重新加载请求列表
       if (action === 'approve') {
         loadContactsList() // 重新加载联系人列表
       }
     } else {
-      showErrorMessage(data.message || '操作失败')
+      ElMessage.error(data.message || '操作失败')
     }
   } catch (error) {
     console.error('处理好友请求失败:', error)
-    showErrorMessage('操作失败，请稍后重试')
+    ElMessage.error('操作失败，请稍后重试')
   }
 }
 
@@ -2918,7 +3099,7 @@ const cancelFriendRequest = async (requestId: number) => {
   try {
     const token = getAuthToken()
     if (!token) {
-      showErrorMessage('请先登录')
+      ElMessage.error('请先登录')
       return
     }
 
@@ -2935,14 +3116,14 @@ const cancelFriendRequest = async (requestId: number) => {
 
     const data = await response.json()
     if (data.code === 200) {
-      showSuccessMessage('已取消好友请求')
+      ElMessage.success('已取消好友请求')
       loadFriendRequests() // 重新加载请求列表
     } else {
-      showErrorMessage(data.message || '取消失败')
+      ElMessage.error(data.message || '取消失败')
     }
   } catch (error) {
     console.error('取消好友请求失败:', error)
-    showErrorMessage('取消失败，请稍后重试')
+    ElMessage.error('取消失败，请稍后重试')
   }
 }
 
@@ -3097,7 +3278,7 @@ const setContactAlias = (contactId: string | number, contactName: string) => {
   // 更严格的检查contactId
   if (contactId === undefined || contactId === null) {
     console.error('无效的联系人ID: undefined');
-    showErrorMessage('无效的联系人ID: undefined');
+    ElMessage.error('无效的联系人ID: undefined');
     return;
   }
   
@@ -3107,19 +3288,19 @@ const setContactAlias = (contactId: string | number, contactName: string) => {
     numericContactId = parseInt(trimmedId);
     if (isNaN(numericContactId) || trimmedId === '') {
       console.error('无效的联系人ID:', contactId);
-      showErrorMessage('无效的联系人ID');
+      ElMessage.error('无效的联系人ID');
       return;
     }
   } else if (typeof contactId === 'number') {
     numericContactId = contactId;
     if (isNaN(numericContactId) || numericContactId <= 0) {
       console.error('无效的联系人ID值:', contactId);
-      showErrorMessage('无效的联系人ID');
+      ElMessage.error('无效的联系人ID');
       return;
     }
   } else {
     console.error('无效的联系人ID类型:', typeof contactId);
-    showErrorMessage('无效的联系人ID类型');
+    ElMessage.error('无效的联系人ID类型');
     return;
   }
   
@@ -3153,13 +3334,13 @@ const updateContactAlias = async () => {
   try {
     const token = getAuthToken()
     if (!token) {
-      showErrorMessage('请先登录')
+      ElMessage.error('请先登录')
       return
     }
 
     const currentUserId = await getCurrentUserId()
     if (!currentUserId) {
-      showErrorMessage('获取用户信息失败')
+      ElMessage.error('获取用户信息失败')
       return
     }
 
@@ -3167,7 +3348,7 @@ const updateContactAlias = async () => {
     const contactId = parseInt(aliasForm.value.contactId)
     if (isNaN(contactId) || contactId <= 0) {
       console.error('无效的联系人ID:', aliasForm.value.contactId)
-      showErrorMessage('无效的联系人ID')
+      ElMessage.error('无效的联系人ID')
       return
     }
 
@@ -3207,7 +3388,7 @@ const updateContactAlias = async () => {
         console.warn('未找到要更新的联系人:', aliasForm.value.contactId)
       }
       
-      showSuccessMessage('备注修改成功')
+      ElMessage.success('备注修改成功')
       showSetAliasModal.value = false
       
       // 重新加载联系人列表
@@ -3219,11 +3400,11 @@ const updateContactAlias = async () => {
         contactsList.value.loadContacts()
       }
     } else {
-      showErrorMessage(response.message || '修改备注失败')
+      ElMessage.error(response.message || '修改备注失败')
     }
   } catch (error) {
     console.error('修改备注失败:', error)
-    showErrorMessage('修改备注失败，请稍后重试')
+    ElMessage.error('修改备注失败，请稍后重试')
   }
 }
 
@@ -3235,7 +3416,7 @@ const openAssignTagModal = (contactId: string | number, contactName: string, con
   // 更严格的检查contactId
   if (contactId === undefined || contactId === null) {
     console.error('无效的联系人ID: undefined');
-    showErrorMessage('无效的联系人ID: undefined');
+    ElMessage.error('无效的联系人ID: undefined');
     return;
   }
   
@@ -3245,19 +3426,19 @@ const openAssignTagModal = (contactId: string | number, contactName: string, con
     numericContactId = parseInt(trimmedId);
     if (isNaN(numericContactId) || trimmedId === '') {
       console.error('无效的联系人ID:', contactId);
-      showErrorMessage('无效的联系人ID');
+      ElMessage.error('无效的联系人ID');
       return;
     }
   } else if (typeof contactId === 'number') {
     numericContactId = contactId;
     if (isNaN(numericContactId) || numericContactId <= 0) {
       console.error('无效的联系人ID值:', contactId);
-      showErrorMessage('无效的联系人ID');
+      ElMessage.error('无效的联系人ID');
       return;
     }
   } else {
     console.error('无效的联系人ID类型:', typeof contactId);
-    showErrorMessage('无效的联系人ID类型');
+    ElMessage.error('无效的联系人ID类型');
     return;
   }
   
@@ -3320,7 +3501,7 @@ const loadTagsForAssign = async (contactId: string) => {
     const numericContactId = parseInt(contactId)
     if (isNaN(numericContactId) || numericContactId <= 0) {
       console.error('无效的联系人ID:', contactId)
-      showErrorMessage('无效的联系人ID')
+      ElMessage.error('无效的联系人ID')
       return
     }
 
@@ -3372,7 +3553,7 @@ const saveTagAssignment = async () => {
   try {
     const token = getAuthToken()
     if (!token) {
-      showErrorMessage('请先登录')
+      ElMessage.error('请先登录')
       return
     }
 
@@ -3392,13 +3573,13 @@ const saveTagAssignment = async () => {
     const contactId = parseInt(tagAssignForm.value.contactId)
     if (isNaN(contactId) || contactId <= 0) {
       console.error('无效的联系人ID:', tagAssignForm.value.contactId)
-      showErrorMessage('无效的联系人ID')
+      ElMessage.error('无效的联系人ID')
       return
     }
 
     const currentUserId = await getCurrentUserId()
     if (!currentUserId) {
-      showErrorMessage('获取用户信息失败')
+      ElMessage.error('获取用户信息失败')
       return
     }
 
@@ -3413,7 +3594,7 @@ const saveTagAssignment = async () => {
     
     // 兼容不同的响应格式
     if (response.success || response.code === 200) {
-      showSuccessMessage('标签分配成功')
+      ElMessage.success('标签分配成功')
       showAssignTagModal.value = false
       loadContactsList() // 重新加载联系人列表
       
@@ -3423,11 +3604,11 @@ const saveTagAssignment = async () => {
         contactsList.value.loadContacts()
       }
     } else {
-      showErrorMessage(response.message || '标签分配失败')
+      ElMessage.error(response.message || '标签分配失败')
     }
   } catch (error) {
     console.error('标签分配失败:', error)
-    showErrorMessage('标签分配失败，请稍后重试')
+    ElMessage.error('标签分配失败，请稍后重试')
   }
 }
 
@@ -3435,7 +3616,7 @@ const saveTagAssignment = async () => {
 const handleEditAlias = (contact: any) => {
   if (!contact || !contact.id) {
     console.error('无效的联系人数据:', contact);
-    showErrorMessage('无效的联系人数据');
+    ElMessage.error('无效的联系人数据');
     return;
   }
   
@@ -3444,7 +3625,7 @@ const handleEditAlias = (contact: any) => {
   const contactId = Number(contact.id);
   if (isNaN(contactId) || contactId <= 0) {
     console.error('无效的联系人ID:', contact.id);
-    showErrorMessage('无效的联系人ID');
+    ElMessage.error('无效的联系人ID');
     return;
   }
   
@@ -3456,7 +3637,7 @@ const handleEditAlias = (contact: any) => {
 const handleManageTags = (contact: any) => {
   if (!contact || !contact.id) {
     console.error('无效的联系人数据:', contact);
-    showErrorMessage('无效的联系人数据');
+    ElMessage.error('无效的联系人数据');
     return;
   }
   
@@ -3465,7 +3646,7 @@ const handleManageTags = (contact: any) => {
   const contactId = Number(contact.id);
   if (isNaN(contactId) || contactId <= 0) {
     console.error('无效的联系人ID:', contact.id);
-    showErrorMessage('无效的联系人ID');
+    ElMessage.error('无效的联系人ID');
     return;
   }
   
@@ -3477,7 +3658,7 @@ const handleManageTags = (contact: any) => {
 const handleDeleteContact = (contact: any) => {
   if (!contact || !contact.id) {
     console.error('无效的联系人数据:', contact);
-    showErrorMessage('无效的联系人数据');
+    ElMessage.error('无效的联系人数据');
     return;
   }
   
@@ -3486,7 +3667,7 @@ const handleDeleteContact = (contact: any) => {
   const contactId = Number(contact.id);
   if (isNaN(contactId) || contactId <= 0) {
     console.error('无效的联系人ID:', contact.id);
-    showErrorMessage('无效的联系人ID');
+    ElMessage.error('无效的联系人ID');
     return;
   }
   
@@ -3509,14 +3690,14 @@ const deleteContact = async () => {
   try {
     const token = getAuthToken()
     if (!token) {
-      showErrorMessage('请先登录')
+      ElMessage.error('请先登录')
       return
     }
 
     // 获取当前用户信息
     const userInfo = getUserInfo()
     if (!userInfo || !userInfo.id) {
-      showErrorMessage('无法获取用户信息，请重新登录')
+      ElMessage.error('无法获取用户信息，请重新登录')
       return
     }
 
@@ -3529,7 +3710,7 @@ const deleteContact = async () => {
     })
 
     if (response.status === 401) {
-      showErrorMessage('登录已过期，请重新登录')
+      ElMessage.error('登录已过期，请重新登录')
       clearLoginInfo()
       setTimeout(() => {
         window.location.href = '/login'
@@ -3539,7 +3720,7 @@ const deleteContact = async () => {
 
     const data = await response.json()
     if (data.code === 200) {
-      showSuccessMessage('好友删除成功')
+      ElMessage.success('好友删除成功')
       showDeleteContactModal.value = false
       
       // 立即从本地列表中移除已删除的联系人，确保UI立即更新
@@ -3552,11 +3733,11 @@ const deleteContact = async () => {
       await nextTick() // 等待DOM更新
       loadContactsList() // 重新加载联系人列表
     } else {
-      showErrorMessage(data.message || '删除好友失败')
+      ElMessage.error(data.message || '删除好友失败')
     }
   } catch (error) {
     console.error('删除好友失败:', error)
-    showErrorMessage('删除好友失败，请稍后重试')
+    ElMessage.error('删除好友失败，请稍后重试')
   }
 }
 
@@ -3565,7 +3746,7 @@ const loadTags = async () => {
   try {
     const currentUserId = await getCurrentUserId()
     if (!currentUserId) {
-      showErrorMessage('请先登录')
+      ElMessage.error('请先登录')
       return
     }
 
@@ -3588,11 +3769,11 @@ const loadTags = async () => {
         });
       }
     } else {
-      showErrorMessage(response.message || '加载标签失败')
+      ElMessage.error(response.message || '加载标签失败')
     }
   } catch (error) {
     console.error('加载标签失败:', error)
-    showErrorMessage('加载标签失败，请稍后重试')
+    ElMessage.error('加载标签失败，请稍后重试')
   }
 }
 
@@ -3629,24 +3810,24 @@ const createTag = async () => {
   
   // 参数验证
   if (!name) {
-    showErrorMessage('标签名称不能为空')
+    ElMessage.error('标签名称不能为空')
     return
   }
   
   if (name.length > 20) {
-    showErrorMessage('标签名称不能超过20个字符')
+    ElMessage.error('标签名称不能超过20个字符')
     return
   }
   
   if (!/^#[0-9A-Fa-f]{6}$/.test(color)) {
-    showErrorMessage('颜色格式不正确')
+    ElMessage.error('颜色格式不正确')
     return
   }
 
   try {
     const token = getAuthToken()
     if (!token) {
-      showErrorMessage('请先登录')
+      ElMessage.error('请先登录')
       return
     }
 
@@ -3660,7 +3841,7 @@ const createTag = async () => {
     })
 
     if (profileResponse.status === 401) {
-      showErrorMessage('登录已过期，请重新登录')
+      ElMessage.error('登录已过期，请重新登录')
       clearLoginInfo()
       setTimeout(() => {
         router.push('/login')
@@ -3691,7 +3872,7 @@ const createTag = async () => {
     })
 
     if (response.status === 401) {
-      showErrorMessage('登录已过期，请重新登录')
+      ElMessage.error('登录已过期，请重新登录')
       clearLoginInfo()
       setTimeout(() => {
         router.push('/login')
@@ -3701,7 +3882,7 @@ const createTag = async () => {
 
     const data = await response.json()
     if (data.success || data.code === 200) {
-      showSuccessMessage('标签创建成功')
+      ElMessage.success('标签创建成功')
       closeCreateTagModal()
       loadTags() // 重新加载标签列表
       
@@ -3714,7 +3895,7 @@ const createTag = async () => {
     }
   } catch (error: any) {
     console.error('创建标签失败:', error)
-    showErrorMessage('创建标签失败: ' + error.message)
+    ElMessage.error('创建标签失败: ' + error.message)
   }
 }
 
@@ -3737,14 +3918,14 @@ const editTag = (tag: any) => {
 // 更新标签
 const updateTag = async () => {
   if (!editTagForm.value.name.trim()) {
-    showErrorMessage('请输入标签名称')
+    ElMessage.error('请输入标签名称')
     return
   }
 
   try {
     const token = getAuthToken()
     if (!token) {
-      showErrorMessage('请先登录')
+      ElMessage.error('请先登录')
       return
     }
 
@@ -3752,7 +3933,7 @@ const updateTag = async () => {
     console.log('更新标签前，ID类型:', typeof editTagForm.value.id, '标签ID值:', editTagForm.value.id);
     
     if (!editTagForm.value.id) {
-      showErrorMessage('标签ID无效')
+      ElMessage.error('标签ID无效')
       return
     }
     
@@ -3774,15 +3955,15 @@ const updateTag = async () => {
 
     const data = await response.json()
     if (data.code === 200) {
-      showSuccessMessage('标签更新成功')
+      ElMessage.success('标签更新成功')
       showEditTagModal.value = false
       loadTags() // 重新加载标签列表
     } else {
-      showErrorMessage(data.message || '更新标签失败')
+      ElMessage.error(data.message || '更新标签失败')
     }
   } catch (error) {
     console.error('更新标签失败:', error)
-    showErrorMessage('更新标签失败，请稍后重试')
+    ElMessage.error('更新标签失败，请稍后重试')
   }
 }
 
@@ -3825,7 +4006,7 @@ const deleteTag = async () => {
   try {
     const token = getAuthToken()
     if (!token) {
-      showErrorMessage('请先登录')
+      ElMessage.error('请先登录')
       return
     }
 
@@ -3833,7 +4014,7 @@ const deleteTag = async () => {
     console.log('删除标签前，ID类型:', typeof deleteTagForm.value.tagId, '标签ID值:', deleteTagForm.value.tagId);
     
     if (!deleteTagForm.value.tagId) {
-      showErrorMessage('标签ID无效')
+      ElMessage.error('标签ID无效')
       return
     }
     
@@ -3851,16 +4032,16 @@ const deleteTag = async () => {
 
     const data = await response.json()
     if (data.code === 200) {
-      showSuccessMessage('标签删除成功')
+      ElMessage.success('标签删除成功')
       showDeleteTagModal.value = false
       loadTags() // 重新加载标签列表
       loadContactsList() // 重新加载联系人列表
     } else {
-      showErrorMessage(data.message || '删除标签失败')
+      ElMessage.error(data.message || '删除标签失败')
     }
   } catch (error) {
     console.error('删除标签失败:', error)
-    showErrorMessage('删除标签失败，请稍后重试')
+    ElMessage.error('删除标签失败，请稍后重试')
   }
 }
 
@@ -3925,7 +4106,7 @@ const loadContactsByTag = async (tagId: number | string) => {
     
     if (!tagId) {
       console.error('标签ID无效');
-      showErrorMessage('标签ID无效');
+      ElMessage.error('标签ID无效');
       tagContacts.value = []; // 清空联系人列表
       return;
     }
@@ -3935,7 +4116,7 @@ const loadContactsByTag = async (tagId: number | string) => {
     
     if (isNaN(numericTagId) || numericTagId <= 0) {
       console.error('标签ID格式无效:', tagId);
-      showErrorMessage('标签ID格式无效');
+      ElMessage.error('标签ID格式无效');
       tagContacts.value = []; // 清空联系人列表
       return;
     }
@@ -4001,7 +4182,7 @@ const loadContactsByTag = async (tagId: number | string) => {
       console.log('更新后的标签联系人:', tagContacts.value);
     } else {
       console.error('标签联系人响应错误:', response?.message);
-      showErrorMessage(response?.message || '加载联系人失败');
+      ElMessage.error(response?.message || '加载联系人失败');
       tagContacts.value = []; // 清空联系人列表
     }
   } catch (error: any) {
@@ -4009,7 +4190,7 @@ const loadContactsByTag = async (tagId: number | string) => {
     if (error.status) {
       console.error('错误状态码:', error.status, '错误消息:', error.message);
     }
-    showErrorMessage(error.message || '加载联系人失败，请稍后重试');
+    ElMessage.error(error.message || '加载联系人失败，请稍后重试');
     tagContacts.value = []; // 清空联系人列表
   }
 }
@@ -4023,7 +4204,7 @@ const loadContactsList = async () => {
   try {
     const currentUserId = await getCurrentUserId()
     if (!currentUserId) {
-      showErrorMessage('请先登录')
+      ElMessage.error('请先登录')
       return
     }
 
@@ -4125,11 +4306,11 @@ const loadContactsList = async () => {
         console.log('联系人列表为空')
       }
     } else {
-      showErrorMessage(response.message || '加载联系人失败')
+      ElMessage.error(response.message || '加载联系人失败')
     }
   } catch (error) {
     console.error('加载联系人失败:', error)
-    showErrorMessage('加载联系人失败，请稍后重试')
+    ElMessage.error('加载联系人失败，请稍后重试')
   } finally {
     contactsLoading.value = false
   }
@@ -4143,7 +4324,7 @@ const handleContactStartChat = (data: { contact: any, conversationId: number }) 
   
   if (!data.conversationId) {
     console.error('无效的会话ID');
-    showErrorMessage('无法创建会话，请稍后重试');
+    ElMessage.error('无法创建会话，请稍后重试');
     return;
   }
   
@@ -4213,7 +4394,7 @@ const openContactChat = async (contact: any) => {
         console.log('使用friend.id作为联系人ID:', rawContactId);
       } else {
         console.error('无法获取有效的联系人ID');
-        showErrorMessage('无法获取有效的联系人ID');
+        ElMessage.error('无法获取有效的联系人ID');
         return;
       }
     }
@@ -4223,7 +4404,7 @@ const openContactChat = async (contact: any) => {
     // 获取当前用户ID
     const userId = getCurrentUserId()
     if (!userId) {
-      showErrorMessage('请先登录')
+      ElMessage.error('请先登录')
     return
   }
   
@@ -4308,14 +4489,14 @@ const openContactChat = async (contact: any) => {
         }, 100)
       } else {
         console.error('无法从响应中提取会话ID:', response.data);
-        showErrorMessage('无法获取会话ID')
+        ElMessage.error('无法获取会话ID')
       }
     } else {
-      showErrorMessage(response.message || '创建会话失败')
+      ElMessage.error(response.message || '创建会话失败')
     }
   } catch (error: any) {
     console.error('打开联系人会话失败:', error)
-    showErrorMessage(error.message || '打开联系人会话失败')
+    ElMessage.error(error.message || '打开联系人会话失败')
   }
 }
 
@@ -4354,12 +4535,12 @@ const handleAvatarError = (event: Event) => {
 const generateQRCode = async () => {
   try {
     // 显示加载状态
-    showErrorMessage('正在生成二维码名片...')
+    ElMessage.error('正在生成二维码名片...')
     
     // 获取JWT token
     const token = getAuthToken()
     if (!token) {
-      showErrorMessage('请先登录')
+      ElMessage.error('请先登录')
       return
     }
     
@@ -4374,7 +4555,7 @@ const generateQRCode = async () => {
     
     // 处理401未授权错误
     if (response.status === 401) {
-      showErrorMessage('登录已过期，请重新登录')
+      ElMessage.error('登录已过期，请重新登录')
       clearLoginInfo()
       setTimeout(() => {
         router.push('/login')
@@ -4387,11 +4568,11 @@ const generateQRCode = async () => {
       // 显示二维码模态框
       showQRCodeModal(data.data)
     } else {
-      showErrorMessage(data.message || '生成二维码失败')
+      ElMessage.error(data.message || '生成二维码失败')
     }
   } catch (error) {
     console.error('生成二维码失败:', error)
-    showErrorMessage('生成二维码失败，请稍后重试')
+    ElMessage.error('生成二维码失败，请稍后重试')
   }
 }
 
@@ -4561,7 +4742,7 @@ const loadDeviceList = async () => {
 
     // 处理401未授权错误
     if (response.status === 401) {
-      showErrorMessage('登录已过期，请重新登录')
+      ElMessage.error('登录已过期，请重新登录')
       clearLoginInfo()
       setTimeout(() => {
         window.location.href = '/login'
@@ -4585,7 +4766,7 @@ const loadDeviceList = async () => {
     }
   } catch (error: any) {
     console.error('加载设备列表失败:', error)
-    showErrorMessage(error.message || '加载设备列表失败')
+    ElMessage.error(error.message || '加载设备列表失败')
   } finally {
     deviceLoading.value = false
   }
@@ -4607,7 +4788,7 @@ const logoutDevice = async (device: any) => {
       try {
         const token = getAuthToken()
         if (!token) {
-          showErrorMessage('请先登录')
+          ElMessage.error('请先登录')
           return
         }
 
@@ -4621,7 +4802,7 @@ const logoutDevice = async (device: any) => {
 
         // 处理401未授权错误
         if (response.status === 401) {
-          showErrorMessage('登录已过期，请重新登录')
+          ElMessage.error('登录已过期，请重新登录')
           clearLoginInfo()
           setTimeout(() => {
             window.location.href = '/login'
@@ -4632,14 +4813,14 @@ const logoutDevice = async (device: any) => {
         const result = await response.json()
         
         if (response.ok && result.code === 200) {
-          showSuccessMessage('设备已成功下线')
+          ElMessage.success('设备已成功下线')
           loadDeviceList() // 重新加载列表
         } else {
           throw new Error(result.message || '强制下线失败')
         }
       } catch (error: any) {
         console.error('强制下线设备失败:', error)
-        showErrorMessage(error.message || '强制下线设备失败')
+        ElMessage.error(error.message || '强制下线设备失败')
       } finally {
         deviceLoading.value = false
       }
@@ -4659,7 +4840,7 @@ const logoutAllDevices = async () => {
       try {
         const token = getAuthToken()
         if (!token) {
-          showErrorMessage('请先登录')
+          ElMessage.error('请先登录')
           return
         }
 
@@ -4677,7 +4858,7 @@ const logoutAllDevices = async () => {
 
         // 处理401未授权错误
         if (response.status === 401) {
-          showErrorMessage('登录已过期，请重新登录')
+          ElMessage.error('登录已过期，请重新登录')
           clearLoginInfo()
           setTimeout(() => {
             window.location.href = '/login'
@@ -4688,14 +4869,14 @@ const logoutAllDevices = async () => {
         const result = await response.json()
         
         if (response.ok && result.code === 200) {
-          showSuccessMessage('所有其他设备已成功下线')
+          ElMessage.success('所有其他设备已成功下线')
           loadDeviceList() // 重新加载列表
         } else {
           throw new Error(result.message || '强制下线所有设备失败')
         }
       } catch (error: any) {
         console.error('强制下线所有设备失败:', error)
-        showErrorMessage(error.message || '强制下线所有设备失败')
+        ElMessage.error(error.message || '强制下线所有设备失败')
       } finally {
         deviceLoading.value = false
       }
@@ -5358,6 +5539,89 @@ const closeViewUserProfileModal = () => {
   viewingUserProfile.value = {}
 }
 
+// 举报用户相关函数
+const handleReportUser = () => {
+  if (!viewingUserProfile.value) return
+  
+  showReportUserDialog.value = true
+  reportUserReason.value = ''
+  reportUserDescription.value = ''
+}
+
+// 从搜索结果举报用户
+const handleReportUserFromSearch = (user: any) => {
+  if (!user) return
+  
+  // 设置要举报的用户信息
+  reportingUser.value = {
+    id: user.userId || user.id,
+    userIdString: user.userIdString,
+    nickname: user.nickname || user.email || '未知用户'
+  }
+  
+  showReportUserDialog.value = true
+  reportUserReason.value = ''
+  reportUserDescription.value = ''
+}
+
+// 取消举报用户
+const cancelReportUser = () => {
+  showReportUserDialog.value = false
+  reportUserReason.value = ''
+  reportUserDescription.value = ''
+  reportingUser.value = null // 清空举报用户信息
+}
+
+// 提交举报用户
+const submitReportUser = async () => {
+  // 优先使用reportingUser（从搜索结果举报），其次使用viewingUserProfile（从资料页面举报）
+  const targetUser = reportingUser.value || viewingUserProfile.value
+  
+  if (!targetUser) {
+    ElMessage.error('无法获取用户信息')
+    return
+  }
+  
+  if (!reportUserReason.value) {
+    ElMessage.error('请选择举报原因')
+    return
+  }
+
+  try {
+    // 获取用户ID，支持多种ID格式
+    let userId = targetUser.id || targetUser.userId
+    
+    if (!userId) {
+      ElMessage.error('无法获取有效的用户ID')
+      return
+    }
+
+    const currentUserId = await getCurrentUserId()
+    if (!currentUserId) {
+      ElMessage.error('请先登录')
+      return
+    }
+
+    console.log('举报用户:', { userId, currentUserId, reason: reportUserReason.value })
+    
+    const response = await reportApi.reportContact(userId, currentUserId, reportUserReason.value, reportUserDescription.value)
+    if (response.success) {
+      ElMessage.success('用户举报成功，感谢您的反馈！')
+      console.log('用户已举报')
+    } else {
+      throw new Error(response.message || '举报提交失败')
+    }
+  } catch (err: any) {
+    console.error('举报用户失败:', err)
+    ElMessage.error(err.message || '举报提交失败，请稍后重试')
+  } finally {
+    showReportUserDialog.value = false
+    reportUserReason.value = ''
+    reportUserDescription.value = ''
+    reportingUser.value = null // 清空举报用户信息
+  }
+}
+
 // 获取性别文本
 const getGenderText = (gender: string | undefined) => {
   if (!gender || gender.trim() === '') {
@@ -5397,7 +5661,7 @@ const uploadProfileAvatar = async (event: Event) => {
   // 严格的文件类型验证
   const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
   if (!allowedTypes.includes(file.type.toLowerCase())) {
-    showErrorMessage('请选择有效的图片文件（支持 JPEG、PNG、GIF、WebP 格式）')
+    ElMessage.error('请选择有效的图片文件（支持 JPEG、PNG、GIF、WebP 格式）')
     // 清空文件输入框
     target.value = ''
     return
@@ -5405,7 +5669,7 @@ const uploadProfileAvatar = async (event: Event) => {
   
   // 文件大小验证（5MB限制）
   if (file.size > 5 * 1024 * 1024) {
-    showErrorMessage('图片文件大小不能超过5MB')
+    ElMessage.error('图片文件大小不能超过5MB')
     // 清空文件输入框
     target.value = ''
     return
@@ -5416,7 +5680,7 @@ const uploadProfileAvatar = async (event: Event) => {
   try {
     const token = getAuthToken()
     if (!token) {
-      showErrorMessage('请先登录')
+      ElMessage.error('请先登录')
       // 清空文件输入框
       target.value = ''
       return
@@ -5430,7 +5694,7 @@ const uploadProfileAvatar = async (event: Event) => {
     formData.append('file', file)
     
     // 显示上传进度提示
-    showSuccessMessage('正在上传头像...')
+    ElMessage.success('正在上传头像...')
     
     // 调用公共文件上传接口
     const response = await fetch('/api/user/profile/avatar', {
@@ -5444,7 +5708,7 @@ const uploadProfileAvatar = async (event: Event) => {
     
     // 处理401未授权错误
     if (response.status === 401) {
-      showErrorMessage('登录已过期，请重新登录')
+      ElMessage.error('登录已过期，请重新登录')
       clearLoginInfo()
       setTimeout(() => {
         router.push('/login')
@@ -5474,16 +5738,16 @@ const uploadProfileAvatar = async (event: Event) => {
       if (currentUser.value) {
         currentUser.value.avatar = data.data.avatarUrl
       }
-      showSuccessMessage('头像上传成功，原有头像已替换')
+      ElMessage.success('头像上传成功，原有头像已替换')
     } else {
       throw new Error(data.message || '头像上传失败：服务器响应异常')
     }
   } catch (error: any) {
     if (error.name === 'AbortError') {
-      showErrorMessage('头像上传已取消')
+      ElMessage.error('头像上传已取消')
     } else {
       console.error('头像上传失败:', error)
-      showErrorMessage(error.message || '头像上传失败，请稍后重试')
+      ElMessage.error(error.message || '头像上传失败，请稍后重试')
     }
   } finally {
     // 确保清空文件输入框
@@ -5507,7 +5771,7 @@ const removeAvatar = async () => {
       try {
         const token = getAuthToken()
         if (!token) {
-          showErrorMessage('请先登录')
+          ElMessage.error('请先登录')
           return
         }
         
@@ -5522,7 +5786,7 @@ const removeAvatar = async () => {
         
         // 处理401未授权错误
         if (response.status === 401) {
-          showErrorMessage('登录已过期，请重新登录')
+          ElMessage.error('登录已过期，请重新登录')
           clearLoginInfo()
           setTimeout(() => {
             router.push('/login')
@@ -5550,13 +5814,13 @@ const removeAvatar = async () => {
           if (currentUser.value) {
             currentUser.value.avatar = ''
           }
-          showSuccessMessage('头像删除成功，原有头像已从公共存储中移除')
+          ElMessage.success('头像删除成功，原有头像已从公共存储中移除')
         } else {
           throw new Error(data.message || '头像删除失败：服务器响应异常')
         }
       } catch (error: any) {
         console.error('头像删除失败:', error)
-        showErrorMessage(error.message || '头像删除失败，请稍后重试')
+        ElMessage.error(error.message || '头像删除失败，请稍后重试')
       }
     }
   })
@@ -5581,7 +5845,7 @@ const saveStatus = async () => {
   try {
     const token = getAuthToken()
     if (!token) {
-      showErrorMessage('请先登录')
+      ElMessage.error('请先登录')
       return
     }
     
@@ -5628,7 +5892,7 @@ const saveStatus = async () => {
     })
     
     if (response.status === 401) {
-      showErrorMessage('登录已过期，请重新登录')
+      ElMessage.error('登录已过期，请重新登录')
       clearLoginInfo()
       setTimeout(() => {
         router.push('/login')
@@ -5648,16 +5912,16 @@ const saveStatus = async () => {
         userProfile.value.statusExpiry = ''
       }
       showStatusForm.value = false
-      showSuccessMessage('状态设置成功')
+      ElMessage.success('状态设置成功')
       
       // 刷新用户资料以获取最新的状态信息
       setTimeout(() => refreshUserProfile(), 500)
     } else {
-      showErrorMessage(data.message || '状态设置失败')
+      ElMessage.error(data.message || '状态设置失败')
     }
   } catch (error) {
     console.error('状态设置失败:', error)
-    showErrorMessage('状态设置失败，请稍后重试')
+    ElMessage.error('状态设置失败，请稍后重试')
   }
 }
 
@@ -5665,7 +5929,7 @@ const clearStatus = async () => {
   try {
     const token = getAuthToken()
     if (!token) {
-      showErrorMessage('请先登录')
+      ElMessage.error('请先登录')
       return
     }
     
@@ -5677,7 +5941,7 @@ const clearStatus = async () => {
     })
     
     if (response.status === 401) {
-      showErrorMessage('登录已过期，请重新登录')
+      ElMessage.error('登录已过期，请重新登录')
       clearLoginInfo()
       setTimeout(() => {
         router.push('/login')
@@ -5693,16 +5957,16 @@ const clearStatus = async () => {
       userProfile.value.statusEmoji = ''
       userProfile.value.statusExpiry = ''
       showStatusForm.value = false
-      showSuccessMessage('状态已清除')
+      ElMessage.success('状态已清除')
       
       // 刷新用户资料以确认状态已清除
       setTimeout(() => refreshUserProfile(), 500)
     } else {
-      showErrorMessage(data.message || '清除状态失败')
+      ElMessage.error(data.message || '清除状态失败')
     }
   } catch (error) {
     console.error('清除状态失败:', error)
-    showErrorMessage('清除状态失败，请稍后重试')
+    ElMessage.error('清除状态失败，请稍后重试')
   }
 }
 
@@ -5822,7 +6086,7 @@ const saveProfile = async () => {
   try {
     const token = getAuthToken()
     if (!token) {
-      showErrorMessage('请先登录')
+      ElMessage.error('请先登录')
       return
     }
     
@@ -5857,7 +6121,7 @@ const saveProfile = async () => {
     })
     
     if (response.status === 401) {
-      showErrorMessage('登录已过期，请重新登录')
+      ElMessage.error('登录已过期，请重新登录')
       clearLoginInfo()
       setTimeout(() => {
         router.push('/login')
@@ -5886,12 +6150,12 @@ const saveProfile = async () => {
           
           if (!userIdResponse.ok) {
             const userIdData = await userIdResponse.json()
-            showErrorMessage(userIdData.message || '设置个人ID失败')
+            ElMessage.error(userIdData.message || '设置个人ID失败')
             return
           }
         } catch (error) {
           console.error('设置个人ID失败:', error)
-          showErrorMessage('设置个人ID失败')
+          ElMessage.error('设置个人ID失败')
           return
         }
       }
@@ -5902,16 +6166,16 @@ const saveProfile = async () => {
         currentUser.value.userIdString = userProfile.value.userIdString
       }
       showUserProfileModal.value = false
-      showSuccessMessage('个人资料保存成功')
+      ElMessage.success('个人资料保存成功')
       
       // 刷新用户资料以获取最新数据，但不重新加载全部数据
       refreshUserProfile()
     } else {
-      showErrorMessage(data.message || '保存个人资料失败')
+      ElMessage.error(data.message || '保存个人资料失败')
     }
   } catch (error) {
     console.error('保存个人资料失败:', error)
-    showErrorMessage('保存个人资料失败，请稍后重试')
+    ElMessage.error('保存个人资料失败，请稍后重试')
   }
 }
 
@@ -6110,14 +6374,14 @@ const performLogout = async (keepInfo: boolean) => {
     sessionStorage.removeItem('refreshToken')
     sessionStorage.removeItem('userInfo')
     // 保留 localStorage 中的 userInfo、rememberMe、savedEmail、savedPassword
-    showSuccessMessage('已退出登录，登录信息已保留')
+    ElMessage.success('已退出登录，登录信息已保留')
   } else {
     // 完全退出：清除所有信息
     clearLoginInfo()
     localStorage.removeItem('rememberMe')
     localStorage.removeItem('savedEmail')
     localStorage.removeItem('savedPassword')
-    showSuccessMessage('已完全退出登录')
+    ElMessage.success('已完全退出登录')
   }
   
   // 跳转到登录页
@@ -6137,7 +6401,7 @@ const handleProfileSave = async (profile: any) => {
     // 获取JWT token
     const token = getAuthToken()
     if (!token) {
-      showErrorMessage('请先登录')
+      ElMessage.error('请先登录')
       return
     }
     
@@ -6165,7 +6429,7 @@ const handleProfileSave = async (profile: any) => {
     
     // 处理401未授权错误
     if (response.status === 401) {
-      showErrorMessage('登录已过期，请重新登录')
+      ElMessage.error('登录已过期，请重新登录')
       clearLoginInfo()
       setTimeout(() => {
         router.push('/login')
@@ -6194,12 +6458,12 @@ const handleProfileSave = async (profile: any) => {
           
           if (!userIdResponse.ok) {
             const userIdData = await userIdResponse.json()
-            showErrorMessage(userIdData.message || '设置个人ID失败')
+            ElMessage.error(userIdData.message || '设置个人ID失败')
             return
           }
         } catch (error) {
           console.error('设置个人ID失败:', error)
-          showErrorMessage('设置个人ID失败')
+          ElMessage.error('设置个人ID失败')
           return
         }
       }
@@ -6214,16 +6478,16 @@ const handleProfileSave = async (profile: any) => {
         currentUser.value.userIdString = profile.userIdString
       }
       
-      showSuccessMessage('个人资料保存成功')
+      ElMessage.success('个人资料保存成功')
       showProfileEditModal.value = false
       
       // 移除 initData() 调用，避免覆盖用户状态
     } else {
-      showErrorMessage(data.message || '保存个人资料失败')
+      ElMessage.error(data.message || '保存个人资料失败')
     }
   } catch (error) {
     console.error('保存个人资料失败:', error)
-    showErrorMessage('保存个人资料失败，请稍后重试')
+    ElMessage.error('保存个人资料失败，请稍后重试')
   }
 }
 
@@ -6334,7 +6598,7 @@ const downloadQRCode = (qrCodeData: any) => {
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)
-  showSuccessMessage('二维码下载成功')
+  ElMessage.success('二维码下载成功')
 }
 
 // 分享二维码
@@ -6354,11 +6618,11 @@ const shareQRCode = async (qrCodeData: any) => {
     } else {
       // 降级方案：复制到剪贴板
       await navigator.clipboard.writeText('扫描二维码添加我为好友')
-      showSuccessMessage('二维码信息已复制到剪贴板')
+      ElMessage.success('二维码信息已复制到剪贴板')
     }
   } catch (error) {
     console.error('分享失败:', error)
-    showErrorMessage('分享功能暂不可用')
+    ElMessage.error('分享功能暂不可用')
   }
 }
 
@@ -6470,23 +6734,7 @@ const clearLoginInfo = () => {
   sessionStorage.removeItem('userInfo')
 }
 
-// 显示错误信息
-const showErrorMessage = (message: string) => {
-  errorMessage.value = message
-  showError.value = true
-  setTimeout(() => {
-    showError.value = false
-  }, 5000)
-}
 
-// 显示成功信息
-const showSuccessMessage = (message: string) => {
-  successMessage.value = message
-  showSuccess.value = true
-  setTimeout(() => {
-    showSuccess.value = false
-  }, 3000)
-}
 
 // 初始化会话列表
 const initChatList = async () => {
@@ -6583,7 +6831,7 @@ const initChatList = async () => {
     }
   } catch (error) {
     console.error('获取会话列表失败:', error)
-    showErrorMessage('获取会话列表失败，请检查网络连接')
+    ElMessage.error('获取会话列表失败，请检查网络连接')
     chats.value = []
   }
 }
@@ -6787,7 +7035,7 @@ const initContactsList = async () => {
     }
   } catch (error) {
     console.error('获取联系人列表失败:', error)
-    showErrorMessage('获取联系人列表失败，请检查网络连接')
+    ElMessage.error('获取联系人列表失败，请检查网络连接')
     contacts.value = []
   }
 }
@@ -6925,7 +7173,7 @@ const initData = async () => {
     }
   } catch (error) {
     console.error('初始化数据失败:', error)
-    showErrorMessage('初始化失败，请重新登录')
+    ElMessage.error('初始化失败，请重新登录')
     setTimeout(() => {
       router.push('/login')
     }, 2000)
@@ -6955,13 +7203,20 @@ const checkStatusExpiry = () => {
 
 // 启动定时刷新
 const startAutoRefresh = () => {
-  // 每30秒刷新一次会话列表和联系人列表，同时检查状态过期
+  // 每30秒检查状态过期，但不再自动刷新会话列表
   refreshInterval = window.setInterval(async () => {
     try {
       // 检查状态过期
       checkStatusExpiry()
       
-      // 只在不是手动刷新时进行自动刷新
+      // 记录调用栈，帮助确定是哪里触发了定时刷新
+      console.log('[DEBUG] DashboardView 30秒定时刷新调用栈:', new Error().stack);
+      
+      // 不再自动刷新会话列表，改为依赖WebSocket实时更新
+      console.log('[DEBUG] DashboardView 定时刷新仅检查状态过期，不再自动刷新会话列表，避免触发已读状态更新');
+      
+      /*
+      // 只在不是手动刷新时进行自动刷新 - 已禁用
       if (!isLoading.value) {
         if (activeTab.value === 'chat') {
           await initChatList()
@@ -6969,6 +7224,7 @@ const startAutoRefresh = () => {
           await initContactsList()
         }
       }
+      */
     } catch (error) {
       console.error('自动刷新失败:', error)
     }
@@ -7045,23 +7301,7 @@ const muteChat = (chat: Chat | null) => {
   hideOptionsMenu()
 }
 
-// 删除聊天
-const deleteChat = (chat: Chat | null) => {
-  if (!chat) return
-  
-  if (confirm(`确定要删除与 ${chat.name} 的聊天记录吗？`)) {
-    console.log('删除聊天:', chat.name)
-    // 这里应该调用API删除聊天
-    
-    // 更新本地状态
-    const chatIndex = chats.value.findIndex(c => c.id === chat.id)
-    if (chatIndex !== -1) {
-      chats.value.splice(chatIndex, 1)
-    }
-  }
-  
-  hideOptionsMenu()
-}
+
 
 // 键盘事件处理
 const handleKeydown = (event: KeyboardEvent) => {
@@ -7075,61 +7315,138 @@ const handleKeydown = (event: KeyboardEvent) => {
 // 会话面板处理函数
 // 处理会话选择
 const handleSelectChat = async (chat: any) => {
-  console.log('选择会话:', chat);
+  console.log('[DEBUG] 选择会话:', chat);
+  
+  // 检查是否是从全局搜索跳转的消息
+  const isMessageNavigation = chat.conversationId !== undefined;
+  const conversationId = isMessageNavigation ? chat.conversationId : chat.id;
+  const targetMessageId = isMessageNavigation ? chat.id : null;
+  
+  console.log('[DEBUG] 消息导航模式:', isMessageNavigation, '会话ID:', conversationId, '目标消息ID:', targetMessageId);
+  
   // 防止无限循环
-  if (activeChatId.value === String(chat.id) && activeTab.value === 'chat') {
-    console.log('会话已经是当前选中的，跳过处理');
+  if (activeChatId.value === String(conversationId) && activeTab.value === 'chat' && !targetMessageId) {
+    console.log('[DEBUG] 会话已经是当前选中的，跳过处理');
     return;
   }
   
-  // 确保chat.id是字符串类型
-  activeChatId.value = String(chat.id);
+  // 确保conversationId是字符串类型
+  activeChatId.value = String(conversationId);
   
   // 保存当前会话信息
-  currentChatInfo.value = chat;
+  if (isMessageNavigation) {
+    // 从全局搜索跳转，需要构建会话信息
+    currentChatInfo.value = {
+      id: conversationId,
+      name: `会话 ${conversationId}`,
+      unreadCount: 0
+    };
+  } else {
+    currentChatInfo.value = chat;
+  }
   
   // 切换到聊天标签页
   activeTab.value = 'chat';
   
-  // 加载会话消息
-  loadMessages(String(chat.id));
-  
-  // 如果会话有未读消息，标记为已读
-  if (chat.unreadCount > 0) {
-    console.log(`会话 ${chat.id} 有 ${chat.unreadCount} 条未读消息，标记为已读`);
+  // 处理未读消息标记（仅对普通会话选择）
+  if (!isMessageNavigation && chat.unreadCount > 0) {
+    console.log(`[DEBUG] 用户点击会话 ${chat.id}，有 ${chat.unreadCount} 条未读消息，标记为已读`);
+    
+    // 立即更新未读计数（乐观更新）
+    chat.unreadCount = 0;
+    
+    // 如果有会话面板引用，强制更新其视图
+    if (conversationsPanel.value) {
+      const panelChats = conversationsPanel.value.chats;
+      if (panelChats) {
+        const chatInPanel = panelChats.find((c: any) => c.id === chat.id);
+        if (chatInPanel) {
+          chatInPanel.unreadCount = 0;
+          // 强制更新视图
+          conversationsPanel.value.chats = [...panelChats];
+        }
+      }
+    }
     
     try {
-      // 获取会话的最新消息
-      const response = await messageApi.getMessages(chat.id, 0, 1);
-      
-      if (response.success && response.data && response.data.content && response.data.content.length > 0) {
-        const latestMessage = response.data.content[0];
-        
-        // 确保latestMessage存在且有id
-        if (latestMessage && latestMessage.id) {
-          console.log(`标记消息 ${latestMessage.id} 为已读`);
-          await messageApi.markMessageAsRead(latestMessage.id);
-          
-          // 标记整个会话为已读
-          await messageApi.markConversationAsRead(chat.id);
-          
-          // 立即更新未读计数（乐观更新）
-          chat.unreadCount = 0;
-        } else {
-          console.log('无法获取有效的最新消息ID，直接标记整个会话为已读');
-          await messageApi.markConversationAsRead(chat.id);
-          chat.unreadCount = 0;
-        }
+      // 调用会话面板组件的标记为已读方法
+      if (conversationsPanel.value && typeof conversationsPanel.value.markConversationAsRead === 'function') {
+        console.log(`[DEBUG] 调用会话面板的 markConversationAsRead 方法标记会话 ${chat.id} 为已读`);
+        await conversationsPanel.value.markConversationAsRead(chat.id, true);
       } else {
-        // 如果无法获取最新消息，直接标记整个会话为已读
-        console.log('无法获取最新消息，直接标记整个会话为已读');
-        await messageApi.markConversationAsRead(chat.id);
+        console.log(`[DEBUG] 会话面板组件不可用或没有 markConversationAsRead 方法，使用备用方法标记会话 ${chat.id} 为已读`);
         
-        // 立即更新未读计数（乐观更新）
-        chat.unreadCount = 0;
+        // 获取会话的最新消息
+        const response = await messageApi.getMessages(chat.id, 0, 1);
+        
+        if (response.success && response.data && response.data.content && response.data.content.length > 0) {
+          const latestMessage = response.data.content[0];
+          
+          // 确保latestMessage存在且有id
+          if (latestMessage && latestMessage.id) {
+            console.log(`[DEBUG] 标记消息 ${latestMessage.id} 为已读`);
+            await messageApi.markMessageAsRead(latestMessage.id, true); // 传递true表示这是用户主动操作
+            
+            // 标记整个会话为已读，使用自定义请求，包含isUserAction标志
+            const request = {
+              conversationId: chat.id,
+              markAllAsRead: true,
+              isUserAction: true, // 标记这是用户主动操作
+              lastReadMessageId: latestMessage.id
+            };
+            
+            console.log(`[DEBUG] 发送标记会话已读请求，lastReadMessageId: ${latestMessage.id}，会话ID: ${chat.id}`);
+            const markAsReadResponse = await messageApi.markAsRead(request);
+            console.log(`[DEBUG] 标记会话已读响应:`, markAsReadResponse);
+          }
+        }
       }
     } catch (error) {
-      console.error('标记会话已读失败:', error);
+      console.error('[DEBUG] 标记会话已读失败:', error);
+    }
+  }
+  
+  // 加载会话消息
+  console.log(`[DEBUG] 加载会话 ${conversationId} 的消息`);
+  await loadMessages(String(conversationId));
+  
+  // 如果是消息导航，需要定位到特定消息
+  if (isMessageNavigation && targetMessageId) {
+    console.log(`[DEBUG] 尝试定位到消息 ${targetMessageId}`);
+    
+    // 等待ChatPanel组件加载完成
+    await nextTick();
+    
+    // 使用ChatPanel组件的scrollToMessage方法
+    if (chatPanel.value && typeof chatPanel.value.scrollToMessage === 'function') {
+      console.log(`[DEBUG] 调用ChatPanel的scrollToMessage方法定位到消息 ${targetMessageId}`);
+      try {
+        await chatPanel.value.scrollToMessage(Number(targetMessageId));
+      } catch (error) {
+        console.error(`[DEBUG] ChatPanel scrollToMessage失败:`, error);
+        ElMessage.error('定位消息失败，请稍后重试');
+      }
+    } else {
+      console.warn(`[DEBUG] ChatPanel组件不可用或没有scrollToMessage方法`);
+      ElMessage.warning('消息定位功能暂时不可用');
+    }
+  }
+  
+  // 确保未读计数为0（仅对普通会话选择）
+  if (!isMessageNavigation && chat.unreadCount !== undefined) {
+    chat.unreadCount = 0;
+    
+    // 再次确保会话面板中的未读计数也为0
+    if (conversationsPanel.value) {
+      const panelChats = conversationsPanel.value.chats;
+      if (panelChats) {
+        const chatInPanel = panelChats.find((c: any) => c.id === chat.id);
+        if (chatInPanel) {
+          chatInPanel.unreadCount = 0;
+          // 强制更新视图
+          conversationsPanel.value.chats = [...panelChats];
+        }
+      }
     }
   }
 };
@@ -7161,13 +7478,13 @@ const handlePinChat = async (chat: any) => {
     await conversationsPanel.value?.loadConversations();
     
       const actionText = !isPinned ? '取消置顶' : '置顶';
-      showSuccessMessage(`已${actionText}会话：${chat.name || '未命名会话'}`);
+      ElMessage.success(`已${actionText}会话：${chat.name || '未命名会话'}`);
     } else {
       throw new Error(response.message || '操作失败');
     }
   } catch (error: any) {
     console.error('置顶/取消置顶操作失败:', error);
-    showErrorMessage(`${chat?.isPinned ? '取消置顶' : '置顶'}失败：${error.message || '未知错误'}`);
+    ElMessage.error(`${chat?.isPinned ? '取消置顶' : '置顶'}失败：${error.message || '未知错误'}`);
   }
 };
 
@@ -7198,13 +7515,13 @@ const handleMute = async (chat: any) => {
     await conversationsPanel.value?.loadConversations();
     
       const actionText = !isDnd ? '取消免打扰' : '设置免打扰';
-      showSuccessMessage(`已${actionText}会话：${chat.name || '未命名会话'}`);
+      ElMessage.success(`已${actionText}会话：${chat.name || '未命名会话'}`);
     } else {
       throw new Error(response.message || '操作失败');
     }
   } catch (error: any) {
     console.error('免打扰/取消免打扰操作失败:', error);
-    showErrorMessage(`${chat?.isDnd ? '取消免打扰' : '设置免打扰'}失败：${error.message || '未知错误'}`);
+    ElMessage.error(`${chat?.isDnd ? '取消免打扰' : '设置免打扰'}失败：${error.message || '未知错误'}`);
   }
 };
 
@@ -7243,24 +7560,11 @@ const handleArchiveChat = async (chat: any) => {
     }
   } catch (error: any) {
     console.error('归档/取消归档操作失败:', error);
-    showErrorMessage(`${chat.isArchived ? '归档' : '取消归档'}失败：${error.message || '未知错误'}`);
+    ElMessage.error(`${chat.isArchived ? '归档' : '取消归档'}失败：${error.message || '未知错误'}`);
   }
 };
 
-// 处理会话删除
-const handleDeleteChat = async (chat: any) => {
-  try {
-    // 调用消息API进行删除
-    await messageApi.deleteConversation(chat.id);
-    
-    // 重新加载会话列表
-    await conversationsPanel.value?.loadConversations();
-    
-    showSuccessMessage(`已删除会话：${chat.name}`);
-  } catch (error: any) {
-    showErrorMessage(`删除失败：${error.message}`);
-  }
-};
+
 
 // 处理面板错误
 const handlePanelError = (error: string) => {
@@ -7273,18 +7577,18 @@ const handlePanelError = (error: string) => {
   }
   
   if (error === 'UNAUTHORIZED') {
-    showErrorMessage('登录已过期，请重新登录');
+    ElMessage.error('登录已过期，请重新登录');
     // 处理登录过期逻辑
   } else {
-    showErrorMessage(error);
+    ElMessage.error(error);
   }
 };
 
 // 手动刷新会话列表
 const refreshConversations = () => {
   if (conversationsPanel.value) {
-    console.log('手动刷新会话列表');
-    conversationsPanel.value.loadConversations();
+    console.log('手动刷新会话列表，不标记为已读');
+    conversationsPanel.value.loadConversations(true, false);
   }
 };
 
@@ -7338,8 +7642,8 @@ onMounted(async () => {
   startAutoRefresh()
   // 添加键盘事件监听
   document.addEventListener('keydown', handleKeydown)
-  // 初始化会话列表
-  conversationsPanel.value?.loadConversations()
+  // 初始化会话列表，不标记为已读
+  conversationsPanel.value?.loadConversations(false, false)
   
   // 延迟检查会话列表
   setTimeout(() => {
@@ -13147,5 +13451,247 @@ onUnmounted(() => {
     width: 100%;
     margin: 4px 0;
   }
+}
+
+/* 举报对话框样式 */
+.report-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.report-dialog {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  width: 90%;
+  max-width: 450px;
+  max-height: 90%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.report-dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #eee;
+  background-color: #f9f9f9;
+}
+
+.report-dialog-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #333;
+}
+
+.report-dialog-body {
+  padding: 20px;
+  overflow-y: auto;
+  flex-grow: 1;
+}
+
+.report-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: #555;
+}
+
+.report-reason-select,
+.report-description {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.report-reason-select:focus,
+.report-description:focus {
+  border-color: #3498db;
+}
+
+.report-description {
+  min-height: 80px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.report-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px 20px;
+  border-top: 1px solid #eee;
+  background-color: #f9f9f9;
+}
+
+.cancel-btn,
+.submit-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.cancel-btn {
+  background-color: #e0e0e0;
+  color: #333;
+  margin-right: 10px;
+}
+
+.cancel-btn:hover {
+  background-color: #d5d5d5;
+}
+
+.submit-btn {
+  background-color: #3498db;
+  color: white;
+}
+
+.submit-btn:hover {
+  background-color: #2980b9;
+}
+
+.submit-btn:disabled {
+  background-color: #a0c4ff;
+  cursor: not-allowed;
+  color: #888;
+}
+
+/* 举报按钮样式 */
+.profile-actions {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+  text-align: center;
+}
+
+.report-btn {
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.report-btn:hover {
+  background-color: #c0392b;
+}
+
+/* 高亮消息样式 - 更加明显和显眼 */
+.highlight-message {
+  position: relative;
+  background-color: rgba(255, 235, 59, 0.3) !important; /* 明亮的黄色背景 */
+  border-radius: 12px !important;
+  padding: 4px !important;
+  margin: -4px !important;
+  box-shadow: 0 0 20px rgba(255, 193, 7, 0.6) !important; /* 金色光晕 */
+  animation: highlight-glow 3s ease-out !important;
+}
+
+.highlight-message::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  right: -6px;
+  bottom: -6px;
+  background: linear-gradient(45deg, #ff9800, #ffc107, #ffeb3b, #ffc107, #ff9800);
+  background-size: 400% 400%;
+  border: 4px solid #ff9800; /* 更粗的橙色边框 */
+  border-radius: 16px;
+  pointer-events: none;
+  z-index: -1;
+  animation: highlight-rainbow 3s ease-out, highlight-pulse 3s ease-out;
+}
+
+.highlight-message::after {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  right: -10px;
+  bottom: -10px;
+  background: radial-gradient(circle, rgba(255, 193, 7, 0.4) 0%, transparent 70%);
+  border-radius: 20px;
+  pointer-events: none;
+  z-index: -2;
+  animation: highlight-outer-glow 3s ease-out;
+}
+
+@keyframes highlight-glow {
+  0% { 
+    background-color: rgba(255, 235, 59, 0.8) !important;
+    box-shadow: 0 0 30px rgba(255, 193, 7, 0.9) !important;
+  }
+  50% { 
+    background-color: rgba(255, 235, 59, 0.5) !important;
+    box-shadow: 0 0 25px rgba(255, 193, 7, 0.7) !important;
+  }
+  100% { 
+    background-color: transparent !important;
+    box-shadow: none !important;
+  }
+}
+
+@keyframes highlight-rainbow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes highlight-pulse {
+  0%, 10% { 
+    transform: scale(1.05);
+    opacity: 1;
+    border-width: 4px;
+  }
+  25% { 
+    transform: scale(1.02);
+    opacity: 0.8;
+    border-width: 3px;
+  }
+  50% { 
+    transform: scale(1.01);
+    opacity: 0.6;
+    border-width: 2px;
+  }
+  100% { 
+    transform: scale(1);
+    opacity: 0;
+    border-width: 0px;
+  }
+}
+
+@keyframes highlight-outer-glow {
+  0% { opacity: 0.6; }
+  50% { opacity: 0.3; }
+  100% { opacity: 0; }
 }
 </style>

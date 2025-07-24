@@ -33,7 +33,21 @@
     </div>
     
     <!-- 聊天消息列表 -->
-    <div ref="messageContainerRef" class="message-container">
+    <div ref="messageContainerRef" class="messages-area" @scroll="handleScroll">
+      <!-- 历史消息加载指示器 -->
+      <div v-if="isLoadingHistory" class="history-loading-container">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">加载历史消息...</div>
+      </div>
+      
+      <!-- 没有更多历史消息提示 -->
+      <div v-if="!hasMoreHistory && !isLoadingHistory && messages.length > 0" class="no-more-history-container">
+        <div class="no-more-history-text">
+          <i class="fas fa-info-circle"></i>
+          没有更多历史消息了
+        </div>
+      </div>
+      
       <div v-if="loading" class="loading-container">
         <div class="loading-spinner"></div>
         <div>加载中...</div>
@@ -199,12 +213,18 @@ const {
 } = useSharedWebSocket(handleWebSocketMessage); // 使用共享WebSocket
 
 // 标记指定会话为已读
-const markConversationAsReadById = async (conversationId: number) => {
+const markConversationAsReadById = async (conversationId: number, isUserAction: boolean = false) => {
   if (!conversationId) return;
   
+  // 如果不是用户主动操作，记录并拒绝执行
+  if (!isUserAction) {
+    console.warn('[DEBUG] 拒绝非用户主动操作的标记已读请求，会话ID:', conversationId);
+    return;
+  }
+  
   try {
-    console.log(`标记会话 ${conversationId} 为已读`);
-    await messageApi.markConversationAsRead(conversationId);
+    console.log(`标记会话 ${conversationId} 为已读，用户主动操作: ${isUserAction}`);
+    await messageApi.markConversationAsRead(conversationId, isUserAction);
     console.log('会话已标记为已读');
   } catch (error) {
     console.error('标记会话为已读失败:', error);
@@ -213,7 +233,24 @@ const markConversationAsReadById = async (conversationId: number) => {
 
 // 处理WebSocket消息
 function handleWebSocketMessage(data: any) {
-  console.log('ChatPanel收到WebSocket消息:', data);
+  // 使用非阻塞方式处理WebSocket消息
+  setTimeout(() => {
+    console.log('[DEBUG] ChatPanel收到WebSocket消息:', data);
+    
+    try {
+      // 标准化消息类型（转换为大写）
+      const messageType = data.type ? data.type.toUpperCase() : null;
+      
+      // 检查是否包含tempId，如果有，可能是我们发送的消息的确认
+      if (data.tempId || (data.data && data.data.tempId)) {
+        console.log('[DEBUG] 检测到带有tempId的消息，优先处理为确认消息');
+        // 处理确认消息
+        handleMessageConfirmation(data.data || data);
+      }
+    } catch (error) {
+      console.error('[DEBUG] 处理WebSocket消息出错:', error);
+    }
+  }, 0);
   
   try {
     // 标准化消息类型（转换为大写）
@@ -372,18 +409,36 @@ const messageTimeouts = new Map<string, number>();
 
 // 处理消息确认
 const handleMessageConfirmation = (data: any) => {
+  // 使用非阻塞方式处理消息确认
+  setTimeout(() => {
   if (data && data.tempId) {
-    console.log('收到消息确认:', data);
+      console.log('[DEBUG] 收到消息确认:', data);
     
     // 将临时ID添加到确认集合
     messageConfirmations.value.add(data.tempId);
+      
+      // 更新消息状态
+      if (data.messageId || data.id) {
+        const messageId = data.messageId || data.id;
+        // 查找临时消息并更新其ID和状态
+        const tempIndex = messages.value.findIndex(m => m.tempId === data.tempId);
+        if (tempIndex !== -1) {
+          console.log(`[DEBUG] 更新临时消息 ${data.tempId} 的ID为 ${messageId}`);
+          messages.value[tempIndex].id = messageId;
+          messages.value[tempIndex].status = 'SENT';
+          // 强制更新视图
+          messages.value = [...messages.value];
+        }
+      }
     
     // 清除相关的超时处理器
     if (messageTimeouts.has(data.tempId)) {
       clearTimeout(messageTimeouts.get(data.tempId));
       messageTimeouts.delete(data.tempId);
+        console.log(`[DEBUG] 已清除消息 ${data.tempId} 的超时处理器`);
       }
   }
+  }, 0);
 };
 
 // 直接从存储中获取当前用户ID
@@ -495,7 +550,23 @@ const ensureMessageHasCorrectIsSelf = (message: any) => {
 
 // 处理实时消息
 function handleRealTimeMessage(messageData: any) {
-  console.log('处理实时消息，原始数据:', JSON.stringify(messageData));
+  // 使用非阻塞方式处理实时消息
+  setTimeout(() => {
+    console.log('[DEBUG] 处理实时消息，原始数据:', JSON.stringify(messageData));
+    
+    // 检查是否是临时消息的确认
+    if (messageData.tempId) {
+      // 如果有tempId，可能是我们发送的消息的确认
+      handleMessageConfirmation(messageData);
+      
+      // 检查消息是否已经在列表中（通过tempId匹配）
+      const existingIndex = messages.value.findIndex(m => m.tempId === messageData.tempId);
+      if (existingIndex !== -1) {
+        console.log(`[DEBUG] 消息 tempId=${messageData.tempId} 已在列表中，不重复添加`);
+        return; // 已处理过的消息，不再继续处理
+      }
+    }
+  }, 0);
   
   try {
     // 格式化消息对象
@@ -503,8 +574,13 @@ function handleRealTimeMessage(messageData: any) {
     
     // 检查基本有效性
     if (!formattedMessage || !formattedMessage.id) {
-      console.warn('收到的消息无效，缺少ID');
+      console.warn('[DEBUG] 收到的消息无效，缺少ID');
       return;
+    }
+    
+    // 保存tempId以便后续处理
+    if (messageData.tempId) {
+      formattedMessage.tempId = messageData.tempId;
     }
     
     // 确保消息有正确的isSelf属性
@@ -514,21 +590,38 @@ function handleRealTimeMessage(messageData: any) {
     const currentConversationId = Number(props.conversationId);
     const messageConversationId = Number(formattedMessage.conversationId);
     
-    console.log(`检查消息会话匹配: 消息会话=${messageConversationId}, 当前会话=${currentConversationId}`);
-    console.log(`消息isSelf状态: ${formattedMessage.isSelf}, 发送者ID: ${formattedMessage.senderId}, 当前用户ID: ${currentUser.value?.id}`);
+    console.log(`[DEBUG] 检查消息会话匹配: 消息会话=${messageConversationId}, 当前会话=${currentConversationId}`);
+    console.log(`[DEBUG] 消息isSelf状态: ${formattedMessage.isSelf}, 发送者ID: ${formattedMessage.senderId}, 当前用户ID: ${currentUser.value?.id}`);
     
     if (messageConversationId !== currentConversationId) {
-      console.log(`消息会话ID不匹配，忽略消息: 消息会话=${messageConversationId}, 当前会话=${currentConversationId}`);
+      console.log(`[DEBUG] 消息会话ID不匹配，忽略消息: 消息会话=${messageConversationId}, 当前会话=${currentConversationId}`);
       return;
     }
     
-    console.log('收到当前会话的新消息:', formattedMessage);
+    console.log('[DEBUG] 收到当前会话的新消息:', formattedMessage);
+    
+    // 检查是否更新现有消息（通过tempId匹配）
+    if (messageData.tempId) {
+      const existingIndex = messages.value.findIndex(msg => msg.tempId === messageData.tempId);
+      if (existingIndex !== -1) {
+        console.log(`[DEBUG] 更新已有临时消息 tempId=${messageData.tempId} 为真实消息 id=${formattedMessage.id}`);
+        // 更新现有消息，但保留tempId
+        messages.value[existingIndex] = {
+          ...formattedMessage,
+          tempId: messageData.tempId,
+          status: 'SENT'
+        };
+        // 强制更新视图
+        messages.value = [...messages.value];
+        return;
+      }
+    }
       
     // 检查消息是否已存在（避免重复）
     const isDuplicate = messages.value.some(msg => {
       // 主要检查方式：ID相同
       if (msg.id === formattedMessage.id) {
-        console.log(`消息ID ${formattedMessage.id} 已存在，跳过`);
+        console.log(`[DEBUG] 消息ID ${formattedMessage.id} 已存在，跳过`);
         return true;
       }
       
@@ -541,7 +634,7 @@ function handleRealTimeMessage(messageData: any) {
         const timeDiff = Math.abs(msgTime - newMsgTime);
         
         if (timeDiff < 5000) {
-          console.log(`消息内容和发送者相同，时间差 ${timeDiff}ms < 5000ms，判定为重复消息`);
+          console.log(`[DEBUG] 消息内容和发送者相同，时间差 ${timeDiff}ms < 5000ms，判定为重复消息`);
           return true;
         }
       }
@@ -550,34 +643,23 @@ function handleRealTimeMessage(messageData: any) {
     });
       
     if (!isDuplicate) {
-      console.log('消息不是重复的，添加到当前会话');
-      console.log('添加消息的isSelf状态:', formattedMessage.isSelf);
+      console.log('[DEBUG] 消息不是重复的，添加到当前会话');
+      console.log('[DEBUG] 添加消息的isSelf状态:', formattedMessage.isSelf);
       
       // 将消息添加到当前会话的消息列表中
       messages.value = [...messages.value, formattedMessage];
-      console.log('消息已添加到当前会话，当前消息列表长度:', messages.value.length);
+      console.log('[DEBUG] 消息已添加到当前会话，当前消息列表长度:', messages.value.length);
       
-      // 滚动到底部
+      // 滚动到底部，但不标记为已读（不是用户主动操作）
       nextTick(() => {
-        scrollToBottom();
+        scrollToBottom(false);
       });
       
-      // 如果是当前会话，自动标记为已读并更新阅读光标
-      if (formattedMessage.id) {
-        try {
-          // 标记消息已读
-          messageApi.markMessageAsRead(formattedMessage.id)
-            .then(() => console.log('消息已标记为已读:', formattedMessage.id))
-            .catch(err => console.error('标记消息已读失败:', err));
-            
-          // 标记会话为已读
-          markConversationAsReadById(messageConversationId);
-        } catch (err) {
-          console.error('标记消息已读过程中出错:', err);
-        }
-      }
+      // 收到新消息时，不自动标记为已读
+      // 只有在用户点击或查看消息时才标记为已读
+      console.log('[DEBUG] 收到新消息，但不自动标记为已读，等待用户交互');
     } else {
-      console.log('跳过重复消息:', formattedMessage.id);
+      console.log('[DEBUG] 跳过重复消息:', formattedMessage.id);
     }
   } catch (error) {
     console.error('处理实时消息失败:', error);
@@ -771,19 +853,34 @@ function getNumericValue(value: any): number {
 // 处理状态更新
 function handleStatusUpdate(data: any) {
   if (!data || !data.messageId) {
-    console.warn('无效的状态更新数据');
+    console.warn('[DEBUG] 无效的状态更新数据');
     return;
   }
   
-  const { messageId, status } = data;
+  const { messageId, status, tempId } = data;
   
-  console.log(`收到消息 ${messageId} 状态更新: ${status}`);
+  console.log(`[DEBUG] 收到消息 ${messageId} 状态更新: ${status}, tempId: ${tempId}`);
   
-  // 更新消息状态
-  const messageToUpdate = messages.value.find(m => m.id === messageId);
+  // 先尝试通过ID查找消息
+  let messageToUpdate = messages.value.find(m => m.id === messageId);
+  
+  // 如果找不到，尝试通过tempId查找
+  if (!messageToUpdate && tempId) {
+    messageToUpdate = messages.value.find(m => m.tempId === tempId);
   if (messageToUpdate) {
-    console.log(`更新消息 ${messageId} 状态从 ${messageToUpdate.status} 到 ${status}`);
+      console.log(`[DEBUG] 通过tempId=${tempId}找到消息，更新其ID为${messageId}`);
+      messageToUpdate.id = messageId;
+    }
+  }
+  
+  if (messageToUpdate) {
+    console.log(`[DEBUG] 更新消息 ${messageId} 状态从 ${messageToUpdate.status} 到 ${status}`);
     messageToUpdate.status = status;
+    
+    // 强制更新视图
+    messages.value = [...messages.value];
+  } else {
+    console.log(`[DEBUG] 未找到消息ID=${messageId}, tempId=${tempId}，无法更新状态`);
   }
 }
 
@@ -1102,42 +1199,90 @@ const currentUserAvatar = computed(() => {
 });
 
 // 滚动到底部
-const scrollToBottom = () => {
+const scrollToBottom = (isUserAction = false) => {
   if (messageContainerRef.value) {
     messageContainerRef.value.scrollTop = messageContainerRef.value.scrollHeight;
+    
+    // 记录调用栈，帮助确定哪里调用了这个方法
+    console.log('[DEBUG] scrollToBottom 调用栈:', new Error().stack);
+    
+    // 根据需求，滚动到底部不应该触发重置未读消息
+    // 移除标记为已读的逻辑
+    console.log('[DEBUG] 滚动到底部，但不标记为已读，isUserAction=', isUserAction);
   }
 };
 
 // 标记会话为已读
-const markConversationAsRead = async () => {
+const markConversationAsRead = async (isUserAction: boolean = false) => {
   if (!props.conversationId || !currentUser.value?.id) {
-    console.warn('无法标记会话为已读：会话ID或用户ID不存在', {
+    console.warn('[DEBUG] 无法标记会话为已读：会话ID或用户ID不存在', {
       conversationId: props.conversationId,
       userId: currentUser.value?.id
     });
     return;
   }
 
+  // 如果不是用户主动操作，记录并拒绝执行
+  if (!isUserAction) {
+    console.warn('[DEBUG] 拒绝非用户主动操作的标记已读请求，会话ID:', props.conversationId);
+    return;
+  }
+
       try {
-      console.log('开始标记会话为已读，会话ID:', props.conversationId);
-      const response = await messageApi.markConversationAsRead(Number(props.conversationId));
-      console.log('标记会话已读API响应:', JSON.stringify(response));
+    console.log('[DEBUG] 开始标记会话为已读，会话ID:', props.conversationId, '用户主动操作:', isUserAction);
+    
+    // 获取当前会话的最新消息ID，用于更新lastReadMessageId
+    let lastMessageId = null;
+    if (messages.value && messages.value.length > 0) {
+      // 找到最新的消息
+      const lastMessage = [...messages.value].sort((a, b) => {
+        const timeA = new Date(a.createdAt).getTime();
+        const timeB = new Date(b.createdAt).getTime();
+        return timeB - timeA; // 降序排列
+      })[0];
+      
+      if (lastMessage && lastMessage.id) {
+        lastMessageId = lastMessage.id;
+        console.log(`[DEBUG] 找到最新消息ID: ${lastMessageId}, 消息内容: ${lastMessage.content?.substring(0, 20)}...`);
+      }
+    }
+    
+    // 创建一个自定义请求，包含isUserAction标志
+    const request: MarkAsReadRequest = {
+      conversationId: Number(props.conversationId),
+      markAllAsRead: true,
+      isUserAction: true // 标记这是用户主动操作
+    };
+    
+    // 如果有最新消息ID，也包含在请求中
+    if (lastMessageId) {
+      request.lastReadMessageId = lastMessageId;
+      console.log(`[DEBUG] 将使用lastReadMessageId=${lastMessageId}标记会话${props.conversationId}为已读`);
+    } else {
+      console.log(`[DEBUG] 没有找到最新消息ID，将不使用lastReadMessageId标记会话${props.conversationId}为已读`);
+    }
+    
+    // 记录调用栈，帮助确定哪里调用了这个方法
+    console.log('[DEBUG] markConversationAsRead 调用栈:', new Error().stack);
+    
+    // 调用API标记为已读
+    console.log('[DEBUG] 发送标记会话已读请求:', JSON.stringify(request));
+    const response = await messageApi.markAsRead(request);
+    console.log('[DEBUG] 标记会话已读API响应:', JSON.stringify(response));
+    
       if (response.success) {
-        console.log('会话已标记为已读');
+      console.log('[DEBUG] 会话已标记为已读');
         // 在消息列表中找到当前会话的最后一条消息，并标记为已读
         const lastMessage = messages.value.find(msg => msg.conversationId === Number(props.conversationId));
         if (lastMessage) {
           lastMessage.isRead = true;
-          console.log(`已将最后一条消息 ${lastMessage.id} 标记为已读`);
-          
-          // 标记会话为已读
-          markConversationAsReadById(Number(props.conversationId));
+        console.log(`[DEBUG] 已将最后一条消息 ${lastMessage.id} 标记为已读`);
         }
       } else {
-        console.warn('标记会话已读失败:', response.message);
+      console.warn('[DEBUG] 标记会话已读失败:', response.message);
       }
     } catch (err) {
-      console.error('标记会话已读出错:', err);
+    console.error('[DEBUG] 标记会话已读出错:', err);
     }
 };
 
@@ -1184,6 +1329,11 @@ const loadMessages = async (conversationId: string) => {
     
     console.log('正在加载会话消息，conversationId:', conversationId);
     
+    // 重置历史消息加载状态
+    currentPage.value = 0;
+    hasMoreHistory.value = true;
+    isLoadingHistory.value = false;
+    
     // 如果是群聊，先检查群组状态并加载成员
     if (props.isGroupChat && props.groupId) {
       await checkGroupBanStatus(Number(conversationId));
@@ -1203,8 +1353,8 @@ const loadMessages = async (conversationId: string) => {
     // 清空当前消息，避免显示之前会话的消息
     messages.value = [];
     
-    // 直接调用API获取消息
-    const response = await messageApi.getMessages(Number(conversationId));
+    // 直接调用API获取消息（第一页）
+    const response = await messageApi.getMessages(Number(conversationId), 0, pageSize);
     
     if (response.success && response.data) {
       console.log(`获取到${response.data.content?.length || 0}条消息`);
@@ -1292,38 +1442,47 @@ const loadMessages = async (conversationId: string) => {
           return dateA - dateB;
         });
       
+      // 查找最新的消息ID，用于调试
+      if (validMessages.length > 0) {
+        const sortedMessages = [...validMessages].sort((a, b) => {
+          const timeA = new Date(a.createdAt || 0).getTime();
+          const timeB = new Date(b.createdAt || 0).getTime();
+          return timeB - timeA; // 降序排列，最新的在前
+        });
+        
+        const latestMessage = sortedMessages[0];
+        if (latestMessage && latestMessage.id) {
+          console.log(`[DEBUG] 会话 ${conversationId} 的最新消息ID: ${latestMessage.id}, 内容: ${latestMessage.content?.substring(0, 20)}...`);
+        }
+      }
+      
       // 更新消息列表
       messages.value = validMessages;
       
-      console.log('会话消息已加载，共', validMessages.length, '条消息');
-      console.log('消息列表中的isSelf状态:', validMessages.map(msg => ({ id: msg.id, senderId: msg.senderId, isSelf: msg.isSelf })));
+      console.log('[DEBUG] 会话消息已加载，共', validMessages.length, '条消息');
     } else {
-      console.error('加载会话消息失败:', response.message);
+      console.error('[DEBUG] 加载会话消息失败:', response.message);
       if (!response.data || !response.data.content) {
-        console.warn('服务器返回的消息数据为空');
+        console.warn('[DEBUG] 服务器返回的消息数据为空');
         // 设置为空数组，而不是undefined
         messages.value = [];
       }
     }
     
-    // 滚动到底部
+    // 滚动到底部，但不标记为已读（因为不是用户操作）
     nextTick(() => {
       try {
-        scrollToBottom();
+        scrollToBottom(false); // 明确传递false，表示这不是用户主动操作
       } catch (scrollError) {
-        console.error('滚动到底部失败:', scrollError);
+        console.error('[DEBUG] 滚动到底部失败:', scrollError);
       }
     });
     
-    // 标记消息为已读
-    try {
-      await markConversationAsRead();
-    } catch (markError) {
-      console.error('标记消息为已读失败:', markError);
-      // 不阻止主流程继续
-    }
+    // 不自动标记消息为已读
+    // 只有在用户点击会话时才标记为已读
+    console.log('[DEBUG] 消息加载完成，但不自动标记为已读，等待用户交互（点击）');
   } catch (err: any) {
-    console.error('加载消息失败:', err);
+      console.error('[DEBUG] 加载消息失败:', err);
     error.value = err.message || '加载消息失败';
     
     // 确保在出错时消息列表是空的而不是undefined
@@ -1500,18 +1659,105 @@ const handleSendMessage = async (messageData: { content: string, type: string, m
         throw new Error(errorMessage);
       }
     } else {
-      console.log('消息已通过WebSocket发送，等待服务器确认');
+      console.log('[DEBUG] 消息已通过WebSocket发送，等待服务器确认，tempId:', tempId);
+      
+      // 将临时消息添加到消息列表中，状态为发送中
+      const tempMessage = {
+        id: `temp-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        tempId: tempId,
+        conversationId: Number(props.conversationId),
+        senderId: currentUser.value?.id ? Number(currentUser.value.id) : getCurrentUserIdFromStorage(),
+        content: messageData.content,
+        type: messageData.type || 'TEXT',
+        messageType: messageData.type || 'TEXT',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        status: 'SENDING',
+        isSentByCurrentUser: true,
+        isSelf: true
+      };
+      
+      // 添加到消息列表
+      messages.value.push(tempMessage);
+      
+      // 滚动到底部，但不标记为已读（虽然是用户操作，但发送消息不应触发标记已读）
+      nextTick(() => {
+        scrollToBottom(false);
+      });
       
       // 添加WebSocket错误处理
       // 设置一个超时，如果一段时间内没有收到确认，则显示错误
       const messageTimeout = setTimeout(() => {
         // 检查是否收到了消息确认
         if (!messageConfirmations.value.has(tempId)) {
-          console.warn('消息发送超时，可能发送失败:', tempId);
-          error.value = '消息发送失败，请检查您的网络连接或与对方的关系状态';
-          ElMessage.error('消息发送失败，请检查您的网络连接或与对方的关系状态');
+          console.warn('[DEBUG] 消息发送超时，可能发送失败:', tempId);
+          
+                // 使用非阻塞方式检查消息状态
+      // 将异步操作移到setTimeout之外，避免阻塞主线程
+      const tempContent = messageData.content;
+      setTimeout(() => {
+        // 检查消息状态的异步函数
+        (async function() {
+          try {
+            // 查找临时消息在列表中的位置
+            const tempIndex = messages.value.findIndex(m => m.tempId === tempId);
+            
+            // 尝试在数据库中查找消息，确认是否真的发送失败
+            const response = await messageApi.getMessages(Number(props.conversationId), 0, 20);
+            
+            if (response.success && response.data && response.data.content) {
+              // 检查最近消息中是否有内容匹配的消息
+              const matchingMessage = response.data.content.find(msg => 
+                msg.content === tempContent && 
+                new Date(msg.createdAt).getTime() > Date.now() - 30000 // 30秒内发送的
+              );
+              
+              if (matchingMessage) {
+                console.log('[DEBUG] 消息已成功存入数据库，但未收到WebSocket确认。消息ID:', matchingMessage.id);
+                
+                // 如果找到了临时消息，更新它
+                if (tempIndex !== -1) {
+                  console.log(`[DEBUG] 更新临时消息 ${tempId} 为已确认消息 ${matchingMessage.id}`);
+                  messages.value[tempIndex] = {
+                    ...messages.value[tempIndex],
+                    id: matchingMessage.id,
+                    status: 'SENT',
+                    createdAt: matchingMessage.createdAt,
+                    updatedAt: matchingMessage.updatedAt
+                  };
+                  
+                  // 添加到确认集合，防止重复处理
+                  messageConfirmations.value.add(tempId);
+                  
+                  // 强制更新视图
+                  messages.value = [...messages.value];
+                }
+              } else if (tempIndex !== -1) {
+                // 真的发送失败了，更新临时消息状态
+                console.log(`[DEBUG] 消息 ${tempId} 发送失败，未在数据库中找到`);
+                messages.value[tempIndex].status = 'FAILED';
+                // 强制更新视图
+                messages.value = [...messages.value];
+                
+                // 显示错误提示，但不弹出通知，避免连续发送时的多次提示
+                error.value = '消息发送失败，请检查您的网络连接';
+              }
+            }
+          } catch (err) {
+            console.error('[DEBUG] 检查消息状态失败:', err);
+            
+            // 查找临时消息并标记为失败
+            const tempIndex = messages.value.findIndex(m => m.tempId === tempId);
+            if (tempIndex !== -1) {
+              messages.value[tempIndex].status = 'FAILED';
+              // 强制更新视图
+              messages.value = [...messages.value];
+            }
+          }
+        })();
+      }, 0);
         }
-      }, 5000); // 5秒超时
+      }, 8000); // 增加到8秒超时，给网络更多时间
       
       // 存储超时处理器，以便在收到确认时清除
       messageTimeouts.set(tempId, messageTimeout);
@@ -1529,9 +1775,24 @@ const handleSendMessage = async (messageData: { content: string, type: string, m
     } else if (errorMessage.includes('被对方屏蔽')) {
       error.value = '您已被对方屏蔽，无法发送消息';
       ElMessage.error('您已被对方屏蔽，无法发送消息');
-    } else if (errorMessage.includes('不是群成员') || errorMessage.includes('已不是群成员')) {
+    } else if (errorMessage.includes('不是群成员') || errorMessage.includes('已不是群成员') || errorMessage.includes('不是群组成员')) {
       error.value = '您已不是群成员，无法发送消息';
       ElMessage.error('您已不是群成员，无法发送消息');
+    } else if (errorMessage.includes('已被禁言') || errorMessage.includes('被禁言')) {
+      error.value = '您已被禁言，无法发送消息';
+      ElMessage.error('您已被禁言，无法发送消息');
+    } else if (errorMessage.includes('群组已被封禁') || errorMessage.includes('已被封禁')) {
+      error.value = '该群组已被封禁，无法发送消息';
+      ElMessage.error('该群组已被封禁，无法发送消息');
+    } else if (errorMessage.includes('群组已解散') || errorMessage.includes('已解散')) {
+      error.value = '该群组已解散，无法发送消息';
+      ElMessage.error('该群组已解散，无法发送消息');
+    } else if (errorMessage.includes('会话不存在')) {
+      error.value = '会话不存在，请刷新页面重试';
+      ElMessage.error('会话不存在，请刷新页面重试');
+    } else if (errorMessage.includes('请求参数无效')) {
+      error.value = '消息格式错误，请重试';
+      ElMessage.error('消息格式错误，请重试');
     } else {
       error.value = errorMessage;
       ElMessage.error(errorMessage);
@@ -1594,7 +1855,39 @@ const retryMessage = async (messageId: string | number) => {
     }
   } catch (err: any) {
     console.error('重新发送消息失败:', err);
-    error.value = err.message || '重新发送消息失败';
+    
+    // 显示友好的错误消息
+    const errorMessage = err.message || '重新发送消息失败';
+    
+    // 检查是否是特定的错误类型，并显示友好的提示
+    if (errorMessage.includes('不是对方好友') || errorMessage.includes('已不是对方好友')) {
+      error.value = '您不是对方好友，无法发送消息';
+      ElMessage.error('您不是对方好友，无法发送消息');
+    } else if (errorMessage.includes('被对方屏蔽')) {
+      error.value = '您已被对方屏蔽，无法发送消息';
+      ElMessage.error('您已被对方屏蔽，无法发送消息');
+    } else if (errorMessage.includes('不是群成员') || errorMessage.includes('已不是群成员') || errorMessage.includes('不是群组成员')) {
+      error.value = '您已不是群成员，无法发送消息';
+      ElMessage.error('您已不是群成员，无法发送消息');
+    } else if (errorMessage.includes('已被禁言') || errorMessage.includes('被禁言')) {
+      error.value = '您已被禁言，无法发送消息';
+      ElMessage.error('您已被禁言，无法发送消息');
+    } else if (errorMessage.includes('群组已被封禁') || errorMessage.includes('已被封禁')) {
+      error.value = '该群组已被封禁，无法发送消息';
+      ElMessage.error('该群组已被封禁，无法发送消息');
+    } else if (errorMessage.includes('群组已解散') || errorMessage.includes('已解散')) {
+      error.value = '该群组已解散，无法发送消息';
+      ElMessage.error('该群组已解散，无法发送消息');
+    } else if (errorMessage.includes('会话不存在')) {
+      error.value = '会话不存在，请刷新页面重试';
+      ElMessage.error('会话不存在，请刷新页面重试');
+    } else if (errorMessage.includes('请求参数无效')) {
+      error.value = '消息格式错误，请重试';
+      ElMessage.error('消息格式错误，请重试');
+    } else {
+      error.value = errorMessage;
+      ElMessage.error(errorMessage);
+    }
   }
 };
 
@@ -1712,7 +2005,7 @@ const closeSearchPanel = () => {
 };
 
 // 滚动到指定消息
-const scrollToMessage = (messageId: number) => {
+const scrollToMessage = async (messageId: number) => {
   // 关闭搜索面板
   closeSearchPanel();
   
@@ -1722,33 +2015,193 @@ const scrollToMessage = (messageId: number) => {
   highlightedMessageId.value = messageId;
   
   // 查找消息元素
-  const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+  let messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+  
   if (messageElement) {
-    // 滚动到消息位置
+    // 找到消息，直接滚动
     messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
     
     // 3秒后移除高亮
     setTimeout(() => {
       highlightedMessageId.value = null;
     }, 3000);
-  } else {
-    console.warn('找不到消息元素:', messageId);
-    
-    // 如果找不到消息，可能需要重新加载
-    loadMessages(props.conversationId).then(() => {
-      // 延迟尝试再次查找和滚动
-      setTimeout(() => {
-        const element = document.querySelector(`[data-message-id="${messageId}"]`);
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          // 3秒后移除高亮
-          setTimeout(() => {
-            highlightedMessageId.value = null;
-          }, 3000);
-        }
-      }, 300);
-    });
+    return;
   }
+  
+  // 如果找不到消息，尝试加载更多历史消息
+  console.log('消息不在当前视图中，开始加载历史消息...');
+  
+  // 检查消息是否在当前消息列表中
+  const messageInList = messages.value.find(msg => msg.id === messageId);
+  if (messageInList) {
+    // 消息在列表中但DOM元素不存在，等待DOM更新
+    await nextTick();
+    messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+    if (messageElement) {
+      messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(() => {
+        highlightedMessageId.value = null;
+      }, 3000);
+      return;
+    }
+  }
+  
+  // 消息不在当前列表中，需要加载更多历史消息
+  await loadHistoryUntilMessage(messageId);
+};
+
+// 加载历史消息直到找到目标消息
+const loadHistoryUntilMessage = async (targetMessageId: number) => {
+  const maxAttempts = 10; // 最大尝试次数，防止无限循环
+  let attempts = 0;
+  
+  // 显示加载指示器
+  isLoadingHistory.value = true;
+  
+  while (attempts < maxAttempts && hasMoreHistory.value) {
+    attempts++;
+    console.log(`尝试加载历史消息 (${attempts}/${maxAttempts})...`);
+    
+    try {
+      // 加载下一页历史消息
+      const response = await messageApi.getMessages(
+        Number(props.conversationId),
+        currentPage.value + 1,
+        pageSize.value
+      );
+      
+      if (response.success && response.data) {
+        let newMessages: any[] = [];
+        
+        if (Array.isArray(response.data)) {
+          newMessages = response.data;
+        } else if (response.data.content && Array.isArray(response.data.content)) {
+          newMessages = response.data.content;
+          hasMoreHistory.value = !response.data.last;
+        }
+        
+        if (newMessages.length === 0) {
+          hasMoreHistory.value = false;
+          break;
+        }
+        
+        // 获取当前用户ID
+        let currentUserId = currentUser.value?.id ? Number(currentUser.value.id) : null;
+        if (currentUserId === null) {
+          currentUserId = getCurrentUserIdFromStorage();
+        }
+        
+        // 格式化新消息（使用与loadMoreHistory完全相同的逻辑）
+        const formattedMessages = newMessages
+          .filter(msg => msg && msg.id) // 过滤掉无效消息
+          .map(msg => {
+            // 确保每条消息都有必要的字段
+            const senderId = msg.senderId ? Number(msg.senderId) : null;
+            const isSentByCurrentUser = currentUserId !== null && senderId !== null && senderId === currentUserId;
+            
+            // 处理发送者昵称
+            let senderName = '';
+            if (msg.senderName) {
+              senderName = msg.senderName;
+            } else if (msg.senderNickname) {
+              senderName = msg.senderNickname;
+            } else if ((msg as any).sender && (msg as any).sender.nickname) {
+              senderName = (msg as any).sender.nickname;
+            } else if ((msg as any).user && (msg as any).user.nickname) {
+              senderName = (msg as any).user.nickname;
+            } else if ((msg as any).sender && (msg as any).sender.username) {
+              senderName = (msg as any).sender.username;
+            } else if ((msg as any).user && (msg as any).user.username) {
+              senderName = (msg as any).user.username;
+            }
+            
+            // 处理头像
+            const avatarUrl = msg.senderAvatar || 
+                             ((msg as any).sender && (msg as any).sender.avatarUrl) || 
+                             ((msg as any).user && (msg as any).user.avatarUrl) || 
+                             '';
+                             
+            // 获取用户在群组中的角色
+            let memberRole = undefined;
+            if (props.isGroupChat && senderId !== null && props.groupId) {
+              memberRole = getMemberRole(senderId, props.groupId);
+            }
+            
+            const formattedMsg = {
+              ...msg,
+              id: msg.id || Date.now() + Math.random(),
+              conversationId: msg.conversationId || Number(props.conversationId),
+              createdAt: msg.createdAt || new Date().toISOString(),
+              type: msg.type || msg.messageType || 'TEXT',
+              content: msg.content || '',
+              isSentByCurrentUser: isSentByCurrentUser,
+              isSelf: isSentByCurrentUser, // 添加isSelf属性以兼容ChatMessage组件
+              senderName: senderName,
+              senderAvatar: avatarUrl,
+              memberRole: memberRole // 添加成员角色属性
+            };
+            
+            // 确保消息有正确的isSelf属性
+            return ensureMessageHasCorrectIsSelf(formattedMsg);
+          });
+        
+        // 对历史消息按时间排序（早的在前，晚的在后）
+        const sortedHistoryMessages = formattedMessages.sort((a, b) => {
+          const dateA = new Date(a.createdAt || 0).getTime();
+          const dateB = new Date(b.createdAt || 0).getTime();
+          return dateA - dateB;
+        });
+        
+        // 将排序后的历史消息添加到列表开头
+        messages.value = [...sortedHistoryMessages, ...messages.value];
+        currentPage.value++;
+        
+        // 检查是否找到目标消息
+        const targetMessage = formattedMessages.find(msg => msg.id === targetMessageId);
+        if (targetMessage) {
+          console.log('找到目标消息，准备滚动');
+          
+          // 等待DOM更新
+          await nextTick();
+          
+          // 查找消息元素并滚动
+          const messageElement = document.querySelector(`[data-message-id="${targetMessageId}"]`);
+          if (messageElement) {
+            messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // 3秒后移除高亮
+            setTimeout(() => {
+              highlightedMessageId.value = null;
+            }, 3000);
+          }
+          
+          break;
+        }
+        
+      } else {
+        console.error('加载历史消息失败:', response.message);
+        break;
+      }
+      
+    } catch (error) {
+      console.error('加载历史消息时出错:', error);
+      break;
+    }
+  }
+  
+  // 隐藏加载指示器
+  isLoadingHistory.value = false;
+  
+  if (attempts >= maxAttempts) {
+    console.warn('已达到最大尝试次数，停止加载历史消息');
+    ElMessage.warning('消息可能在更早的历史记录中，请手动向上滚动查看更多历史消息');
+  } else if (!hasMoreHistory.value) {
+    console.log('没有更多历史消息了');
+    ElMessage.info('未找到指定消息，可能已被删除');
+  }
+  
+  // 移除高亮
+  highlightedMessageId.value = null;
 };
 
 // 重新连接WebSocket
@@ -1864,20 +2317,9 @@ onMounted(() => {
       const background = settings.value?.theme?.chatBackground || 'default';
       console.log('聊天面板挂载时应用背景:', background);
       
-      if (messageContainerRef.value) {
-        const element = messageContainerRef.value;
-        if (background === 'default') {
-          element.style.background = '';
-          element.style.backgroundImage = 'none';
-        } else if (background.startsWith('#')) {
-          element.style.background = background;
-          element.style.backgroundImage = 'none';
-        } else {
-          element.style.backgroundImage = `url(${background})`;
-          element.style.backgroundSize = 'cover';
-          element.style.backgroundPosition = 'center';
-        }
-      }
+      // 不再直接在messageContainerRef上设置背景样式
+      // 背景样式已通过CSS变量在.messages-area上应用
+      console.log('背景设置已通过CSS变量应用到.messages-area');
     }, 100);
   }
 });
@@ -1885,7 +2327,8 @@ onMounted(() => {
 // 暴露方法供父组件调用
 defineExpose({
   loadMessages,
-  refreshMessages
+  refreshMessages,
+  scrollToMessage
 });
 
 
@@ -1957,10 +2400,9 @@ async function loadChatMessages() {
         return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
       });
       
-      // 所有消息加载完成后，如果有消息，标记会话为已读
-      if (messages.value.length > 0) {
-        markConversationAsReadById(Number(props.conversationId));
-      }
+      // 加载消息完成后，不自动标记为已读
+      // 只有在用户点击会话时才标记为已读
+      console.log('消息加载完成，但不自动标记为已读，等待用户交互');
     } else {
       throw new Error(response.message || '加载消息失败');
     }
@@ -2108,6 +2550,163 @@ const getMemberRole = (userId: number | string, groupId?: number): string | unde
   
   return undefined;
 };
+
+// 处理消息容器滚动事件
+// 历史消息加载状态
+const isLoadingHistory = ref(false);
+const hasMoreHistory = ref(true);
+const currentPage = ref(0);
+const pageSize = 20;
+
+// 加载历史消息
+const loadMoreHistory = async () => {
+  if (isLoadingHistory.value || !hasMoreHistory.value || !props.conversationId) {
+    return;
+  }
+
+  try {
+    isLoadingHistory.value = true;
+    console.log(`[DEBUG] 加载历史消息，页码: ${currentPage.value + 1}`);
+    
+    // 获取下一页历史消息
+    const response = await messageApi.getMessages(
+      Number(props.conversationId), 
+      currentPage.value + 1, 
+      pageSize
+    );
+    
+    if (response.success && response.data && response.data.content) {
+      const newMessages = response.data.content;
+      console.log(`[DEBUG] 获取到 ${newMessages.length} 条历史消息`);
+      
+      if (newMessages.length > 0) {
+        // 记录当前滚动位置
+        const container = messageContainerRef.value;
+        const oldScrollHeight = container?.scrollHeight || 0;
+        
+        // 获取当前用户ID
+        let currentUserId = currentUser.value?.id ? Number(currentUser.value.id) : null;
+        if (currentUserId === null) {
+          currentUserId = getCurrentUserIdFromStorage();
+        }
+        
+        // 处理新消息格式（使用与loadMessages相同的逻辑）
+        const formattedMessages = newMessages
+          .filter(msg => msg && msg.id) // 过滤掉无效消息
+          .map(msg => {
+            // 确保每条消息都有必要的字段
+            const senderId = msg.senderId ? Number(msg.senderId) : null;
+            const isSentByCurrentUser = currentUserId !== null && senderId !== null && senderId === currentUserId;
+            
+            // 处理发送者昵称
+            let senderName = '';
+            if (msg.senderName) {
+              senderName = msg.senderName;
+            } else if (msg.senderNickname) {
+              senderName = msg.senderNickname;
+            } else if ((msg as any).sender && (msg as any).sender.nickname) {
+              senderName = (msg as any).sender.nickname;
+            } else if ((msg as any).user && (msg as any).user.nickname) {
+              senderName = (msg as any).user.nickname;
+            } else if ((msg as any).sender && (msg as any).sender.username) {
+              senderName = (msg as any).sender.username;
+            } else if ((msg as any).user && (msg as any).user.username) {
+              senderName = (msg as any).user.username;
+            }
+            
+            // 处理头像
+            const avatarUrl = msg.senderAvatar || 
+                             ((msg as any).sender && (msg as any).sender.avatarUrl) || 
+                             ((msg as any).user && (msg as any).user.avatarUrl) || 
+                             '';
+                             
+            // 获取用户在群组中的角色
+            let memberRole = undefined;
+            if (props.isGroupChat && senderId !== null && props.groupId) {
+              memberRole = getMemberRole(senderId, props.groupId);
+            }
+            
+            const formattedMsg = {
+              ...msg,
+              id: msg.id || Date.now() + Math.random(),
+              conversationId: msg.conversationId || Number(props.conversationId),
+              createdAt: msg.createdAt || new Date().toISOString(),
+              type: msg.type || msg.messageType || 'TEXT',
+              content: msg.content || '',
+              isSentByCurrentUser: isSentByCurrentUser,
+              isSelf: isSentByCurrentUser, // 添加isSelf属性以兼容ChatMessage组件
+              senderName: senderName,
+              senderAvatar: avatarUrl,
+              memberRole: memberRole // 添加成员角色属性
+            };
+            
+            // 确保消息有正确的isSelf属性
+            return ensureMessageHasCorrectIsSelf(formattedMsg);
+          });
+        
+        // 对历史消息按时间排序（早的在前，晚的在后）
+        const sortedHistoryMessages = formattedMessages.sort((a, b) => {
+          const dateA = new Date(a.createdAt || 0).getTime();
+          const dateB = new Date(b.createdAt || 0).getTime();
+          return dateA - dateB;
+        });
+        
+        // 将排序后的历史消息添加到列表开头
+        messages.value = [...sortedHistoryMessages, ...messages.value];
+        currentPage.value++;
+        
+        // 恢复滚动位置，保持用户当前查看的消息位置不变
+        nextTick(() => {
+          if (container) {
+            const newScrollHeight = container.scrollHeight;
+            const scrollDiff = newScrollHeight - oldScrollHeight;
+            container.scrollTop = container.scrollTop + scrollDiff;
+          }
+        });
+        
+        console.log(`[DEBUG] 历史消息加载完成，当前总消息数: ${messages.value.length}`);
+      } else {
+        // 没有更多历史消息
+        hasMoreHistory.value = false;
+        console.log('[DEBUG] 没有更多历史消息');
+      }
+      
+      // 检查是否还有更多页面
+      if (newMessages.length < pageSize) {
+        hasMoreHistory.value = false;
+      }
+    } else {
+      hasMoreHistory.value = false;
+      console.log('[DEBUG] 历史消息加载失败或无数据');
+    }
+  } catch (error) {
+    console.error('[DEBUG] 加载历史消息失败:', error);
+    hasMoreHistory.value = false;
+  } finally {
+    isLoadingHistory.value = false;
+  }
+};
+
+const handleScroll = () => {
+  if (!messageContainerRef.value || messages.value.length === 0) return;
+  
+  const container = messageContainerRef.value;
+  const scrollTop = container.scrollTop;
+  const scrollPosition = container.scrollTop + container.clientHeight;
+  const scrollHeight = container.scrollHeight;
+  
+  // 检测向上滚动到顶部，加载更多历史记录
+  if (scrollTop <= 50 && hasMoreHistory.value && !isLoadingHistory.value) {
+    console.log('[DEBUG] 检测到向上滚动到顶部，开始加载历史消息');
+    loadMoreHistory();
+  }
+  
+  // 根据需求，滚动到底部不应该触发重置未读消息
+  // 因此，我们只记录滚动状态，但不标记为已读
+  if (scrollHeight - scrollPosition <= 20) {
+    console.log('[DEBUG] 用户滚动到底部，但不标记消息为已读');
+  }
+};
 </script>
 
 <style scoped>
@@ -2219,7 +2818,7 @@ const getMemberRole = (userId: number | string, groupId?: number): string | unde
   font-weight: 500;
 }
 
-.message-container {
+.messages-area {
   flex: 1;
   overflow-y: auto;
   padding: 20px;
@@ -2381,6 +2980,48 @@ const getMemberRole = (userId: number | string, groupId?: number): string | unde
   color: #999;
 }
 
+.history-loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  color: #666;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+  margin: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.no-more-history-container {
+  display: flex;
+  justify-content: center;
+  padding: 15px;
+  margin: 10px;
+}
+
+.no-more-history-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #999;
+  background-color: #f8f9fa;
+  padding: 10px 16px;
+  border-radius: 20px;
+  border: 1px solid #e9ecef;
+}
+
+.no-more-history-text i {
+  color: #6c757d;
+  font-size: 12px;
+}
+
+.loading-text {
+  font-size: 14px;
+  margin-top: 8px;
+}
+
 .loading-spinner {
   width: 24px;
   height: 24px;
@@ -2389,6 +3030,13 @@ const getMemberRole = (userId: number | string, groupId?: number): string | unde
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 8px;
+}
+
+.history-loading-container .loading-spinner {
+  width: 20px;
+  height: 20px;
+  border-width: 2px;
+  margin-bottom: 0;
 }
 
 @keyframes spin {
@@ -2524,4 +3172,4 @@ const getMemberRole = (userId: number | string, groupId?: number): string | unde
 .search-action-btn.active .search-text {
   color: white;
 }
-</style> 
+</style>

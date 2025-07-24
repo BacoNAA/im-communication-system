@@ -321,9 +321,9 @@ export function useMessages() {
         console.log('会话消息已加载，共', validMessages.length, '条消息');
         
         // 标记会话为已读
-        await messageApi.markConversationAsRead(conversationId)
-          .then(() => console.log('会话已标记为已读:', conversationId))
-          .catch(err => console.error('标记会话已读失败:', err));
+            await messageApi.markConversationAsRead(conversationId)
+              .then(() => console.log('会话已标记为已读:', conversationId))
+              .catch(err => console.error('标记会话已读失败:', err));
         
         // 确保未读消息数量为0
         if (conversation) {
@@ -793,7 +793,30 @@ export function useMessages() {
         throw new Error(response.message || '发送消息失败');
       }
     } catch (err: any) {
-      error.value = err.message || '发送消息失败';
+      // 显示友好的错误消息
+      const errorMessage = err.message || '发送消息失败';
+      
+      // 检查是否是特定的错误类型，并显示友好的提示
+      if (errorMessage.includes('不是对方好友') || errorMessage.includes('已不是对方好友')) {
+        error.value = '您不是对方好友，无法发送消息';
+      } else if (errorMessage.includes('被对方屏蔽')) {
+        error.value = '您已被对方屏蔽，无法发送消息';
+      } else if (errorMessage.includes('不是群成员') || errorMessage.includes('已不是群成员') || errorMessage.includes('不是群组成员')) {
+        error.value = '您已不是群成员，无法发送消息';
+      } else if (errorMessage.includes('已被禁言') || errorMessage.includes('被禁言')) {
+        error.value = '您已被禁言，无法发送消息';
+      } else if (errorMessage.includes('群组已被封禁') || errorMessage.includes('已被封禁')) {
+        error.value = '该群组已被封禁，无法发送消息';
+      } else if (errorMessage.includes('群组已解散') || errorMessage.includes('已解散')) {
+        error.value = '该群组已解散，无法发送消息';
+      } else if (errorMessage.includes('会话不存在')) {
+        error.value = '会话不存在，请刷新页面重试';
+      } else if (errorMessage.includes('请求参数无效')) {
+        error.value = '消息格式错误，请重试';
+      } else {
+        error.value = errorMessage;
+      }
+      
       throw err;
     }
   };
@@ -820,7 +843,18 @@ export function useMessages() {
         throw new Error(response.message || '创建会话失败');
       }
     } catch (err: any) {
-      error.value = err.message || '创建会话失败';
+      // 显示友好的错误消息
+      const errorMessage = err.message || '创建会话失败';
+      
+      // 检查是否是特定的错误类型，并显示友好的提示
+      if (errorMessage.includes('不是对方好友') || errorMessage.includes('已不是对方好友')) {
+        error.value = '您不是对方好友，无法创建会话';
+      } else if (errorMessage.includes('被对方屏蔽')) {
+        error.value = '您已被对方屏蔽，无法创建会话';
+      } else {
+        error.value = errorMessage;
+      }
+      
       throw err;
     }
   };
@@ -1109,8 +1143,13 @@ export function useMessages() {
   // 定期刷新会话列表，以获取最新未读消息数
   let refreshInterval: number | null = null;
   
-  // 启动定时刷新
+  // 启动定时刷新 - 已禁用，改为依赖WebSocket实时更新
   const startRefreshInterval = () => {
+    // 已禁用定时刷新，改为依赖WebSocket实时更新
+    console.log('[DEBUG] useMessages: 定时刷新已禁用，改为依赖WebSocket实时更新');
+    return;
+    
+    /* 原定时刷新代码已禁用
     if (refreshInterval) return;
     
     refreshInterval = window.setInterval(() => {
@@ -1120,6 +1159,7 @@ export function useMessages() {
         });
       }
     }, 30000); // 每30秒刷新一次
+    */
   };
   
   // 停止定时刷新

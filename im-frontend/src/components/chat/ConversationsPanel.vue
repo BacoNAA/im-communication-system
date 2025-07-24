@@ -1,6 +1,8 @@
 <template>
   <div class="conversations-panel">
     <div class="search-bar">
+      <div class="search-input-container">
+        <i class="fas fa-search search-icon"></i>
       <input 
         v-model="searchKeyword"
         type="text" 
@@ -8,8 +10,15 @@
         class="search-input"
         @input="handleSearch"
       />
-      <button class="refresh-button" @click="() => loadConversations(true)" title="刷新会话列表">
-        <i class="fas fa-sync"></i>
+      </div>
+      <button 
+        class="refresh-button" 
+        @click="refreshConversations" 
+        title="刷新会话列表"
+        :class="{ 'refreshing': isRefreshing }"
+      >
+        <i class="fas fa-sync-alt"></i>
+        <span class="refresh-text">刷新</span>
       </button>
     </div>
     
@@ -108,9 +117,6 @@
       <div class="menu-item" @click="handleArchive">
         {{ activeTab === 'archived' ? '取消归档' : '归档会话' }}
       </div>
-      <div class="menu-item delete" @click="handleDelete">
-        删除会话
-      </div>
     </div>
   </div>
 </template>
@@ -136,11 +142,12 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['select-chat', 'pin-chat', 'mute-chat', 'archive-chat', 'delete-chat', 'error']);
+const emit = defineEmits(['select-chat', 'pin-chat', 'mute-chat', 'archive-chat', 'error']);
 
 // 会话数据
 const chats = ref<any[]>([]);
 const loading = ref(false);
+const isRefreshing = ref(false); // 添加刷新状态
 const searchKeyword = ref('');
 const error = ref<string | null>(null);
 const activeTab = ref<'regular' | 'archived'>('regular');
@@ -237,34 +244,53 @@ function handleWebSocketMessage(data: any) {
 // 处理阅读状态更新通知
 function handleReadStatusUpdate(data: any) {
   try {
-    console.log('处理已读状态更新:', data);
+    console.log('[DEBUG] 处理已读状态更新:', JSON.stringify(data));
     
     const updateData = data.data || data;
     const conversationId = updateData.conversationId;
     const lastReadMessageId = updateData.lastReadMessageId;
     const readerId = updateData.readerId;
+    const isUserAction = updateData.isUserAction === true; // 检查是否是用户主动操作
+    
+    console.log(`[DEBUG] 已读状态关键信息: conversationId=${conversationId}, lastReadMessageId=${lastReadMessageId}, readerId=${readerId}, isUserAction=${isUserAction}`);
     
     if (!conversationId) {
-      console.warn('已读状态更新中缺少会话ID');
+      console.warn('[DEBUG] 已读状态更新中缺少会话ID');
       return;
     }
     
     // 获取当前用户ID
     const currentUserId = getCurrentUserId();
+    console.log(`[DEBUG] 当前用户ID: ${currentUserId}, 读者ID: ${readerId}`);
     
-    // 如果是当前用户的已读状态更新
-    if (readerId === currentUserId) {
-      console.log(`当前用户已读状态更新，会话: ${conversationId}`);
-      
+    // 如果是当前用户的已读状态更新，且是由用户主动操作触发的
+    // 或者是当前活跃的会话（用户正在查看）
+    const isActiveConversation = props.activeChatId === String(conversationId);
+    
+    // 调试信息：检查是否有自动更新last_read_message_id的请求
+    if (readerId === currentUserId && !isUserAction && !isActiveConversation) {
+      console.warn(`[DEBUG] 检测到非用户主动操作的lastReadMessageId更新: ${lastReadMessageId}, 会话ID: ${conversationId}`);
+    }
+    
+    // 只有当是用户主动操作时才重置未读计数
+    // 移除isActiveConversation条件，因为仅仅是当前活跃会话不应该自动重置未读计数
+    if (readerId === currentUserId && isUserAction) {
+      console.log(`[DEBUG] 当前用户已读状态更新，会话: ${conversationId}，lastReadMessageId: ${lastReadMessageId}，是用户主动操作: ${isUserAction}，是当前活跃会话: ${isActiveConversation}`);
+    
       // 更新本地未读计数
-      const conversation = chats.value.find(c => c.id === conversationId);
-      if (conversation) {
-        conversation.unreadCount = 0;
-        console.log(`已将会话 ${conversationId} 的未读计数重置为0`);
+    const conversation = chats.value.find(c => c.id === conversationId);
+    if (conversation) {
+      conversation.unreadCount = 0;
+        console.log(`[DEBUG] 已将会话 ${conversationId} 的未读计数重置为0`);
+      
+        // 强制更新视图
+      chats.value = [...chats.value];
       }
+    } else {
+      console.log(`[DEBUG] 忽略非用户主动操作的已读状态更新，会话: ${conversationId}，用户ID: ${readerId}，当前用户: ${currentUserId}，是用户主动操作: ${isUserAction}`);
     }
   } catch (error) {
-    console.error('处理已读状态更新失败:', error);
+    console.error('[DEBUG] 处理已读状态更新失败:', error);
   }
 }
 
@@ -469,24 +495,25 @@ function handleConversationMute(data: any) {
 }
 
 // 处理新消息对会话列表的影响
-function handleNewMessage(data: any) {
+async function handleNewMessage(data: any) {
   try {
     // 提取消息数据
     const messageData = data.data || data.message || data;
     const conversationId = messageData.conversationId;
+    const messageId = messageData.id;
     
     if (!conversationId) {
-      console.warn('消息数据中缺少会话ID');
+      console.warn('[DEBUG] 消息数据中缺少会话ID');
       return;
     }
     
-    console.log(`收到会话 ${conversationId} 的新消息:`, messageData);
+    console.log(`[DEBUG] 收到会话 ${conversationId} 的新消息, ID: ${messageId}, 内容: ${messageData.content?.substring(0, 20)}...`);
     
     // 查找对应的会话
     const conversation = chats.value.find(c => c.id === conversationId);
     
     if (conversation) {
-      console.log(`找到对应的会话: ${conversation.id}`);
+      console.log(`[DEBUG] 找到对应的会话: ${conversation.id}, 当前未读计数: ${conversation.unreadCount}`);
       
       // 更新会话的最后一条消息内容
       conversation.lastMessage = messageData.content || '新消息';
@@ -499,31 +526,55 @@ function handleNewMessage(data: any) {
       
       // 确定消息发送者
       const senderId = messageData.senderId ? Number(messageData.senderId) : null;
-      const isSentByCurrentUser = 
-        messageData.isSelf === true || 
-        messageData.isSentByCurrentUser === true || 
-        (senderId !== null && currentUserId !== null && senderId === currentUserId);
+      // 严格比较senderId和currentUserId，忽略messageData.isSelf和messageData.isSentByCurrentUser
+      const isSentByCurrentUser = (senderId !== null && currentUserId !== null && senderId === currentUserId);
       
-      console.log(`消息发送者检查: senderId=${senderId}, currentUserId=${currentUserId}, isSelf=${messageData.isSelf}, isSentByCurrentUser=${messageData.isSentByCurrentUser}, 结果=${isSentByCurrentUser}`);
+      console.log(`[DEBUG] 消息发送者检查: senderId=${senderId}, currentUserId=${currentUserId}, isSelf=${messageData.isSelf}, isSentByCurrentUser=${messageData.isSentByCurrentUser}, 严格比较结果=${isSentByCurrentUser}`);
       
       // 如果不是当前用户发送的消息，且不是当前活跃会话，增加未读消息计数
       if (!isSentByCurrentUser) {
         // 检查是否是当前活跃会话，如果是则不增加计数（因为用户正在查看）
         const isActiveConversation = props.activeChatId === String(conversationId);
         if (!isActiveConversation) {
-          // 增加未读计数
-          conversation.unreadCount = (conversation.unreadCount || 0) + 1;
-          console.log(`增加会话 ${conversationId} 未读计数: ${conversation.unreadCount}`);
+          // 确保unreadCount是数字类型
+          if (typeof conversation.unreadCount !== 'number') {
+            conversation.unreadCount = 0;
+          }
+          
+          // 获取当前未读计数
+          const currentUnreadCount = conversation.unreadCount;
+          
+          // 从后端获取准确的未读计数
+          try {
+            const response = await messageApi.getUnreadMessageCount(conversationId);
+            if (response.success && typeof response.data === 'number') {
+              console.log(`[DEBUG] 会话 ${conversationId} 的后端未读计数: ${response.data}, 本地计数: ${currentUnreadCount}`);
+              // 使用后端返回的未读计数，确保准确性
+              conversation.unreadCount = response.data;
+            } else {
+              // 如果API调用失败，则增加本地计数
+              conversation.unreadCount = currentUnreadCount + 1;
+            }
+          } catch (error) {
+            console.error(`[DEBUG] 获取会话 ${conversationId} 未读计数失败:`, error);
+            // 如果API调用失败，则增加本地计数
+            conversation.unreadCount = currentUnreadCount + 1;
+          }
+          
+          console.log(`[DEBUG] 更新会话 ${conversationId} 未读计数为: ${conversation.unreadCount}`);
           
           // 强制视图更新
           chats.value = [...chats.value];
-        } else {
-          console.log(`当前正在查看会话 ${conversationId}，不增加未读计数`);
+      } else {
+          console.log(`[DEBUG] 当前正在查看会话 ${conversationId}，不增加未读计数`);
           // 不自动标记为已读，等待用户交互后再标记
           // 这样可以确保未读消息计数不会自动重置
+          
+          // 检查是否有自动更新lastReadMessageId的请求
+          console.log(`[DEBUG] 当前会话 ${conversationId} 接收到新消息 ${messageId}，检查是否有自动更新lastReadMessageId的请求`);
         }
       } else {
-        console.log('这是当前用户发送的消息，不增加未读计数');
+        console.log('[DEBUG] 这是当前用户发送的消息，不增加未读计数');
       }
       
       // 将该会话移到列表顶部（除非是置顶会话，置顶会话之间保持原有顺序）
@@ -545,25 +596,31 @@ function handleNewMessage(data: any) {
       
       // 强制视图更新
       nextTick(() => {
-        console.log('会话列表已更新，未读计数:', conversation.unreadCount);
+        console.log('[DEBUG] 会话列表已更新，未读计数:', conversation.unreadCount);
       });
     } else {
-      console.log(`收到新消息的会话 ${conversationId} 不在当前列表中，尝试刷新会话列表`);
+      console.log(`[DEBUG] 收到新消息的会话 ${conversationId} 不在当前列表中，尝试刷新会话列表`);
       // 如果会话不在列表中，刷新会话列表
       loadConversations(true).catch(err => {
-        console.warn('自动刷新会话列表失败:', err);
+        console.warn('[DEBUG] 自动刷新会话列表失败:', err);
       });
     }
   } catch (error) {
-    console.error('处理新消息对会话列表的影响时出错:', error);
+    console.error('[DEBUG] 处理新消息对会话列表的影响时出错:', error);
   }
 }
 
 // 标记消息为已读
-async function markMessageAsRead(messageId: number, conversationId: number) {
+async function markMessageAsRead(messageId: number, conversationId: number, isUserAction: boolean = false) {
+  // 如果不是用户主动操作，记录并拒绝执行
+  if (!isUserAction) {
+    console.warn(`[DEBUG] 拒绝非用户主动操作的标记已读请求，消息ID: ${messageId}`);
+    return;
+  }
+  
   try {
-    console.log(`标记消息 ${messageId} 为已读`);
-    await messageApi.markMessageAsRead(messageId);
+    console.log(`标记消息 ${messageId} 为已读，用户主动操作: ${isUserAction}`);
+    await messageApi.markMessageAsRead(messageId, isUserAction);
     
     // 更新本地未读计数
     const conversation = chats.value.find(c => c.id === conversationId);
@@ -787,8 +844,16 @@ const switchTab = async (tab: 'regular' | 'archived') => {
 };
 
 // 加载会话列表
-const loadConversations = async (forceRefresh = false) => {
-  console.log('开始加载会话列表，当前用户:', currentUser.value, '强制刷新:', forceRefresh);
+const loadConversations = async (forceRefresh = false, markAsRead = false) => {
+  console.log('[DEBUG] 开始加载会话列表，当前用户:', currentUser.value, '强制刷新:', forceRefresh, '标记为已读:', markAsRead);
+  
+  // 记录调用栈，帮助确定哪里调用了这个方法
+  console.log('[DEBUG] loadConversations 调用栈:', new Error().stack);
+  
+  // 如果尝试标记为已读，记录警告
+  if (markAsRead) {
+    console.warn('[DEBUG] 警告：loadConversations 不再支持自动标记为已读功能，请在加载后单独调用 markConversationAsRead');
+  }
   
   // 如果已有会话数据且不是强制刷新且WebSocket已连接，则不重新加载
   if (chats.value.length > 0 && !forceRefresh && wsConnected.value) {
@@ -868,8 +933,14 @@ const loadConversations = async (forceRefresh = false) => {
         // 根据置顶状态和最后消息时间排序
         sortConversations();
         
-        // 获取每个会话的最新消息
-        await fetchLatestMessagesForConversations();
+        // 获取每个会话的最新消息，但不标记为已读
+        // 完全分离加载会话和标记已读的逻辑
+        await fetchLatestMessagesForConversations(false);
+        
+        // 如果原来的调用要求标记为已读，记录警告
+        if (markAsRead) {
+          console.warn('[DEBUG] 注意：已忽略markAsRead=true参数，需要标记为已读请单独调用markConversationAsRead');
+        }
       } else {
         console.log('未找到会话数据');
         chats.value = [];
@@ -979,8 +1050,8 @@ const loadArchivedConversations = async () => {
           };
         });
         
-        // 获取每个会话的最新消息
-        await fetchLatestMessagesForConversations();
+        // 获取每个会话的最新消息，但不标记为已读
+        await fetchLatestMessagesForConversations(false);
       } else {
         console.log('未找到已归档会话数据');
         chats.value = [];
@@ -997,11 +1068,20 @@ const loadArchivedConversations = async () => {
   }
 };
 
-// 获取每个会话的最新消息
-const fetchLatestMessagesForConversations = async () => {
+// 仅获取每个会话的最新消息（不标记已读）
+const fetchLatestMessagesForConversations = async (markAsRead = false) => {
   if (!chats.value || chats.value.length === 0) return;
   
-  console.log('开始获取所有会话的最新消息');
+  console.log('[DEBUG] 开始获取所有会话的最新消息，标记为已读:', markAsRead);
+  
+  // 记录调用栈，帮助确定哪里调用了这个方法
+  console.log('[DEBUG] fetchLatestMessagesForConversations 调用栈:', new Error().stack);
+  
+  // 如果尝试标记为已读，记录警告并拒绝
+  if (markAsRead) {
+    console.warn('[DEBUG] 警告：fetchLatestMessagesForConversations 不再支持标记为已读功能，请使用单独的 markConversationAsRead 方法');
+    console.log('[DEBUG] 继续执行，但忽略 markAsRead 参数，只获取最新消息');
+  }
   
   // 获取认证token
   const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
@@ -1010,17 +1090,25 @@ const fetchLatestMessagesForConversations = async () => {
     return;
   }
   
+  // 记录当前时间，用于跟踪执行时间
+  const startTime = Date.now();
+  
   // 遍历所有会话获取最新消息
   for (const chat of chats.value) {
     try {
-      // 获取会话的最新消息
+      // 获取会话的最新消息，但不更新已读状态
+      // 使用自定义请求头和URL参数确保不会自动标记为已读
       const response = await messageApi.getMessages(chat.id, 0, 1);
+      
+      // 记录API调用耗时
+      const apiCallTime = Date.now() - startTime;
+      console.log(`[DEBUG] getMessages API调用耗时: ${apiCallTime}ms`);
       
       if (response.success && response.data && response.data.content && response.data.content.length > 0) {
         const latestMessage = response.data.content[0];
         
         if (latestMessage) {
-          // 更新会话的最新消息
+          // 更新会话的最新消息内容
           chat.lastMessage = getLastMessageContent(latestMessage);
           
           // 确保时间戳有效，再进行更新
@@ -1037,12 +1125,76 @@ const fetchLatestMessagesForConversations = async () => {
               `新: ${chat.lastMessageTime}`
             );
           }
+          
+          // 记录未读消息数量，但不自动标记为已读
+          if (chat.unreadCount > 0) {
+            console.log(`[DEBUG] 会话 ${chat.id} 有 ${chat.unreadCount} 条未读消息，但不自动标记为已读`);
+          }
+          
+          // 确保消息不被标记为已读
+          console.log(`[DEBUG] 消息 ${latestMessage.id} 的已读状态: ${latestMessage.isRead}`);
+          if (latestMessage.isRead === true) {
+            console.warn(`[DEBUG] 警告: 消息 ${latestMessage.id} 被错误地标记为已读，这不应该发生`);
+            console.warn(`[DEBUG] 这可能是后端自动标记为已读的问题，请检查后端代码`);
+          }
         }
       }
     } catch (err) {
-      console.warn(`获取会话 ${chat.id} 的最新消息失败:`, err);
+      console.warn(`[DEBUG] 获取会话 ${chat.id} 的最新消息失败:`, err);
     }
   }
+};
+
+// 单独的标记会话为已读方法
+const markConversationAsRead = async (conversationId: number, isUserAction = true) => {
+  if (!isUserAction) {
+    console.warn(`[DEBUG] 拒绝非用户主动操作的标记已读请求，会话ID: ${conversationId}`);
+    return;
+  }
+  
+  try {
+    console.log(`[DEBUG] 开始标记会话 ${conversationId} 为已读，用户主动操作: ${isUserAction}`);
+    
+    // 获取会话的最新消息
+    const response = await messageApi.getMessages(conversationId, 0, 1);
+    
+    if (response.success && response.data && response.data.content && response.data.content.length > 0) {
+      const latestMessage = response.data.content[0];
+      
+      // 确保latestMessage存在且有id
+      if (latestMessage && latestMessage.id) {
+        console.log(`[DEBUG] 找到最新消息ID: ${latestMessage.id}，准备标记为已读`);
+        
+        // 使用isUserAction标志确保这是用户主动操作
+        const request = {
+          conversationId: conversationId,
+          markAllAsRead: true,
+          isUserAction: true, // 标记这是用户主动操作
+          lastReadMessageId: latestMessage.id
+        };
+        
+        const markAsReadResponse = await messageApi.markAsRead(request);
+        console.log(`[DEBUG] 标记会话已读响应:`, markAsReadResponse);
+        
+        // 更新本地未读计数
+        const chat = chats.value.find(c => c.id === conversationId);
+        if (chat) {
+          chat.unreadCount = 0;
+          console.log(`[DEBUG] 已将会话 ${conversationId} 的未读计数重置为0`);
+        }
+        
+        return true;
+      } else {
+        console.warn(`[DEBUG] 无法获取会话 ${conversationId} 的最新消息ID，无法标记为已读`);
+      }
+    } else {
+      console.warn(`[DEBUG] 获取会话 ${conversationId} 的消息失败，无法标记为已读`);
+    }
+  } catch (error) {
+    console.error(`[DEBUG] 标记会话 ${conversationId} 为已读失败:`, error);
+  }
+  
+  return false;
 };
 
 // 获取会话显示名称
@@ -1322,72 +1474,55 @@ const handleArchive = async () => {
 };
 
 // 处理删除
-const handleDelete = async () => {
-  if (!selectedChat.value) return;
-  
-  try {
-    const chatId = selectedChat.value.id;
-    
-    // 调用API
-    await messageApi.deleteConversation(chatId);
-    
-    // 从列表中移除
-    chats.value = chats.value.filter(c => c.id !== chatId);
-    
-    // 通知父组件
-    emit('delete-chat', { chatId });
-  } catch (err: any) {
-    console.error('删除会话失败:', err);
-    emit('error', err.message || '操作失败');
-  } finally {
-    showMenu.value = false;
-  }
-};
+
 
 // 选择会话
 const handleSelectChat = async (chat: any) => {
-  console.log('选择会话:', chat);
+  console.log('[DEBUG] 选择会话:', chat.id);
   
   try {
     // 发出选择会话事件
     emit('select-chat', chat);
     
-    // 如果会话有未读消息，标记为已读
+    // 只有当用户点击会话时才标记为已读，这里是用户主动点击
     if (chat.unreadCount > 0) {
-      console.log(`会话 ${chat.id} 有 ${chat.unreadCount} 条未读消息，标记为已读`);
+      console.log(`[DEBUG] 用户点击会话 ${chat.id}，有 ${chat.unreadCount} 条未读消息，标记为已读`);
       
-      // 获取会话的最新消息
-      const response = await messageApi.getMessages(chat.id, 0, 1);
+      // 保存原始未读计数，用于恢复（如果API调用失败）
+      const originalUnreadCount = chat.unreadCount;
       
-      if (response.success && response.data && response.data.content && response.data.content.length > 0) {
-        const latestMessage = response.data.content[0];
+      // 立即更新未读计数（乐观更新）
+      chat.unreadCount = 0;
+      // 强制更新视图
+      chats.value = [...chats.value];
+      
+      try {
+        // 使用单独的标记为已读方法，明确传递isUserAction=true
+        const success = await markConversationAsRead(chat.id, true);
         
-        // 确保latestMessage存在且有id
-        if (latestMessage && latestMessage.id) {
-          console.log(`标记消息 ${latestMessage.id} 为已读`);
-          await messageApi.markMessageAsRead(latestMessage.id);
-          
-          // 标记整个会话为已读
-          await messageApi.markConversationAsRead(chat.id);
-          
-          // 立即更新未读计数（乐观更新）
+        if (success) {
+          console.log(`[DEBUG] 会话 ${chat.id} 已成功标记为已读`);
+          // 再次确保未读计数为0
           chat.unreadCount = 0;
+          // 再次强制更新视图
+          chats.value = [...chats.value];
         } else {
-          console.log('无法获取有效的最新消息ID，直接标记整个会话为已读');
-          await messageApi.markConversationAsRead(chat.id);
-          chat.unreadCount = 0;
+          console.warn(`[DEBUG] 标记会话 ${chat.id} 为已读失败`);
+          // 如果标记失败，恢复原始未读计数
+          chat.unreadCount = originalUnreadCount;
+          // 强制更新视图
+          chats.value = [...chats.value];
         }
-      } else {
-        // 如果无法获取最新消息，直接标记整个会话为已读
-        console.log('无法获取最新消息，直接标记整个会话为已读');
-        await messageApi.markConversationAsRead(chat.id);
-        
-        // 立即更新未读计数（乐观更新）
-        chat.unreadCount = 0;
+      } catch (apiError) {
+        console.error('[DEBUG] API调用失败，恢复原始未读计数:', apiError);
+        // 如果API调用失败，恢复原始未读计数
+        chat.unreadCount = originalUnreadCount;
+        // 强制更新视图
+        chats.value = [...chats.value];
       }
     }
   } catch (error) {
-    console.error('处理会话选择失败:', error);
+    console.error('[DEBUG] 处理会话选择失败:', error);
   }
 };
 
@@ -1414,19 +1549,41 @@ const startUnreadCountRefresh = () => {
     if (!getCurrentUserId()) return;
     
     try {
+      // 记录调用栈，帮助确定是哪里触发了定时刷新
+      console.log('[DEBUG] 30秒定时刷新调用栈:', new Error().stack);
+      
       // 遍历当前会话列表，更新每个会话的未读消息计数
       for (const chat of chats.value) {
         if (chat.id === Number(props.activeChatId)) continue; // 跳过当前活跃会话
         
+        // 获取未读消息数量，但不更新已读状态
+        // messageApi.getUnreadMessageCount 已添加 preventReadUpdate=true 参数
         const response = await messageApi.getUnreadMessageCount(chat.id);
+        
         if (response.success && typeof response.data === 'number') {
+          // 记录当前值和新值，用于调试
+          const currentCount = chat.unreadCount;
+          const newCount = response.data;
+          
+          console.log(`[DEBUG] 会话 ${chat.id} 未读计数: 当前=${currentCount}, 后端=${newCount}`);
+          
           // 只有当未读计数不同时才更新
-          if (chat.unreadCount !== response.data) {
-            console.log(`更新会话 ${chat.id} 的未读消息计数: ${chat.unreadCount} -> ${response.data}`);
-            chat.unreadCount = response.data;
+          if (currentCount !== newCount) {
+            console.log(`[DEBUG] 更新会话 ${chat.id} 的未读消息计数: ${currentCount} -> ${newCount}`);
+            
+            // 更新未读计数
+            chat.unreadCount = newCount;
+            
+            // 强制更新视图
+            chats.value = [...chats.value];
           }
         }
       }
+      
+      // 完全禁止在定时刷新中获取最新消息
+      // 这里不再调用 fetchLatestMessagesForConversations
+      console.log('[DEBUG] 定时刷新只更新未读计数，不获取任何消息内容，避免触发已读状态更新');
+      
     } catch (error) {
       console.error('刷新未读消息计数失败:', error);
     }
@@ -1452,10 +1609,35 @@ onUnmounted(() => {
   stopUnreadCountRefresh();
 });
 
+// 刷新会话列表
+const refreshConversations = async () => {
+  if (isRefreshing.value) return; // 防止重复点击
+  
+  isRefreshing.value = true;
+  
+  try {
+    console.log('[DEBUG] 手动刷新会话列表');
+    await loadConversations(true); // 强制刷新
+    ElMessage.success('会话列表已刷新');
+  } catch (error) {
+    console.error('刷新会话列表失败:', error);
+    ElMessage.error('刷新失败，请重试');
+  } finally {
+    isRefreshing.value = false;
+    
+    // 添加一个短暂的延迟，避免用户连续点击
+    setTimeout(() => {
+      isRefreshing.value = false;
+    }, 500);
+  }
+};
+
 // 暴露方法给父组件
 defineExpose({
   loadConversations,
   loadArchivedConversations,
+  markConversationAsRead,
+  refreshConversations,
   chats
 });
 </script>
@@ -1474,34 +1656,92 @@ defineExpose({
   border-bottom: 1px solid #e0e0e0;
   display: flex;
   align-items: center;
+  background-color: #f9f9f9;
+}
+
+.search-input-container {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 10px;
+  color: #aaa;
+  font-size: 12px;
 }
 
 .search-input {
   flex: 1;
-  padding: 8px 12px;
+  padding: 8px 12px 8px 30px;
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 14px;
+  background-color: white;
 }
 
 .refresh-button {
-  width: 32px;
+  min-width: 60px;
   height: 32px;
-  background: none;
-  border: none;
+  padding: 0 8px;
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
   border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-left: 8px;
   cursor: pointer;
-  color: #666;
+  color: #333;
   transition: all 0.2s;
+  font-size: 14px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.refresh-text {
+  margin-left: 4px;
+  font-size: 12px;
 }
 
 .refresh-button:hover {
-  background-color: #f1f1f1;
+  background-color: #e6f7ff;
   color: #1890ff;
+  border-color: #1890ff;
+}
+
+.refresh-button:active {
+  background-color: #dcf5ff;
+  transform: scale(0.95);
+}
+
+.refresh-button.refreshing {
+  background-color: #e6f7ff;
+  color: #1890ff;
+  border-color: #1890ff;
+  pointer-events: none; /* 防止重复点击 */
+}
+
+.refresh-button.refreshing i {
+  animation: spin 1s linear infinite;
+}
+
+/* 添加一个高亮效果 */
+@keyframes highlight {
+  0% { box-shadow: 0 0 0 0 rgba(24, 144, 255, 0.4); }
+  70% { box-shadow: 0 0 0 8px rgba(24, 144, 255, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(24, 144, 255, 0); }
+}
+
+/* 页面加载时添加高亮动画 */
+.refresh-button {
+  animation: highlight 2s ease-out 1s;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 /* 会话类型切换标签 */
@@ -1612,12 +1852,4 @@ defineExpose({
 .menu-item:hover {
   background-color: #f5f5f5;
 }
-
-.menu-item.delete {
-  color: #ff4d4f;
-}
-
-.menu-item.delete:hover {
-  background-color: #fff1f0;
-}
-</style> 
+</style>

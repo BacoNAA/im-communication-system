@@ -46,7 +46,10 @@
             <td>{{ group.groupId }}</td>
             <td class="group-info">
               <div class="group-avatar">
-                <img :src="group.avatarUrl || '/images/default-group.png'" alt="群组头像" />
+                <img v-if="group.avatarUrl" :src="group.avatarUrl" alt="群组头像" />
+                <div v-else class="avatar-initials">
+                  {{ getInitials(group.name) }}
+                </div>
               </div>
               <div>{{ group.name }}</div>
             </td>
@@ -276,6 +279,12 @@ const getStatusText = (status) => {
     case 'banned': return '已封禁'
     default: return '未知'
   }
+}
+
+// 获取群组名称首字母
+const getInitials = (name) => {
+  if (!name) return '群'
+  return name.charAt(0).toUpperCase()
 }
 
 // 处理搜索
@@ -624,6 +633,18 @@ onMounted(() => {
   object-fit: cover;
 }
 
+.avatar-initials {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #4299e1;
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+}
+
 .status-badge {
   display: inline-block;
   padding: 4px 8px;
@@ -658,13 +679,29 @@ onMounted(() => {
   height: 28px;
   border-radius: 4px;
   border: none;
-  background-color: #f7fafc;
-  color: #4a5568;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  color: white;
+}
+
+.action-btn.view {
+  background-color: #4299e1;
+}
+
+.action-btn.ban {
+  background-color: #e53e3e;
+}
+
+.action-btn.unban {
+  background-color: #48bb78;
+}
+
+.action-btn.delete {
+  background-color: #f56565;
 }
 
 .action-btn:hover {
@@ -903,4 +940,4 @@ onMounted(() => {
 .btn.confirm.danger:hover:not(:disabled) {
   background-color: #e53e3e;
 }
-</style> 
+</style>

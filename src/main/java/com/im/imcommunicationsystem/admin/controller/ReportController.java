@@ -67,16 +67,22 @@ public class ReportController {
      * @param pageable 分页信息
      * @param status 状态过滤
      * @param contentType 内容类型过滤
+     * @param userId 用户ID搜索
+     * @param groupId 群组ID搜索
+     * @param reason 举报原因过滤
      * @return 举报列表
      */
     @GetMapping("/api/admin/reports")
     public ResponseEntity<ResponseUtils.ApiResponse<Page<ReportResponse>>> getReportList(
             @PageableDefault(size = 10) Pageable pageable,
             @RequestParam(required = false) String status,
-            @RequestParam(required = false) String contentType) {
+            @RequestParam(required = false) String contentType,
+            @RequestParam(required = false) String userId,
+            @RequestParam(required = false) String groupId,
+            @RequestParam(required = false) String reason) {
         
-        log.info("获取举报列表，状态: {}, 内容类型: {}", status, contentType);
-        Page<ReportResponse> reports = reportService.getReportListWithPagination(pageable, status, contentType);
+        log.info("获取举报列表，状态: {}, 内容类型: {}, 用户ID: {}, 群组ID: {}, 举报原因: {}", status, contentType, userId, groupId, reason);
+        Page<ReportResponse> reports = reportService.getReportListWithPagination(pageable, status, contentType, userId, groupId, reason);
         
         return ResponseEntity.ok(ResponseUtils.success("举报列表获取成功", reports));
     }
@@ -168,4 +174,4 @@ public class ReportController {
         
         return ResponseEntity.ok(ResponseUtils.success("举报统计信息获取成功", statistics));
     }
-} 
+}

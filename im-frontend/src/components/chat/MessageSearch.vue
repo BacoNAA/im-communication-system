@@ -884,8 +884,48 @@ const search = async (page: number) => {
         searchResults.value = response.data.results.map(result => {
           // 记录原始数据，用于调试
           console.log('处理搜索结果项:', JSON.stringify(result));
+          
+          // 确保消息对象有完整的发送者信息
+          if (result.message) {
+            // 如果消息中没有发送者昵称，尝试从缓存获取
+            if (!result.message.senderNickname && result.message.senderId) {
+              const cachedUser = userCache.value[result.message.senderId];
+              if (cachedUser) {
+                result.message.senderNickname = cachedUser.alias || cachedUser.nickname || cachedUser.username;
+                result.message.senderAvatar = cachedUser.avatarUrl;
+              }
+            }
+            
+            // 如果还是没有昵称，设置默认值
+            if (!result.message.senderNickname) {
+              const currentUserId = getCurrentUserId();
+              if (result.message.senderId === currentUserId) {
+                result.message.senderNickname = '我';
+              } else {
+                result.message.senderNickname = `用户${result.message.senderId}`;
+              }
+            }
+            
+            // 如果没有头像，设置默认头像
+            if (!result.message.senderAvatar) {
+              result.message.senderAvatar = '/favicon.ico';
+            }
+          }
+          
           return result;
         });
+        
+        // 预加载搜索结果中的用户信息
+        const senderIds = searchResults.value
+          .map(result => result.message.senderId)
+          .filter((id): id is number => id !== undefined && id !== null);
+        
+        if (senderIds.length > 0) {
+          userCacheService.batchGetUserInfo(senderIds).then(() => {
+            // 用户信息加载完成后，更新搜索结果
+            searchResults.value = [...searchResults.value];
+          });
+        }
         
         totalPages.value = response.data.totalPages || 0;
         totalElements.value = response.data.total || 0;
@@ -924,7 +964,7 @@ const getSenderAvatarSync = (result: MessageSearchResult): string => {
   }
   
   // 首先尝试从消息对象中获取
-  if (result.message.senderAvatar) {
+  if (result.message.senderAvatar && result.message.senderAvatar !== '/favicon.ico') {
     return result.message.senderAvatar;
   }
   
@@ -966,7 +1006,7 @@ const getSenderNameSync = (result: MessageSearchResult): string => {
   }
   
   // 首先尝试从消息对象中获取
-  if (result.message.senderNickname) {
+  if (result.message.senderNickname && !result.message.senderNickname.startsWith('用户')) {
     return result.message.senderNickname;
   }
   
@@ -1580,4 +1620,4 @@ watch(() => searchResults.value, (results) => {
   padding: 0 2px;
   border-radius: 2px;
 }
-</style> 
+</style>

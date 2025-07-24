@@ -805,13 +805,29 @@ onMounted(() => {
   height: 28px;
   border-radius: 4px;
   border: none;
-  background-color: #f7fafc;
-  color: #4a5568;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  color: white;
+}
+
+.action-btn.view {
+  background-color: #4299e1;
+}
+
+.action-btn.edit {
+  background-color: #f6ad55;
+}
+
+.action-btn.publish {
+  background-color: #48bb78;
+}
+
+.action-btn.delete {
+  background-color: #e53e3e;
 }
 
 .action-btn:hover {
@@ -1166,4 +1182,4 @@ onMounted(() => {
   gap: 12px;
   color: #a0aec0;
 }
-</style> 
+</style>

@@ -318,6 +318,10 @@ public class MessageController {
             @PathVariable Long conversationId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "false") boolean noAutoRead,
+            @RequestParam(defaultValue = "false") boolean preventReadUpdate,
+            @RequestHeader(value = "X-Prevent-Read-Update", defaultValue = "false") boolean headerPreventReadUpdate,
+            @RequestHeader(value = "X-No-Auto-Read", defaultValue = "false") boolean headerNoAutoRead,
             Authentication authentication) {
         try {
             // 获取当前用户ID
@@ -327,8 +331,8 @@ public class MessageController {
                 return ResponseEntity.badRequest().body(ApiResponse.badRequest("用户认证失败"));
             }
             
-            log.info("Getting messages for conversation {}, page={}, size={}, userId={}", 
-                    conversationId, page, size, userId);
+            log.info("Getting messages for conversation {}, page={}, size={}, userId={}, noAutoRead={}, preventReadUpdate={}, headerPreventReadUpdate={}, headerNoAutoRead={}", 
+                    conversationId, page, size, userId, noAutoRead, preventReadUpdate, headerPreventReadUpdate, headerNoAutoRead);
             
             // 创建分页请求
             Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
@@ -353,8 +357,13 @@ public class MessageController {
                         firstMsg.getMessage().getMessageType());
             }
             
-            // 自动标记消息为已读
-            if (!messages.isEmpty()) {
+            // 检查是否应该自动标记消息为已读
+            boolean shouldPreventReadUpdate = noAutoRead || preventReadUpdate || headerPreventReadUpdate || headerNoAutoRead;
+            
+            if (shouldPreventReadUpdate) {
+                log.info("Skipping automatic read status update due to client request (noAutoRead={}, preventReadUpdate={}, headerPreventReadUpdate={}, headerNoAutoRead={})",
+                        noAutoRead, preventReadUpdate, headerPreventReadUpdate, headerNoAutoRead);
+            } else if (!messages.isEmpty()) {
                 // 获取最新消息的ID
                 Long latestMessageId = messages.getContent().stream()
                         .map(msg -> msg.getMessage().getId())
@@ -563,6 +572,8 @@ public class MessageController {
     @GetMapping("/conversation/{conversationId}/unread-count")
     public ResponseEntity<ApiResponse<Long>> getUnreadMessageCount(
             @PathVariable Long conversationId,
+            @RequestParam(defaultValue = "false") boolean preventReadUpdate,
+            @RequestHeader(value = "X-Prevent-Read-Update", defaultValue = "false") boolean headerPreventReadUpdate,
             Authentication authentication) {
         try {
             // 获取当前用户ID
@@ -572,10 +583,22 @@ public class MessageController {
                 return ResponseEntity.badRequest().body(ApiResponse.badRequest("用户认证失败"));
             }
             
-            log.info("Getting unread message count for user {} in conversation {}", userId, conversationId);
+            log.info("Getting unread message count for user {} in conversation {}, preventReadUpdate={}, headerPreventReadUpdate={}", 
+                    userId, conversationId, preventReadUpdate, headerPreventReadUpdate);
             
             // 使用新的ReadStatusService获取未读消息数量
             Long unreadCount = readStatusService.countUnreadMessages(userId, conversationId);
+            
+            // 检查是否应该防止更新已读状态
+            boolean shouldPreventReadUpdate = preventReadUpdate || headerPreventReadUpdate;
+            
+            if (shouldPreventReadUpdate) {
+                log.info("Skipping read status update due to client request (preventReadUpdate={}, headerPreventReadUpdate={})",
+                        preventReadUpdate, headerPreventReadUpdate);
+            } else {
+                // 这里不再自动更新已读状态，即使获取了未读消息数量
+                log.info("Not updating read status when getting unread count");
+            }
             
             return ResponseEntity.ok(ApiResponse.success(unreadCount));
         } catch (Exception e) {

@@ -74,7 +74,7 @@ const props = defineProps({
   },
   center: {
     type: Array,
-    default: () => ['50%', '50%']
+    default: () => ['50%', '45%']
   },
   roseType: {
     type: String,
@@ -157,9 +157,9 @@ const updateChart = () => {
     },
     legend: {
       show: showLegend.value,
-      orient: 'vertical',
-      right: '5%',
-      top: 'center',
+      orient: 'horizontal',
+      bottom: '5%',
+      left: 'center',
       icon: 'circle',
       formatter: (name) => {
         // 查找对应数据项
@@ -307,7 +307,7 @@ const emit = defineEmits(['refresh']);
 
 .chart-container {
   flex: 1;
-  min-height: 300px;
+  min-height: 350px;
   padding: 10px;
 }
-</style> 
+</style>

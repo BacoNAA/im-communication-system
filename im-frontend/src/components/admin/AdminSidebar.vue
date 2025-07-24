@@ -52,14 +52,7 @@
         <span>系统通知</span>
       </div>
       
-      <div 
-        class="menu-item" 
-        :class="{ active: activeMenu === 'settings' }"
-        @click="changeMenu('settings')"
-      >
-        <i class="fas fa-cog"></i>
-        <span>系统设置</span>
-      </div>
+
     </div>
     
     <div class="sidebar-footer">
@@ -185,4 +178,4 @@ const handleLogout = () => {
 .logout-btn i {
   margin-right: 10px;
 }
-</style> 
+</style>
